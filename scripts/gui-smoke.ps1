@@ -892,6 +892,40 @@ try {
         return $null
     } | Out-Null
     Write-Host "Diagnostics tests cleared"
+    $runDiagnosticsButton = Get-ByAutomationId -Root $window -AutomationId "RunDiagnosticsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $runDiagnosticsButton
+    $diagnosticsRefreshedText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Run Checks did not report a diagnostics refresh." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "Diagnostics refreshed") {
+            return $text
+        }
+        return $null
+    }
+    $diagnosticsLastRunText = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsLastRunText" -TimeoutSeconds $TimeoutSeconds
+    $diagnosticsLastRun = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Run Checks did not update the diagnostics last-run text." -Condition {
+        $text = Get-ElementValue $diagnosticsLastRunText
+        if ($text -match "Checks refreshed") {
+            return $text
+        }
+        return $null
+    }
+    $diagnosticsSummaryBox = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsSummaryTextBox" -TimeoutSeconds $TimeoutSeconds
+    $diagnosticsReportBox = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsReportTextBox" -TimeoutSeconds $TimeoutSeconds
+    $diagnosticsSummaryAfterRunChecks = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Run Checks did not populate the diagnostics summary." -Condition {
+        $text = Get-ElementValue $diagnosticsSummaryBox
+        if ($text -match "Profile: Local x-tunnel" -and $text -match "OS:") {
+            return $text
+        }
+        return $null
+    }
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Run Checks did not populate the diagnostics report JSON." -Condition {
+        $text = Get-ElementValue $diagnosticsReportBox
+        if ($text -match '"activeProfile"' -and $text -match '"createdAt"') {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Write-Host "Diagnostics run checks: $diagnosticsRefreshedText / $diagnosticsLastRun / $($diagnosticsSummaryAfterRunChecks.Split([Environment]::NewLine)[0])"
 
     $connectButton = Get-ByAutomationId -Root $window -AutomationId "ConnectButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $connectButton

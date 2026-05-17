@@ -414,11 +414,12 @@
               <Button Content="Open Logs" Command="{Binding OpenLogsFolderCommand}"/>
               <Button Content="Copy Ports" Command="{Binding CopyDiagnosticsPortsCommand}" automation:AutomationProperties.AutomationId="CopyDiagnosticsPortsButton"/>
             </WrapPanel>
-            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
               <Border Background="{Binding DiagnosticsPortBackground}" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
                 <TextBlock Text="{Binding DiagnosticsPortStatus}" Foreground="{Binding DiagnosticsPortForeground}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="DiagnosticsPortStatusText"/>
               </Border>
               <TextBlock Grid.Column="1" Text="{Binding DiagnosticsPortDetail}" Classes="caption" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="DiagnosticsPortDetailText"/>
+              <TextBlock Grid.Column="2" Text="{Binding DiagnosticsLastRunText}" Classes="caption" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="DiagnosticsLastRunText"/>
             </Grid>
           </StackPanel>
           <Grid Grid.Row="1" ColumnDefinitions="90,*" ColumnSpacing="8">
@@ -460,8 +461,8 @@
             </Grid>
           </Border>
           <TextBox Grid.Row="7" Text="{Binding ProfileEndpointTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="ProfileEndpointTestResultTextBox"/>
-          <TextBox Grid.Row="8" Text="{Binding DiagnosticsSummaryText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
-          <TextBox Grid.Row="9" Text="{Binding DiagnosticsText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+          <TextBox Grid.Row="8" Text="{Binding DiagnosticsSummaryText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="DiagnosticsSummaryTextBox"/>
+          <TextBox Grid.Row="9" Text="{Binding DiagnosticsText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" automation:AutomationProperties.AutomationId="DiagnosticsReportTextBox"/>
         </Grid>
       </TabItem>
 

@@ -147,6 +147,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private int _selectedMainTabIndex;
     private string _diagnosticsText = "";
     private string _diagnosticsSummaryText = "";
+    private string _diagnosticsLastRunText = "Diagnostics not run";
     private string _diagnosticsPortStatus = "Ports: not checked";
     private string _diagnosticsPortDetail = "Run checks to inspect selected profile listen ports.";
     private string _diagnosticsPortBackground = "#374151";
@@ -515,6 +516,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 CopyDiagnosticsSummaryCommand.RaiseCanExecuteChanged();
             }
         }
+    }
+
+    public string DiagnosticsLastRunText
+    {
+        get => _diagnosticsLastRunText;
+        private set => SetProperty(ref _diagnosticsLastRunText, value);
     }
 
     public string DiagnosticsPortStatus
@@ -1262,6 +1269,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         DiagnosticsSummaryText = BuildDiagnosticsSummary(report);
         DiagnosticsText = JsonSerializer.Serialize(report, JsonDefaults.Pretty);
         UpdateDiagnosticsPortStatus(report);
+        DiagnosticsLastRunText = $"Checks refreshed {DateTimeOffset.Now.LocalDateTime:T}";
         return await _diagnostics.ExportAsync(report);
     }
 
@@ -1721,6 +1729,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         DiagnosticsSummaryText = BuildDiagnosticsSummary(report);
         DiagnosticsText = JsonSerializer.Serialize(report, JsonDefaults.Pretty);
         UpdateDiagnosticsPortStatus(report);
+        DiagnosticsLastRunText = $"Checks refreshed {DateTimeOffset.Now.LocalDateTime:T}";
+        ErrorText = "Diagnostics refreshed";
     }
 
     private async Task OpenDiagnosticsAsync()
