@@ -253,6 +253,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ClearNetworkTestCommand = new RelayCommand(ClearNetworkTest, HasNetworkTestResult);
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
         CopyProfileEndpointTestResultCommand = new RelayCommand(CopyProfileEndpointTestResult, HasProfileEndpointTestResult);
+        ClearProfileEndpointTestCommand = new RelayCommand(ClearProfileEndpointTest, HasProfileEndpointTestResult);
         TestVisibleProfilesCommand = new AsyncRelayCommand(TestVisibleProfilesAsync, () => FilteredProfiles.Count > 0);
         TestAndSelectFastestProfileCommand = new AsyncRelayCommand(TestAndSelectFastestProfileAsync, () => FilteredProfiles.Count > 0);
         SelectFastestProfileCommand = new RelayCommand(SelectFastestProfile, HasSuccessfulVisibleEndpointTest);
@@ -736,6 +737,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _profileEndpointTestText, value))
             {
                 CopyProfileEndpointTestResultCommand.RaiseCanExecuteChanged();
+                ClearProfileEndpointTestCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -988,6 +990,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand ClearNetworkTestCommand { get; }
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
     public RelayCommand CopyProfileEndpointTestResultCommand { get; }
+    public RelayCommand ClearProfileEndpointTestCommand { get; }
     public AsyncRelayCommand TestVisibleProfilesCommand { get; }
     public AsyncRelayCommand TestAndSelectFastestProfileCommand { get; }
     public RelayCommand SelectFastestProfileCommand { get; }
@@ -1714,6 +1717,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         CopyTextRequested?.Invoke(this, ProfileEndpointTestText);
         ErrorText = "Profile endpoint test result copied";
+    }
+
+    private void ClearProfileEndpointTest()
+    {
+        ProfileEndpointTestText = "Not tested";
+        SetProfileEndpointRouteNotTested();
+        ErrorText = "Profile endpoint test result cleared";
     }
 
     private async Task TestProfileEndpointAsync()
@@ -2558,6 +2568,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private void UpdateProfileEndpointRoute(NetworkTestResult result)
     {
         SetProfileEndpointRoute(BuildRouteStatus(result), BuildRouteDetail(result), result.Success ? RouteVisual.Ok : RouteVisual.Failed);
+    }
+
+    private void SetProfileEndpointRouteNotTested()
+    {
+        SetProfileEndpointRoute("Forward TCP: not tested", "Uses selected profile forward endpoint", RouteVisual.Neutral);
     }
 
     private void SetDirectRoute(string status, string detail, RouteVisual visual)

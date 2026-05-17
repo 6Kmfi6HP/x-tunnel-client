@@ -666,6 +666,24 @@ try {
     }
     Write-Host "Copied endpoint result: $($clipboardEndpointText.Split([Environment]::NewLine)[0])"
 
+    $clearEndpointResultButton = Get-ByAutomationId -Root $window -AutomationId "ClearProfileEndpointTestButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $clearEndpointResultButton
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear forward result did not reset the result text." -Condition {
+        $text = Get-ElementValue $endpointResultBox
+        if ($text -match "Not tested") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear forward result did not reset the route chip." -Condition {
+        $text = Get-ElementValue $forwardRouteStatus
+        if ($text -match "Forward TCP: not tested") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Write-Host "Forward result cleared"
+
     $copyDiagnosticsSummaryButton = Get-ByAutomationId -Root $window -AutomationId "CopyDiagnosticsSummaryButton" -TimeoutSeconds $TimeoutSeconds
     Set-Clipboard -Value ""
     Invoke-Element $copyDiagnosticsSummaryButton
