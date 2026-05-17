@@ -156,6 +156,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _networkTestDetail = "Run Test Network to check direct and proxy routes.";
     private string _networkTestBadgeBackground = "#374151";
     private string _networkTestBadgeForeground = "#E5E7EB";
+    private string _networkDirectRouteStatus = "Direct: not tested";
+    private string _networkDirectRouteDetail = "Run Test Network";
+    private string _networkDirectRouteBackground = "#374151";
+    private string _networkDirectRouteForeground = "#E5E7EB";
+    private string _networkProxyRouteStatus = "Proxy: not tested";
+    private string _networkProxyRouteDetail = "Uses selected profile local proxy";
+    private string _networkProxyRouteBackground = "#374151";
+    private string _networkProxyRouteForeground = "#E5E7EB";
+    private string _profileEndpointRouteStatus = "Forward TCP: not tested";
+    private string _profileEndpointRouteDetail = "Uses selected profile forward endpoint";
+    private string _profileEndpointRouteBackground = "#374151";
+    private string _profileEndpointRouteForeground = "#E5E7EB";
     private string _profileEndpointTestText = "Not tested";
     private string _profileBatchTestText = "Endpoint tests not run";
     private string _profileSummaryText = "";
@@ -504,6 +516,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             NetworkTestSummary = "Ready to test";
             NetworkTestDetail = value.Trim();
+            SetNetworkRouteReady(value.Trim());
             if (!_applyingNetworkTestTarget)
             {
                 var target = FindNetworkTestTargetForUrl(value);
@@ -569,6 +582,78 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _networkTestBadgeForeground;
         private set => SetProperty(ref _networkTestBadgeForeground, value);
+    }
+
+    public string NetworkDirectRouteStatus
+    {
+        get => _networkDirectRouteStatus;
+        private set => SetProperty(ref _networkDirectRouteStatus, value);
+    }
+
+    public string NetworkDirectRouteDetail
+    {
+        get => _networkDirectRouteDetail;
+        private set => SetProperty(ref _networkDirectRouteDetail, value);
+    }
+
+    public string NetworkDirectRouteBackground
+    {
+        get => _networkDirectRouteBackground;
+        private set => SetProperty(ref _networkDirectRouteBackground, value);
+    }
+
+    public string NetworkDirectRouteForeground
+    {
+        get => _networkDirectRouteForeground;
+        private set => SetProperty(ref _networkDirectRouteForeground, value);
+    }
+
+    public string NetworkProxyRouteStatus
+    {
+        get => _networkProxyRouteStatus;
+        private set => SetProperty(ref _networkProxyRouteStatus, value);
+    }
+
+    public string NetworkProxyRouteDetail
+    {
+        get => _networkProxyRouteDetail;
+        private set => SetProperty(ref _networkProxyRouteDetail, value);
+    }
+
+    public string NetworkProxyRouteBackground
+    {
+        get => _networkProxyRouteBackground;
+        private set => SetProperty(ref _networkProxyRouteBackground, value);
+    }
+
+    public string NetworkProxyRouteForeground
+    {
+        get => _networkProxyRouteForeground;
+        private set => SetProperty(ref _networkProxyRouteForeground, value);
+    }
+
+    public string ProfileEndpointRouteStatus
+    {
+        get => _profileEndpointRouteStatus;
+        private set => SetProperty(ref _profileEndpointRouteStatus, value);
+    }
+
+    public string ProfileEndpointRouteDetail
+    {
+        get => _profileEndpointRouteDetail;
+        private set => SetProperty(ref _profileEndpointRouteDetail, value);
+    }
+
+    public string ProfileEndpointRouteBackground
+    {
+        get => _profileEndpointRouteBackground;
+        private set => SetProperty(ref _profileEndpointRouteBackground, value);
+    }
+
+    public string ProfileEndpointRouteForeground
+    {
+        get => _profileEndpointRouteForeground;
+        private set => SetProperty(ref _profileEndpointRouteForeground, value);
     }
 
     public string NetworkTestText
@@ -1502,18 +1587,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             NetworkTestText = "Target URL must be an absolute http or https URL";
             NetworkTestSummary = "Invalid target";
             NetworkTestDetail = NetworkTestText;
+            SetNetworkRouteInvalid(NetworkTestText);
             ErrorText = NetworkTestText;
             return;
         }
 
         try
         {
+            var endpoints = TryGetSelectedLocalProxyEndpoints(out var endpointError);
             NetworkTestText = "Testing network...";
             NetworkTestSummary = "Testing network...";
             NetworkTestDetail = target.ToString();
-            var endpoints = TryGetSelectedLocalProxyEndpoints(out var endpointError);
+            SetNetworkRouteTesting(target, endpoints, endpointError);
             var results = await _networkTester.TestAsync(target, endpoints);
             NetworkTestText = FormatNetworkTestResults(results, endpointError);
+            UpdateNetworkRouteStatus(results, endpointError);
             UpdateNetworkTestSummary(results, endpointError);
             ErrorText = results.Any(x => x.Success) ? "" : "Network test failed";
         }
@@ -1522,6 +1610,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             NetworkTestText = $"Network test failed: {ex.Message}";
             NetworkTestSummary = "Network failed";
             NetworkTestDetail = ex.Message;
+            SetNetworkRouteFailed(ex.Message);
             ErrorText = ex.Message;
         }
     }
@@ -1551,6 +1640,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (SelectedProfile is null)
         {
             ProfileEndpointTestText = "No selected profile";
+            SetProfileEndpointRoute("Forward TCP: unavailable", "No selected profile", RouteVisual.Warning);
             return;
         }
 
@@ -1558,13 +1648,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             ProfileEndpointTestText = "Testing profile forward endpoint...";
             var endpoint = _configService.GetForwardEndpoint(SelectedProfile.CoreConfigJson);
+            SetProfileEndpointRoute("Forward TCP: testing", endpoint.Display, RouteVisual.Busy);
             var result = await _networkTester.TestEndpointAsync(endpoint);
             ProfileEndpointTestText = FormatNetworkTestResults([result], note: null);
+            UpdateProfileEndpointRoute(result);
             ErrorText = result.Success ? "" : "Profile endpoint test failed";
         }
         catch (Exception ex)
         {
             ProfileEndpointTestText = $"Profile endpoint test failed: {ex.Message}";
+            SetProfileEndpointRoute("Forward TCP: failed", ex.Message, RouteVisual.Failed);
             ErrorText = ex.Message;
         }
     }
@@ -2281,6 +2374,126 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             error = $"Profile proxy endpoint parse failed: {ex.Message}";
             return null;
         }
+    }
+
+    private enum RouteVisual
+    {
+        Neutral,
+        Busy,
+        Ok,
+        Warning,
+        Failed
+    }
+
+    private void SetNetworkRouteReady(string target)
+    {
+        var detail = string.IsNullOrWhiteSpace(target) ? "Enter an http or https URL" : target;
+        SetDirectRoute("Direct: ready", detail, RouteVisual.Neutral);
+        SetProxyRoute("Proxy: ready", "Uses selected profile local proxy", RouteVisual.Neutral);
+    }
+
+    private void SetNetworkRouteInvalid(string detail)
+    {
+        SetDirectRoute("Direct: invalid target", detail, RouteVisual.Failed);
+        SetProxyRoute("Proxy: invalid target", detail, RouteVisual.Failed);
+    }
+
+    private void SetNetworkRouteTesting(Uri target, LocalProxyEndpoints? endpoints, string? endpointError)
+    {
+        SetDirectRoute("Direct: testing", target.ToString(), RouteVisual.Busy);
+        if (endpoints is null)
+        {
+            SetProxyRoute("Proxy: skipped", FirstNonEmpty(endpointError, "No selected proxy endpoint"), RouteVisual.Warning);
+            return;
+        }
+
+        SetProxyRoute("Proxy: testing", BuildProxyEndpointSummary(endpoints), RouteVisual.Busy);
+    }
+
+    private void SetNetworkRouteFailed(string detail)
+    {
+        SetDirectRoute("Direct: failed", detail, RouteVisual.Failed);
+        SetProxyRoute("Proxy: failed", detail, RouteVisual.Failed);
+    }
+
+    private void UpdateNetworkRouteStatus(IEnumerable<NetworkTestResult> results, string? note)
+    {
+        var tested = results.ToList();
+        var direct = tested.FirstOrDefault(x => string.Equals(x.Route, "Direct", StringComparison.OrdinalIgnoreCase));
+        var proxy = tested.FirstOrDefault(x => !string.Equals(x.Route, "Direct", StringComparison.OrdinalIgnoreCase));
+
+        if (direct is null)
+        {
+            SetDirectRoute("Direct: skipped", "No direct route result", RouteVisual.Warning);
+        }
+        else
+        {
+            SetDirectRoute(BuildRouteStatus(direct), BuildRouteDetail(direct), direct.Success ? RouteVisual.Ok : RouteVisual.Failed);
+        }
+
+        if (proxy is null)
+        {
+            SetProxyRoute("Proxy: skipped", FirstNonEmpty(note, "No local proxy endpoint available"), RouteVisual.Warning);
+            return;
+        }
+
+        SetProxyRoute(BuildRouteStatus(proxy), BuildRouteDetail(proxy), proxy.Success ? RouteVisual.Ok : RouteVisual.Failed);
+    }
+
+    private void UpdateProfileEndpointRoute(NetworkTestResult result)
+    {
+        SetProfileEndpointRoute(BuildRouteStatus(result), BuildRouteDetail(result), result.Success ? RouteVisual.Ok : RouteVisual.Failed);
+    }
+
+    private void SetDirectRoute(string status, string detail, RouteVisual visual)
+    {
+        NetworkDirectRouteStatus = status;
+        NetworkDirectRouteDetail = detail;
+        (NetworkDirectRouteBackground, NetworkDirectRouteForeground) = RouteColors(visual);
+    }
+
+    private void SetProxyRoute(string status, string detail, RouteVisual visual)
+    {
+        NetworkProxyRouteStatus = status;
+        NetworkProxyRouteDetail = detail;
+        (NetworkProxyRouteBackground, NetworkProxyRouteForeground) = RouteColors(visual);
+    }
+
+    private void SetProfileEndpointRoute(string status, string detail, RouteVisual visual)
+    {
+        ProfileEndpointRouteStatus = status;
+        ProfileEndpointRouteDetail = detail;
+        (ProfileEndpointRouteBackground, ProfileEndpointRouteForeground) = RouteColors(visual);
+    }
+
+    private static string BuildRouteStatus(NetworkTestResult result)
+    {
+        var status = result.Success ? "ok" : "failed";
+        return $"{result.Route}: {status} {result.DurationMs}ms";
+    }
+
+    private static string BuildRouteDetail(NetworkTestResult result)
+    {
+        if (!string.IsNullOrWhiteSpace(result.Error))
+        {
+            return result.Error;
+        }
+
+        var status = result.StatusCode.HasValue ? $"status {result.StatusCode}; " : "";
+        var proxy = string.IsNullOrWhiteSpace(result.Proxy) ? "" : $" via {result.Proxy}";
+        return $"{status}{result.Target}{proxy}";
+    }
+
+    private static (string Background, string Foreground) RouteColors(RouteVisual visual)
+    {
+        return visual switch
+        {
+            RouteVisual.Busy => ("#1E3A8A", "#BFDBFE"),
+            RouteVisual.Ok => ("#065F46", "#D1FAE5"),
+            RouteVisual.Warning => ("#92400E", "#FEF3C7"),
+            RouteVisual.Failed => ("#7F1D1D", "#FECACA"),
+            _ => ("#374151", "#E5E7EB")
+        };
     }
 
     private static string FormatNetworkTestResults(IEnumerable<NetworkTestResult> results, string? note)

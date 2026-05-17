@@ -57,3 +57,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added a dedicated GUI smoke screenshot for the active regex log-filter state.
 - Added a Settings core executable status badge so users can immediately see whether the configured or auto-detected `x-tunnel.exe` path is usable.
 - Added a copyable Diagnostics summary for quickly sharing OS, profile, proxy, and port-check context.
+- Added Diagnostics route status chips for direct, local proxy, and selected-profile forward tests so connectivity state is scannable before reading raw result text.

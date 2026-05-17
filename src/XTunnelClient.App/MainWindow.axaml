@@ -384,7 +384,7 @@
       </TabItem>
 
       <TabItem Header="Diagnostics" automation:AutomationProperties.AutomationId="DiagnosticsTab">
-        <Grid Margin="16" RowDefinitions="Auto,Auto,Auto,92,Auto,92,140,*" RowSpacing="10">
+        <Grid Margin="16" RowDefinitions="Auto,Auto,Auto,Auto,88,Auto,Auto,88,132,*" RowSpacing="10">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Content="Run Checks" Command="{Binding RefreshDiagnosticsCommand}" automation:AutomationProperties.AutomationId="RunDiagnosticsButton"/>
             <Button Content="Copy Summary" Command="{Binding CopyDiagnosticsSummaryCommand}" automation:AutomationProperties.AutomationId="CopyDiagnosticsSummaryButton"/>
@@ -402,14 +402,34 @@
             <Button Grid.Column="2" Content="Test Network" Command="{Binding TestNetworkCommand}" automation:AutomationProperties.AutomationId="TestNetworkButton"/>
             <Button Grid.Column="3" Content="Copy Result" Command="{Binding CopyNetworkTestResultCommand}" automation:AutomationProperties.AutomationId="CopyNetworkTestResultButton"/>
           </Grid>
-          <TextBox Grid.Row="3" Text="{Binding NetworkTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="NetworkTestResultTextBox"/>
-          <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="8">
+          <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
+            <Border Background="{Binding NetworkDirectRouteBackground}" CornerRadius="4" Padding="8,5">
+              <Grid RowDefinitions="Auto,Auto">
+                <TextBlock Text="{Binding NetworkDirectRouteStatus}" Foreground="{Binding NetworkDirectRouteForeground}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="NetworkDirectRouteStatusText"/>
+                <TextBlock Grid.Row="1" Text="{Binding NetworkDirectRouteDetail}" Foreground="{Binding NetworkDirectRouteForeground}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="NetworkDirectRouteDetailText"/>
+              </Grid>
+            </Border>
+            <Border Grid.Column="1" Background="{Binding NetworkProxyRouteBackground}" CornerRadius="4" Padding="8,5">
+              <Grid RowDefinitions="Auto,Auto">
+                <TextBlock Text="{Binding NetworkProxyRouteStatus}" Foreground="{Binding NetworkProxyRouteForeground}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="NetworkProxyRouteStatusText"/>
+                <TextBlock Grid.Row="1" Text="{Binding NetworkProxyRouteDetail}" Foreground="{Binding NetworkProxyRouteForeground}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="NetworkProxyRouteDetailText"/>
+              </Grid>
+            </Border>
+          </Grid>
+          <TextBox Grid.Row="4" Text="{Binding NetworkTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="NetworkTestResultTextBox"/>
+          <StackPanel Grid.Row="5" Orientation="Horizontal" Spacing="8">
             <Button Content="Test Forward" Command="{Binding TestProfileEndpointCommand}" automation:AutomationProperties.AutomationId="TestProfileEndpointButton"/>
             <Button Content="Copy Forward" Command="{Binding CopyProfileEndpointTestResultCommand}" automation:AutomationProperties.AutomationId="CopyProfileEndpointTestResultButton"/>
           </StackPanel>
-          <TextBox Grid.Row="5" Text="{Binding ProfileEndpointTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="ProfileEndpointTestResultTextBox"/>
-          <TextBox Grid.Row="6" Text="{Binding DiagnosticsSummaryText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
-          <TextBox Grid.Row="7" Text="{Binding DiagnosticsText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+          <Border Grid.Row="6" Background="{Binding ProfileEndpointRouteBackground}" CornerRadius="4" Padding="8,5">
+            <Grid RowDefinitions="Auto,Auto">
+              <TextBlock Text="{Binding ProfileEndpointRouteStatus}" Foreground="{Binding ProfileEndpointRouteForeground}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="ProfileEndpointRouteStatusText"/>
+              <TextBlock Grid.Row="1" Text="{Binding ProfileEndpointRouteDetail}" Foreground="{Binding ProfileEndpointRouteForeground}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="ProfileEndpointRouteDetailText"/>
+            </Grid>
+          </Border>
+          <TextBox Grid.Row="7" Text="{Binding ProfileEndpointTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="ProfileEndpointTestResultTextBox"/>
+          <TextBox Grid.Row="8" Text="{Binding DiagnosticsSummaryText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+          <TextBox Grid.Row="9" Text="{Binding DiagnosticsText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
         </Grid>
       </TabItem>
 

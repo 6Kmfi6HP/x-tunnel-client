@@ -492,6 +492,23 @@ try {
         }
         return $null
     }
+    $directRouteStatus = Get-ByAutomationId -Root $window -AutomationId "NetworkDirectRouteStatusText" -TimeoutSeconds $TimeoutSeconds
+    $proxyRouteStatus = Get-ByAutomationId -Root $window -AutomationId "NetworkProxyRouteStatusText" -TimeoutSeconds $TimeoutSeconds
+    $directRouteText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Direct route status chip did not show success." -Condition {
+        $text = Get-ElementValue $directRouteStatus
+        if ($text -match "Direct: ok") {
+            return $text
+        }
+        return $null
+    }
+    $proxyRouteText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Proxy route status chip did not show the disconnected failure state." -Condition {
+        $text = Get-ElementValue $proxyRouteStatus
+        if ($text -match "proxy: failed") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Network route chips: $directRouteText / $proxyRouteText"
 
     Select-Element $overviewTab
     $overviewNetworkSummaryText = Get-ByAutomationId -Root $window -AutomationId "OverviewNetworkSummaryText" -TimeoutSeconds $TimeoutSeconds
@@ -543,9 +560,18 @@ try {
         }
         return $null
     }
+    $forwardRouteStatus = Get-ByAutomationId -Root $window -AutomationId "ProfileEndpointRouteStatusText" -TimeoutSeconds $TimeoutSeconds
+    $forwardRouteText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Forward route status chip did not show success." -Condition {
+        $text = Get-ElementValue $forwardRouteStatus
+        if ($text -match "Forward TCP: ok") {
+            return $text
+        }
+        return $null
+    }
 
     Write-Host $resultText
     Write-Host $endpointText
+    Write-Host "Forward route chip: $forwardRouteText"
     $copyEndpointResultButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileEndpointTestResultButton" -TimeoutSeconds $TimeoutSeconds
     Set-Clipboard -Value ""
     Invoke-Element $copyEndpointResultButton
@@ -594,7 +620,15 @@ try {
         }
         return $null
     }
+    $connectedProxyRouteText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Proxy route status chip did not show connected success." -Condition {
+        $text = Get-ElementValue $proxyRouteStatus
+        if ($text -match "HTTP proxy: ok") {
+            return $text
+        }
+        return $null
+    }
     Write-Host "Connected network test: $connectedNetworkText"
+    Write-Host "Connected proxy route chip: $connectedProxyRouteText"
 
     $disconnectButton = Get-ByAutomationId -Root $window -AutomationId "DisconnectButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $disconnectButton
