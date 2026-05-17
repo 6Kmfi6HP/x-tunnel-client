@@ -8,16 +8,16 @@
 
   <TrayIcon.Icons>
     <TrayIcons>
-      <TrayIcon Icon="/Assets/app-icon.ico" ToolTipText="x-tunnel Client">
+      <TrayIcon Icon="/Assets/app-icon.ico" ToolTipText="{Binding TrayToolTipText}">
         <TrayIcon.Menu>
           <NativeMenu>
             <NativeMenuItem Header="Open Dashboard" Click="ShowWindow_OnClick" />
-            <NativeMenuItem Header="Connect" Click="Connect_OnClick" />
-            <NativeMenuItem Header="Disconnect" Click="Disconnect_OnClick" />
-            <NativeMenuItem Header="Restart" Click="Restart_OnClick" />
+            <NativeMenuItem Header="Connect" Command="{Binding ConnectCommand}" />
+            <NativeMenuItem Header="Disconnect" Command="{Binding DisconnectCommand}" />
+            <NativeMenuItem Header="Restart" Command="{Binding RestartCommand}" />
             <NativeMenuItemSeparator />
             <NativeMenuItem Header="Diagnostics" Click="Diagnostics_OnClick" />
-            <NativeMenuItem Header="Restore Proxy" Click="RestoreProxy_OnClick" />
+            <NativeMenuItem Header="Restore Proxy" Command="{Binding RestoreProxyCommand}" />
             <NativeMenuItemSeparator />
             <NativeMenuItem Header="Quit" Click="Quit_OnClick" />
           </NativeMenu>

@@ -41,30 +41,10 @@ public partial class App : Application
         _desktop.MainWindow.Activate();
     }
 
-    private void Connect_OnClick(object? sender, EventArgs e)
-    {
-        _viewModel?.ConnectCommand.Execute(null);
-    }
-
-    private void Disconnect_OnClick(object? sender, EventArgs e)
-    {
-        _viewModel?.DisconnectCommand.Execute(null);
-    }
-
-    private void Restart_OnClick(object? sender, EventArgs e)
-    {
-        _viewModel?.RestartCommand.Execute(null);
-    }
-
     private void Diagnostics_OnClick(object? sender, EventArgs e)
     {
         ShowWindow_OnClick(sender, e);
         _viewModel?.RefreshDiagnosticsCommand.Execute(null);
-    }
-
-    private void RestoreProxy_OnClick(object? sender, EventArgs e)
-    {
-        _viewModel?.RestoreProxyCommand.Execute(null);
     }
 
     private async void Quit_OnClick(object? sender, EventArgs e)

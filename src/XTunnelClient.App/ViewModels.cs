@@ -141,6 +141,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _coreSummary = "Core not running";
     private string _validationSummary = "Not validated";
     private string _recentIssueSummary = "-";
+    private string _trayToolTipText = "x-tunnel Client\nDisconnected";
 
     public MainViewModel()
     {
@@ -340,6 +341,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _recentIssueSummary;
         set => SetProperty(ref _recentIssueSummary, value);
+    }
+
+    public string TrayToolTipText
+    {
+        get => _trayToolTipText;
+        set => SetProperty(ref _trayToolTipText, value);
     }
 
     public ICommand NewProfileCommand { get; }
@@ -753,7 +760,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             : SelectedProfile?.LastValidatedAt is { } validatedAt
                 ? $"Last checked {validatedAt.LocalDateTime:g}"
                 : "Not validated";
-
         try
         {
             LocalProxySummary = SelectedProfile is null
@@ -764,6 +770,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             LocalProxySummary = ex.Message;
         }
+        TrayToolTipText = $"x-tunnel Client{Environment.NewLine}{ConnectionHeading}{Environment.NewLine}{ActiveProfileSummary}{Environment.NewLine}{LocalProxySummary}";
 
         var sent = GetJsonUInt64(stats?.Traffic, "bytes_sent");
         var received = GetJsonUInt64(stats?.Traffic, "bytes_received");
