@@ -195,6 +195,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         TestNetworkCommand = new AsyncRelayCommand(TestNetworkAsync);
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
         TestVisibleProfilesCommand = new AsyncRelayCommand(TestVisibleProfilesAsync, () => FilteredProfiles.Count > 0);
+        SelectFastestProfileCommand = new RelayCommand(SelectFastestProfile, HasSuccessfulVisibleEndpointTest);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         UseDetectedCorePathCommand = new RelayCommand(UseDetectedCorePath);
         ClearLogFiltersCommand = new RelayCommand(ClearLogFilters);
@@ -565,6 +566,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand TestNetworkCommand { get; }
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
     public AsyncRelayCommand TestVisibleProfilesCommand { get; }
+    public RelayCommand SelectFastestProfileCommand { get; }
     public ICommand SaveSettingsCommand { get; }
     public ICommand UseDetectedCorePathCommand { get; }
     public ICommand ClearLogFiltersCommand { get; }
@@ -1164,7 +1166,27 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         ProfileBatchTestText = $"Endpoint tests: {ok} ok, {failed} failed";
         ErrorText = failed == 0 ? "" : ProfileBatchTestText;
+        SelectFastestProfileCommand.RaiseCanExecuteChanged();
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+    }
+
+    private void SelectFastestProfile()
+    {
+        var fastest = FilteredProfiles
+            .Where(HasSuccessfulEndpointTest)
+            .OrderBy(x => x.LastEndpointTestDurationMs ?? long.MaxValue)
+            .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+        if (fastest is null)
+        {
+            ProfileBatchTestText = "No successful endpoint test result; run Test Visible first.";
+            ErrorText = ProfileBatchTestText;
+            return;
+        }
+
+        SelectedProfile = fastest;
+        ProfileBatchTestText = $"Selected fastest: {fastest.Name} ({fastest.LastEndpointTestDurationMs ?? 0}ms)";
+        ErrorText = "";
     }
 
     private void SaveSettings()
@@ -1487,6 +1509,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var matches = Profiles.Where(MatchesProfileSearch).ToList();
         ReplaceCollection(FilteredProfiles, matches);
         TestVisibleProfilesCommand.RaiseCanExecuteChanged();
+        SelectFastestProfileCommand.RaiseCanExecuteChanged();
 
         if (FilteredProfiles.Count == 0)
         {
@@ -1521,6 +1544,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         return !string.IsNullOrWhiteSpace(value)
             && value.Contains(filter, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool HasSuccessfulVisibleEndpointTest()
+    {
+        return FilteredProfiles.Any(HasSuccessfulEndpointTest);
+    }
+
+    private static bool HasSuccessfulEndpointTest(Profile profile)
+    {
+        return profile.LastEndpointTestAt.HasValue
+            && string.IsNullOrWhiteSpace(profile.LastEndpointTestError)
+            && profile.LastEndpointTestDurationMs.HasValue;
     }
 
     private LocalProxyEndpoints? TryGetSelectedLocalProxyEndpoints(out string? error)

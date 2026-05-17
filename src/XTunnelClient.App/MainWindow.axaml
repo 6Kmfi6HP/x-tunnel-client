@@ -188,12 +188,13 @@
                 <TextBox Text="{Binding ProfileSearchText}" PlaceholderText="Search profiles" automation:AutomationProperties.AutomationId="ProfileSearchTextBox"/>
                 <Button Grid.Column="1" Content="Clear" Command="{Binding ClearProfileSearchCommand}" automation:AutomationProperties.AutomationId="ClearProfileSearchButton"/>
               </Grid>
-              <StackPanel Orientation="Horizontal" Spacing="8">
+              <WrapPanel>
                 <Button Content="New" Command="{Binding NewProfileCommand}"/>
-                <Button Content="Copy" Command="{Binding DuplicateProfileCommand}"/>
-                <Button Content="Delete" Command="{Binding DeleteProfileCommand}"/>
-                <Button Content="Test Visible" Command="{Binding TestVisibleProfilesCommand}" automation:AutomationProperties.AutomationId="TestVisibleProfilesButton"/>
-              </StackPanel>
+                <Button Content="Copy" Command="{Binding DuplicateProfileCommand}" Margin="8,0,0,0"/>
+                <Button Content="Delete" Command="{Binding DeleteProfileCommand}" Margin="8,0,0,0"/>
+                <Button Content="Test Visible" Command="{Binding TestVisibleProfilesCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="TestVisibleProfilesButton"/>
+                <Button Content="Fastest" Command="{Binding SelectFastestProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="SelectFastestProfileButton"/>
+              </WrapPanel>
               <TextBlock Text="{Binding ProfileBatchTestText}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="ProfileBatchTestTextBlock"/>
             </StackPanel>
             <ListBox ItemsSource="{Binding FilteredProfiles}" SelectedItem="{Binding SelectedProfile}">
@@ -220,7 +221,7 @@
 
           <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto,120,*,Auto" RowSpacing="10">
             <Grid ColumnDefinitions="*,160,160" ColumnSpacing="8">
-              <TextBox Text="{Binding SelectedProfile.Name}" PlaceholderText="Profile name"/>
+              <TextBox Text="{Binding SelectedProfile.Name}" PlaceholderText="Profile name" automation:AutomationProperties.AutomationId="ProfileNameTextBox"/>
               <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileKinds}" SelectedItem="{Binding SelectedProfile.Kind}"/>
               <TextBox Grid.Column="2" Text="{Binding SelectedProfile.Source}" PlaceholderText="source"/>
             </Grid>

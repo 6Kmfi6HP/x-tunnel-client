@@ -513,6 +513,25 @@ try {
     }
     Write-Host "Profile search cleared: $clearedProfileText"
 
+    $selectFastestButton = Get-ByAutomationId -Root $window -AutomationId "SelectFastestProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $selectFastestButton
+    $profileNameBox = Get-ByAutomationId -Root $window -AutomationId "ProfileNameTextBox" -TimeoutSeconds $TimeoutSeconds
+    $fastestProfileName = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Select fastest did not switch to the tested local profile." -Condition {
+        $text = Get-ElementValue $profileNameBox
+        if ($text -match "Local x-tunnel") {
+            return $text
+        }
+        return $null
+    }
+    $fastestText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Select fastest did not report the selected profile." -Condition {
+        $text = Get-ElementValue $profileBatchTestTextBlock
+        if ($text -match "Selected fastest: Local x-tunnel") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Fastest profile selected: $fastestProfileName / $fastestText"
+
     $profileJsonBox = Get-ByAutomationId -Root $window -AutomationId "ProfileJsonTextBox" -TimeoutSeconds $TimeoutSeconds
     Set-ElementValue -Element $profileJsonBox -Value "{"
 
