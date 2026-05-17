@@ -1336,6 +1336,23 @@ try {
     Write-Host "Subscription updated sort first item: $updatedSortedSubscription"
     Save-ElementScreenshot -Element $window -Path $SubscriptionScreenshotPath
     Write-Host "Subscription GUI screenshot: $SubscriptionScreenshotPath"
+    $deleteSubscriptionButton = Get-ByAutomationId -Root $window -AutomationId "DeleteSubscriptionButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $deleteSubscriptionButton
+    $deletedSubscriptionStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Delete subscription did not update the subscription status text." -Condition {
+        $text = Get-ElementValue $subscriptionStatusBox
+        if ($text -match "Subscription deleted") {
+            return $text
+        }
+        return $null
+    }
+    $deletedSubscriptionSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Delete subscription did not reset the subscription summary." -Condition {
+        $text = Get-ElementValue $subscriptionSummaryBlock
+        if ($text -match "Subscriptions 0/0 visible") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Subscription deleted: $deletedSubscriptionStatus / $deletedSubscriptionSummary"
 
     $profilesTab = Get-ByAutomationId -Root $window -AutomationId "ProfilesTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $profilesTab

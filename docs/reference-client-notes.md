@@ -89,3 +89,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added an Overview Copy Metrics action backed by the x-tunnel sidecar control API metrics endpoint.
 - Extended Overview Copy Runtime Details to include both control status and stats JSON.
 - Added GUI smoke coverage for duplicating and deleting an imported profile.
+- Added GUI smoke coverage for deleting a subscription through a stable AutomationId.

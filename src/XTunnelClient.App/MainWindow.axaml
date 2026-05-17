@@ -336,7 +336,7 @@
               <Button Content="Update" Command="{Binding RefreshSubscriptionCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="UpdateSubscriptionButton"/>
               <Button Content="Update All" Command="{Binding RefreshAllSubscriptionsCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="UpdateAllSubscriptionsButton"/>
               <Button Content="Save" Command="{Binding SaveSubscriptionCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="SaveSubscriptionButton"/>
-              <Button Content="Delete" Command="{Binding DeleteSubscriptionCommand}" Margin="0,0,8,8"/>
+              <Button Content="Delete" Command="{Binding DeleteSubscriptionCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="DeleteSubscriptionButton"/>
             </WrapPanel>
             <TextBlock DockPanel.Dock="Top" Text="{Binding SubscriptionSummaryText}" Classes="caption" Margin="0,0,0,10" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="SubscriptionSummaryTextBlock"/>
             <ListBox ItemsSource="{Binding FilteredSubscriptions}" SelectedItem="{Binding SelectedSubscription}">
