@@ -1264,6 +1264,29 @@ try {
     Write-Host "Copied filtered logs: $($clipboardLogText.Split([Environment]::NewLine)[0])"
     Save-ElementScreenshot -Element $window -Path $LogsScreenshotPath
     Write-Host "Logs GUI screenshot: $LogsScreenshotPath"
+    $exportDiagnosticsButton = Get-ByAutomationId -Root $window -AutomationId "ExportDiagnosticsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $exportDiagnosticsButton
+    $logsExportedDiagnosticsText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Logs Export Diagnostics did not report an exported file path." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "Diagnostics exported: .*\.zip") {
+            return $text
+        }
+        return $null
+    }
+    $logsExportedDiagnosticsPath = $logsExportedDiagnosticsText -replace '^Diagnostics exported:\s*', ''
+    if (!(Test-Path $logsExportedDiagnosticsPath)) {
+        throw "Logs exported diagnostics zip was not created: '$logsExportedDiagnosticsPath'"
+    }
+    $logsZip = [System.IO.Compression.ZipFile]::OpenRead($logsExportedDiagnosticsPath)
+    try {
+        if (!($logsZip.Entries | Where-Object { $_.FullName -eq "report.json" })) {
+            throw "Logs exported diagnostics zip did not contain report.json: '$logsExportedDiagnosticsPath'"
+        }
+    }
+    finally {
+        $logsZip.Dispose()
+    }
+    Write-Host "Logs exported diagnostics zip: $logsExportedDiagnosticsPath"
 
     $subscriptionsTab = Get-ByAutomationId -Root $window -AutomationId "SubscriptionsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $subscriptionsTab
