@@ -142,6 +142,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _diagnosticsSummaryText = "";
     private string _subscriptionStatusText = "";
     private string _subscriptionSummaryText = "";
+    private string _subscriptionSearchText = "";
     private string _networkTestUrl = "https://www.gstatic.com/generate_204";
     private string _networkTestText = "Not tested";
     private string _profileEndpointTestText = "Not tested";
@@ -207,6 +208,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         UseDetectedCorePathCommand = new RelayCommand(UseDetectedCorePath);
         ClearLogFiltersCommand = new RelayCommand(ClearLogFilters);
         ClearProfileSearchCommand = new RelayCommand(ClearProfileSearch);
+        ClearSubscriptionSearchCommand = new RelayCommand(ClearSubscriptionSearch);
         RestoreProxyCommand = new RelayCommand(() => systemProxy.Restore());
         CopyProxyCommand = new RelayCommand(CopyProxySummary);
         OpenDataFolderCommand = new RelayCommand(() => OpenFolder(_paths.Root));
@@ -227,6 +229,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<SummaryRow> ChannelRows { get; } = [];
     public ObservableCollection<ProfileIssue> ProfileIssues { get; } = [];
     public ObservableCollection<Subscription> Subscriptions { get; } = [];
+    public ObservableCollection<Subscription> FilteredSubscriptions { get; } = [];
     public IReadOnlyList<ProxyMode> ProxyModes { get; } = Enum.GetValues<ProxyMode>();
     public IReadOnlyList<string> ProfileKinds { get; } = ["client", "server"];
     public IReadOnlyList<string> ThemeOptions { get; } = ["system", "light", "dark"];
@@ -396,6 +399,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _subscriptionSummaryText;
         set => SetProperty(ref _subscriptionSummaryText, value);
+    }
+
+    public string SubscriptionSearchText
+    {
+        get => _subscriptionSearchText;
+        set
+        {
+            if (SetProperty(ref _subscriptionSearchText, value))
+            {
+                UpdateFilteredSubscriptions();
+            }
+        }
     }
 
     public string NetworkTestUrl
@@ -605,6 +620,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand UseDetectedCorePathCommand { get; }
     public ICommand ClearLogFiltersCommand { get; }
     public ICommand ClearProfileSearchCommand { get; }
+    public ICommand ClearSubscriptionSearchCommand { get; }
     public ICommand RestoreProxyCommand { get; }
     public ICommand CopyProxyCommand { get; }
     public ICommand OpenDataFolderCommand { get; }
@@ -658,7 +674,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             Subscriptions.Add(subscription);
         }
-        UpdateSubscriptionSummary();
+        UpdateFilteredSubscriptions(targetId);
         if (Subscriptions.Count == 0)
         {
             SelectedSubscription = null;
@@ -666,9 +682,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             RaiseSubscriptionCommandState();
             return;
         }
-        SelectedSubscription = targetId.HasValue
-            ? Subscriptions.FirstOrDefault(x => x.Id == targetId.Value) ?? Subscriptions.FirstOrDefault()
-            : Subscriptions.FirstOrDefault();
     }
 
     public async Task ImportProfileJsonAsync(string json, string name)
@@ -781,7 +794,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         };
         Subscriptions.Add(subscription);
         SelectedSubscription = subscription;
-        UpdateSubscriptionSummary();
+        UpdateFilteredSubscriptions(subscription.Id);
         RaiseSubscriptionCommandState();
     }
 
@@ -807,9 +820,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var subscription = SelectedSubscription;
         _repository.DeleteSubscription(subscription.Id);
         Subscriptions.Remove(subscription);
-        SelectedSubscription = Subscriptions.FirstOrDefault();
+        UpdateFilteredSubscriptions();
         SubscriptionStatusText = "Subscription deleted";
-        UpdateSubscriptionSummary();
         RaiseSubscriptionCommandState();
     }
 
@@ -1403,6 +1415,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ProfileSearchText = "";
     }
 
+    private void ClearSubscriptionSearch()
+    {
+        SubscriptionSearchText = "";
+    }
+
     private void OnRuntimeChanged(object? sender, RuntimeChangedEventArgs e)
     {
         Dispatcher.UIThread.Post(() =>
@@ -1789,22 +1806,59 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         });
     }
 
+    private void UpdateFilteredSubscriptions(Guid? preferredSubscriptionId = null)
+    {
+        var selectedId = preferredSubscriptionId ?? SelectedSubscription?.Id;
+        var matches = Subscriptions.Where(MatchesSubscriptionSearch).ToList();
+        ReplaceCollection(FilteredSubscriptions, matches);
+        UpdateSubscriptionSummary();
+
+        if (FilteredSubscriptions.Count == 0)
+        {
+            SelectedSubscription = null;
+            RaiseSubscriptionCommandState();
+            return;
+        }
+
+        var preferred = selectedId.HasValue
+            ? FilteredSubscriptions.FirstOrDefault(x => x.Id == selectedId.Value)
+            : null;
+        SelectedSubscription = preferred ?? FilteredSubscriptions.First();
+    }
+
+    private bool MatchesSubscriptionSearch(Subscription subscription)
+    {
+        var filter = SubscriptionSearchText.Trim();
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            return true;
+        }
+
+        return SubscriptionFieldContains(subscription.DisplayName, filter)
+            || SubscriptionFieldContains(subscription.Url, filter)
+            || SubscriptionFieldContains(subscription.LastResult, filter)
+            || SubscriptionFieldContains(subscription.UpdateState, filter)
+            || SubscriptionFieldContains(subscription.UpdateDetail, filter)
+            || SubscriptionFieldContains(subscription.TrustPolicy, filter);
+    }
+
+    private static bool SubscriptionFieldContains(string? value, string filter)
+    {
+        return !string.IsNullOrWhiteSpace(value)
+            && value.Contains(filter, StringComparison.OrdinalIgnoreCase);
+    }
+
     private void UpdateSubscriptionSummary()
     {
         if (Subscriptions.Count == 0)
         {
-            SubscriptionSummaryText = "Subscriptions 0 configured";
+            SubscriptionSummaryText = "Subscriptions 0/0 visible, 0 updated, 0 failed";
             return;
         }
 
         var updated = Subscriptions.Count(x => x.LastUpdatedAt.HasValue);
         var failed = Subscriptions.Count(x => x.LastResult.StartsWith("failed:", StringComparison.OrdinalIgnoreCase));
-        var newest = Subscriptions
-            .Where(x => x.LastUpdatedAt.HasValue)
-            .OrderByDescending(x => x.LastUpdatedAt)
-            .Select(x => x.LastUpdatedAt!.Value.LocalDateTime.ToString("g", CultureInfo.CurrentCulture))
-            .FirstOrDefault() ?? "-";
-        SubscriptionSummaryText = $"Subscriptions {Subscriptions.Count} configured, {updated} updated, {failed} failed, latest {newest}";
+        SubscriptionSummaryText = $"Subscriptions {FilteredSubscriptions.Count}/{Subscriptions.Count} visible, {updated} updated, {failed} failed";
     }
 
     private static string BuildDiagnosticsSummary(DiagnosticReport report)

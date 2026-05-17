@@ -524,7 +524,7 @@ try {
     $subscriptionSummaryBlock = Get-ByAutomationId -Root $window -AutomationId "SubscriptionSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
     $subscriptionSummaryText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Subscription summary did not reflect the updated subscription." -Condition {
         $text = Get-ElementValue $subscriptionSummaryBlock
-        if ($text -match "Subscriptions 1 configured" -and $text -match "1 updated" -and $text -match "0 failed") {
+        if ($text -match "Subscriptions 1/1 visible" -and $text -match "1 updated" -and $text -match "0 failed") {
             return $text
         }
         return $null
@@ -541,6 +541,42 @@ try {
         return $null
     }
     Write-Host "Subscription list state: $subscriptionListState"
+    $subscriptionSearchBox = Get-ByAutomationId -Root $window -AutomationId "SubscriptionSearchTextBox" -TimeoutSeconds $TimeoutSeconds
+    Set-ElementValue -Element $subscriptionSearchBox -Value "Smoke"
+    $searchedSubscriptionText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Subscription search did not keep the smoke subscription visible." -Condition {
+        $item = Find-ByAutomationId -Root $window -AutomationId "SubscriptionListItemName"
+        if (!$item) {
+            return $null
+        }
+        $text = Get-ElementValue $item
+        if ($text -match "Smoke subscription") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Subscription search result: $searchedSubscriptionText"
+    Set-ElementValue -Element $subscriptionSearchBox -Value "missing-subscription-filter"
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Subscription search did not reduce visible subscriptions to zero." -Condition {
+        $text = Get-ElementValue $subscriptionSummaryBlock
+        if ($text -match "Subscriptions 0/1 visible") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    $clearSubscriptionSearchButton = Get-ByAutomationId -Root $window -AutomationId "ClearSubscriptionSearchButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $clearSubscriptionSearchButton
+    $clearedSubscriptionText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear subscription search did not restore the smoke subscription." -Condition {
+        $item = Find-ByAutomationId -Root $window -AutomationId "SubscriptionListItemName"
+        if (!$item) {
+            return $null
+        }
+        $text = Get-ElementValue $item
+        if ($text -match "Smoke subscription") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Subscription search cleared: $clearedSubscriptionText"
     Save-ElementScreenshot -Element $window -Path $SubscriptionScreenshotPath
     Write-Host "Subscription GUI screenshot: $SubscriptionScreenshotPath"
 

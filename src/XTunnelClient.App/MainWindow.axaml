@@ -278,6 +278,10 @@
       <TabItem Header="Subscriptions" automation:AutomationProperties.AutomationId="SubscriptionsTab">
         <Grid Margin="16" ColumnDefinitions="320,*" ColumnSpacing="16">
           <DockPanel>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,8">
+              <TextBox Text="{Binding SubscriptionSearchText}" PlaceholderText="Search subscriptions" automation:AutomationProperties.AutomationId="SubscriptionSearchTextBox"/>
+              <Button Grid.Column="1" Content="Clear" Command="{Binding ClearSubscriptionSearchCommand}" automation:AutomationProperties.AutomationId="ClearSubscriptionSearchButton"/>
+            </Grid>
             <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
               <Button Content="New" Command="{Binding NewSubscriptionCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="NewSubscriptionButton"/>
               <Button Content="Update" Command="{Binding RefreshSubscriptionCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="UpdateSubscriptionButton"/>
@@ -286,7 +290,7 @@
               <Button Content="Delete" Command="{Binding DeleteSubscriptionCommand}" Margin="0,0,8,8"/>
             </WrapPanel>
             <TextBlock DockPanel.Dock="Top" Text="{Binding SubscriptionSummaryText}" Classes="caption" Margin="0,0,0,10" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="SubscriptionSummaryTextBlock"/>
-            <ListBox ItemsSource="{Binding Subscriptions}" SelectedItem="{Binding SelectedSubscription}">
+            <ListBox ItemsSource="{Binding FilteredSubscriptions}" SelectedItem="{Binding SelectedSubscription}">
               <ListBox.ItemTemplate>
                 <DataTemplate>
                   <Border Padding="8" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
