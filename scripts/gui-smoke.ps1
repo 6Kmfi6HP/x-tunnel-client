@@ -412,6 +412,24 @@ try {
     $overviewTab = Get-ByAutomationId -Root $window -AutomationId "OverviewTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $overviewTab
 
+    $openSubscriptionsButton = Get-ByAutomationId -Root $window -AutomationId "OpenSubscriptionsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $openSubscriptionsButton
+    Get-ByAutomationId -Root $window -AutomationId "SubscriptionSearchTextBox" -TimeoutSeconds $TimeoutSeconds | Out-Null
+    Write-Host "Overview subscriptions shortcut opened Subscriptions"
+    Select-Element $overviewTab
+
+    $openLogsButton = Get-ByAutomationId -Root $window -AutomationId "OpenLogsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $openLogsButton
+    Get-ByAutomationId -Root $window -AutomationId "LogFilterTextBox" -TimeoutSeconds $TimeoutSeconds | Out-Null
+    Write-Host "Overview logs shortcut opened Logs"
+    Select-Element $overviewTab
+
+    $openSettingsButton = Get-ByAutomationId -Root $window -AutomationId "OpenSettingsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $openSettingsButton
+    Get-ByAutomationId -Root $window -AutomationId "SettingsCorePathTextBox" -TimeoutSeconds $TimeoutSeconds | Out-Null
+    Write-Host "Overview settings shortcut opened Settings"
+    Select-Element $overviewTab
+
     $openProfilesButton = Get-ByAutomationId -Root $window -AutomationId "OpenProfilesButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $openProfilesButton
 
