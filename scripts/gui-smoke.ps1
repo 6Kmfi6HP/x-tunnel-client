@@ -608,6 +608,17 @@ try {
         return $null
     }
     Write-Host $updateAllText
+    $copySubscriptionStatusButton = Get-ByAutomationId -Root $window -AutomationId "CopySubscriptionStatusButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copySubscriptionStatusButton
+    $clipboardSubscriptionStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy subscription result did not place the aggregate result on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "Updated all 1 subscription" -and $text -match "Succeeded: 1, failed: 0" -and $text -match "unchanged: 1") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied subscription result: $($clipboardSubscriptionStatus.Split([Environment]::NewLine)[0])"
     $subscriptionSummaryBlock = Get-ByAutomationId -Root $window -AutomationId "SubscriptionSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
     $subscriptionSummaryText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Subscription summary did not reflect the updated subscription." -Condition {
         $text = Get-ElementValue $subscriptionSummaryBlock

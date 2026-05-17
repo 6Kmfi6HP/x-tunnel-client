@@ -202,6 +202,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         DeleteSubscriptionCommand = new RelayCommand(DeleteSelectedSubscription, () => SelectedSubscription is not null);
         RefreshSubscriptionCommand = new AsyncRelayCommand(RefreshSelectedSubscriptionAsync, () => SelectedSubscription is not null);
         RefreshAllSubscriptionsCommand = new AsyncRelayCommand(RefreshAllSubscriptionsAsync, () => Subscriptions.Count > 0);
+        CopySubscriptionStatusCommand = new RelayCommand(CopySubscriptionStatus, HasSubscriptionStatusResult);
         ConnectCommand = new AsyncRelayCommand(ConnectAsync, CanConnect);
         DisconnectCommand = new AsyncRelayCommand(() => _supervisor.DisconnectAsync(), CanDisconnect);
         RestartCommand = new AsyncRelayCommand(RestartAsync, CanRestart);
@@ -411,7 +412,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string SubscriptionStatusText
     {
         get => _subscriptionStatusText;
-        set => SetProperty(ref _subscriptionStatusText, value);
+        set
+        {
+            if (SetProperty(ref _subscriptionStatusText, value))
+            {
+                CopySubscriptionStatusCommand.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     public string SubscriptionSummaryText
@@ -705,6 +712,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand DeleteSubscriptionCommand { get; }
     public AsyncRelayCommand RefreshSubscriptionCommand { get; }
     public AsyncRelayCommand RefreshAllSubscriptionsCommand { get; }
+    public RelayCommand CopySubscriptionStatusCommand { get; }
     public AsyncRelayCommand ConnectCommand { get; }
     public AsyncRelayCommand DisconnectCommand { get; }
     public AsyncRelayCommand RestartCommand { get; }
@@ -1622,6 +1630,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ErrorText = "Filtered logs copied";
     }
 
+    private void CopySubscriptionStatus()
+    {
+        if (!HasSubscriptionStatusResult())
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, SubscriptionStatusText);
+        ErrorText = "Subscription result copied";
+    }
+
     private void ClearProfileSearch()
     {
         ProfileSearchText = "";
@@ -2312,6 +2331,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return !string.IsNullOrWhiteSpace(FilteredLogText);
     }
 
+    private bool HasSubscriptionStatusResult()
+    {
+        return !string.IsNullOrWhiteSpace(SubscriptionStatusText)
+            && !string.Equals(SubscriptionStatusText, "No subscriptions configured", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(SubscriptionStatusText, "No subscription selected", StringComparison.OrdinalIgnoreCase)
+            && !SubscriptionStatusText.StartsWith("Fetching subscription", StringComparison.OrdinalIgnoreCase)
+            && !SubscriptionStatusText.StartsWith("Updating ", StringComparison.OrdinalIgnoreCase);
+    }
+
     private void RaiseCommandState()
     {
         DuplicateProfileCommand.RaiseCanExecuteChanged();
@@ -2335,5 +2363,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         DeleteSubscriptionCommand.RaiseCanExecuteChanged();
         RefreshSubscriptionCommand.RaiseCanExecuteChanged();
         RefreshAllSubscriptionsCommand.RaiseCanExecuteChanged();
+        CopySubscriptionStatusCommand.RaiseCanExecuteChanged();
     }
 }
