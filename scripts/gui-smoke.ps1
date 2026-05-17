@@ -799,6 +799,25 @@ try {
     }
     Write-Host "Connected status bar: $connectedCoreStatus / $connectedLocalProxy"
 
+    Select-Element $overviewTab
+    $overviewRecentLogsBox = Get-ByAutomationId -Root $window -AutomationId "OverviewRecentLogsTextBox" -TimeoutSeconds $TimeoutSeconds
+    $overviewRuntimeDetailsBox = Get-ByAutomationId -Root $window -AutomationId "OverviewRuntimeDetailsTextBox" -TimeoutSeconds $TimeoutSeconds
+    $overviewRecentLogs = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Overview recent logs did not show runtime log output after connect." -Condition {
+        $text = Get-ElementValue $overviewRecentLogsBox
+        if ($text -match "\[客户端\]" -or $text -match "metrics" -or $text -match "HTTP") {
+            return $text
+        }
+        return $null
+    }
+    $overviewRuntimeDetails = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Overview runtime details did not show status output after connect." -Condition {
+        $text = Get-ElementValue $overviewRuntimeDetailsBox
+        if ($text -match "version" -and $text -match "mode") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Overview connected details: $($overviewRecentLogs.Split([Environment]::NewLine)[0]) / $($overviewRuntimeDetails.Split([Environment]::NewLine)[0])"
+
     Invoke-Element $headerDiagnosticsButton
     $testButton = Get-ByAutomationId -Root $window -AutomationId "TestNetworkButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $testButton

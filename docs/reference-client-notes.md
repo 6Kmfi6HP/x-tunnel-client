@@ -73,3 +73,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added selected-profile forward test freshness text so Diagnostics shows when the last TCP check ran or was cleared.
 - Added a Diagnostics Copy Ports action for quickly sharing the current listen-port status and local endpoint details.
 - Extended the copied Diagnostics summary with the current network and forward-test results after checks have run.
+- Added GUI smoke coverage for Overview recent logs and runtime details after connecting through the sidecar.
