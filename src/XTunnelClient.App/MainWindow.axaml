@@ -368,13 +368,13 @@
               <TextBlock Grid.Row="3" Text="Trust policy" VerticalAlignment="Center"/>
               <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding SubscriptionTrustPolicies}" SelectedItem="{Binding SelectedSubscription.TrustPolicy}"/>
             </Grid>
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+            <WrapPanel Grid.Row="1" ItemSpacing="8" LineSpacing="8">
               <Button Content="Update Now" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionNowButton"/>
               <Button Content="Update All" Command="{Binding RefreshAllSubscriptionsCommand}" automation:AutomationProperties.AutomationId="UpdateAllSubscriptionsNowButton"/>
               <Button Content="Save Subscription" Command="{Binding SaveSubscriptionCommand}" automation:AutomationProperties.AutomationId="SaveSubscriptionDetailsButton"/>
               <Button Content="Copy Source" Command="{Binding CopySubscriptionSourceCommand}" automation:AutomationProperties.AutomationId="CopySubscriptionSourceButton"/>
               <Button Content="Copy Result" Command="{Binding CopySubscriptionStatusCommand}" automation:AutomationProperties.AutomationId="CopySubscriptionStatusButton"/>
-            </StackPanel>
+            </WrapPanel>
             <TextBox Grid.Row="2" Text="{Binding SubscriptionStatusText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="SubscriptionStatusTextBox"/>
           </Grid>
         </Grid>
