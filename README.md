@@ -12,6 +12,7 @@ Windows desktop client for `x-tunnel`, implemented as a separate C# / Avalonia r
 ## Features
 
 - Single-instance Windows desktop app with tray menu.
+- Global status bar for runtime state, active profile, proxy endpoints, core version, and current issue.
 - Overview dashboard with runtime, traffic, channel, listener, reconnect, proxy, recent-log, and raw-detail panels.
 - Profiles page with structured form editing, advanced JSON editing, core-backed format/check, field issue list, secret validation, and local port checks.
 - Subscriptions page for saving sources, updating profiles by name, and tracking fetch/cache status.

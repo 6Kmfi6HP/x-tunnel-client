@@ -163,6 +163,14 @@ try {
         $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
     }
 
+    $statusState = Get-ByAutomationId -Root $window -AutomationId "StatusBarStateText" -TimeoutSeconds $TimeoutSeconds
+    $statusProfile = Get-ByAutomationId -Root $window -AutomationId "StatusBarProfileText" -TimeoutSeconds $TimeoutSeconds
+    $stateText = Get-ElementValue $statusState
+    $profileText = Get-ElementValue $statusProfile
+    if ($stateText -notmatch "Disconnected" -or $profileText -notmatch "Local x-tunnel") {
+        throw "Unexpected status bar text: state='$stateText' profile='$profileText'"
+    }
+
     $profilesTab = Get-ByAutomationId -Root $window -AutomationId "ProfilesTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $profilesTab
 
