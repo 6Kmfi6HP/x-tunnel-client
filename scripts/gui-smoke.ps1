@@ -327,6 +327,21 @@ try {
     }
     Write-Host "Connection state: $disconnectedText"
 
+    $settingsTab = Get-ByAutomationId -Root $window -AutomationId "SettingsTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $settingsTab
+    $detectedCorePathText = Get-ByAutomationId -Root $window -AutomationId "DetectedCorePathTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $detectedCorePath = Get-ElementValue $detectedCorePathText
+    if ($detectedCorePath -notmatch "x-tunnel.exe") {
+        throw "Detected core path was not visible: '$detectedCorePath'"
+    }
+    $useDetectedCoreButton = Get-ByAutomationId -Root $window -AutomationId "UseDetectedCorePathButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $useDetectedCoreButton
+    $settingsCorePathBox = Get-ByAutomationId -Root $window -AutomationId "SettingsCorePathTextBox" -TimeoutSeconds $TimeoutSeconds
+    $settingsCorePath = Get-ElementValue $settingsCorePathBox
+    if ($settingsCorePath -notmatch "x-tunnel.exe") {
+        throw "Use Detected did not populate core path: '$settingsCorePath'"
+    }
+
     $logsTab = Get-ByAutomationId -Root $window -AutomationId "LogsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $logsTab
     $logLevelCombo = Get-ByAutomationId -Root $window -AutomationId "LogLevelFilterComboBox" -TimeoutSeconds $TimeoutSeconds

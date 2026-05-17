@@ -18,7 +18,7 @@ Windows desktop client for `x-tunnel`, implemented as a separate C# / Avalonia r
 - Subscriptions page for saving sources, updating profiles by name, and tracking fetch/cache status.
 - Logs page with runtime log level and text filtering.
 - Diagnostics page with direct/local-proxy HTTP tests, profile forward endpoint TCP tests, redacted export, and log access.
-- Settings page with app-data, profile, log, and runtime folder shortcuts.
+- Settings page with core executable auto-detect, app-data, profile, log, and runtime folder shortcuts.
 - Tray menu for connect, disconnect, restart, copy proxy address, subscription update, diagnostics, log folder access, restore proxy, and quit.
 - SQLite profile/settings/subscription storage.
 - DPAPI-protected profile secrets.

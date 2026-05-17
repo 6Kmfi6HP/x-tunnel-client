@@ -140,6 +140,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _networkTestUrl = "https://www.gstatic.com/generate_204";
     private string _networkTestText = "Not tested";
     private string _profileEndpointTestText = "Not tested";
+    private string _detectedCorePath = "";
     private string _errorText = "";
     private string _secretValue = "";
     private string _profileListen = "";
@@ -192,6 +193,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         TestNetworkCommand = new AsyncRelayCommand(TestNetworkAsync);
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
+        UseDetectedCorePathCommand = new RelayCommand(UseDetectedCorePath);
         RestoreProxyCommand = new RelayCommand(() => systemProxy.Restore());
         CopyProxyCommand = new RelayCommand(CopyProxySummary);
         OpenDataFolderCommand = new RelayCommand(() => OpenFolder(_paths.Root));
@@ -369,6 +371,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set => SetProperty(ref _profileEndpointTestText, value);
     }
 
+    public string DetectedCorePath
+    {
+        get => _detectedCorePath;
+        set => SetProperty(ref _detectedCorePath, value);
+    }
+
     public string ErrorText
     {
         get => _errorText;
@@ -459,6 +467,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set => SetProperty(ref _recentIssueSummary, value);
     }
 
+    public string CorePath
+    {
+        get => Settings.CorePath ?? "";
+        set
+        {
+            if (!string.Equals(Settings.CorePath ?? "", value, StringComparison.Ordinal))
+            {
+                Settings.CorePath = string.IsNullOrWhiteSpace(value) ? null : value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public string TrayToolTipText
     {
         get => _trayToolTipText;
@@ -520,6 +541,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand TestNetworkCommand { get; }
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
     public ICommand SaveSettingsCommand { get; }
+    public ICommand UseDetectedCorePathCommand { get; }
     public ICommand RestoreProxyCommand { get; }
     public ICommand CopyProxyCommand { get; }
     public ICommand OpenDataFolderCommand { get; }
@@ -529,6 +551,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public void Load()
     {
+        DetectedCorePath = _coreLocator.Resolve(new AppSettings()) ?? "";
         LoadProfiles(Settings.AutoConnectProfileId);
         LoadSubscriptions();
         StatusText = "Stopped";
@@ -1066,6 +1089,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var exe = Environment.ProcessPath ?? AppContext.BaseDirectory;
         _startupService.SetEnabled(Settings.LaunchAtLogin, exe, Settings.StartMinimized);
         ErrorText = "Settings saved";
+    }
+
+    private void UseDetectedCorePath()
+    {
+        DetectedCorePath = _coreLocator.Resolve(new AppSettings()) ?? "";
+        if (string.IsNullOrWhiteSpace(DetectedCorePath))
+        {
+            ErrorText = "No x-tunnel.exe was auto-detected";
+            return;
+        }
+        Settings.CorePath = DetectedCorePath;
+        OnPropertyChanged(nameof(CorePath));
+        ErrorText = "Core path set from auto-detect";
     }
 
     private async Task AutoConnectOnStartupAsync()
