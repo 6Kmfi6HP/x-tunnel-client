@@ -465,11 +465,12 @@
             <TextBlock Grid.Row="8" Text="Update channel" VerticalAlignment="Center"/>
             <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding UpdateChannels}" SelectedItem="{Binding SelectedUpdateChannel}"/>
             <TextBlock Grid.Row="9" Text="Core executable" VerticalAlignment="Center"/>
-            <Grid Grid.Row="9" Grid.Column="1" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="6" ColumnSpacing="8">
+            <Grid Grid.Row="9" Grid.Column="1" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
               <TextBox Text="{Binding CorePath}" PlaceholderText="Auto-detect or full path to x-tunnel.exe" automation:AutomationProperties.AutomationId="SettingsCorePathTextBox"/>
               <Button Grid.Column="1" Content="Use Detected" Command="{Binding UseDetectedCorePathCommand}" automation:AutomationProperties.AutomationId="UseDetectedCorePathButton"/>
-              <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding DetectedCorePath}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="DetectedCorePathTextBlock"/>
-              <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8">
+              <Button Grid.Column="2" Content="Copy Path" Command="{Binding CopyCorePathCommand}" automation:AutomationProperties.AutomationId="CopyCorePathButton"/>
+              <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding DetectedCorePath}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="DetectedCorePathTextBlock"/>
+              <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="8">
                 <Border Background="{Binding CorePathStatusBackground}" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
                   <TextBlock Text="{Binding CorePathStatus}" Foreground="{Binding CorePathStatusForeground}" FontSize="11" FontWeight="SemiBold" automation:AutomationProperties.AutomationId="CorePathStatusText"/>
                 </Border>

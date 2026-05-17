@@ -690,6 +690,17 @@ try {
     }
     $corePathStatusDetailText = Get-ByAutomationId -Root $window -AutomationId "CorePathStatusDetailText" -TimeoutSeconds $TimeoutSeconds
     Write-Host "Core path status: $corePathStatus / $(Get-ElementValue $corePathStatusDetailText)"
+    $copyCorePathButton = Get-ByAutomationId -Root $window -AutomationId "CopyCorePathButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyCorePathButton
+    $clipboardCorePath = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy core path did not place x-tunnel.exe on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match [Regex]::Escape($settingsCorePath)) {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied core path: $clipboardCorePath"
     Save-ElementScreenshot -Element $window -Path $SettingsScreenshotPath
     Write-Host "Settings GUI screenshot: $SettingsScreenshotPath"
 

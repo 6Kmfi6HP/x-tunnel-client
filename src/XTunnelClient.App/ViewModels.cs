@@ -258,6 +258,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ClearVisibleProfileEndpointTestsCommand = new RelayCommand(ClearVisibleProfileEndpointTests, HasVisibleEndpointTestResults);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         UseDetectedCorePathCommand = new RelayCommand(UseDetectedCorePath);
+        CopyCorePathCommand = new RelayCommand(CopyCorePath, HasCorePathToCopy);
         ClearLogFiltersCommand = new RelayCommand(ClearLogFilters);
         CopyFilteredLogsCommand = new RelayCommand(CopyFilteredLogs, HasFilteredLogs);
         ClearProfileSearchCommand = new RelayCommand(ClearProfileSearch);
@@ -757,6 +758,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _detectedCorePath, value))
             {
                 UpdateCorePathStatus();
+                CopyCorePathCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -885,6 +887,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 Settings.CorePath = string.IsNullOrWhiteSpace(value) ? null : value;
                 OnPropertyChanged();
                 UpdateCorePathStatus();
+                CopyCorePathCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -988,6 +991,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand ClearVisibleProfileEndpointTestsCommand { get; }
     public ICommand SaveSettingsCommand { get; }
     public ICommand UseDetectedCorePathCommand { get; }
+    public RelayCommand CopyCorePathCommand { get; }
     public ICommand ClearLogFiltersCommand { get; }
     public RelayCommand CopyFilteredLogsCommand { get; }
     public ICommand ClearProfileSearchCommand { get; }
@@ -1858,6 +1862,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(CorePath));
         UpdateCorePathStatus();
         ErrorText = "Core path set from auto-detect";
+    }
+
+    private void CopyCorePath()
+    {
+        var path = FirstNonEmpty(CorePath, DetectedCorePath).Trim();
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, path);
+        ErrorText = "Core path copied";
     }
 
     private async Task AutoConnectOnStartupAsync()
@@ -3060,6 +3076,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool HasDiagnosticsSummary()
     {
         return !string.IsNullOrWhiteSpace(DiagnosticsSummaryText);
+    }
+
+    private bool HasCorePathToCopy()
+    {
+        return !string.IsNullOrWhiteSpace(FirstNonEmpty(CorePath, DetectedCorePath));
     }
 
     private bool HasSubscriptionStatusResult()

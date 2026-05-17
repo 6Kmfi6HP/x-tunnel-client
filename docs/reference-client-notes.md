@@ -61,3 +61,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added a Logs filter badge with invalid-regex and no-match states, following the v2rayN-style emphasis on visible regex log search feedback.
 - Added a Diagnostics listen-port badge that surfaces selected-profile port availability from the existing core config port checks.
 - Added Overview network-test last-run text and copied it into the Overview status summary so users can judge result freshness.
+- Added a Settings copy-core-path action so users can paste the configured or auto-detected `x-tunnel.exe` path into bug reports or terminals.
