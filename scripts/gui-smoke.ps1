@@ -606,6 +606,19 @@ try {
         return $null
     }
     Write-Host "Network target preset URL: $presetUrl"
+
+    Set-ElementValue -Element $urlBox -Value "not-a-url"
+    $diagnosticsNetworkButton = Get-ByAutomationId -Root $window -AutomationId "TestNetworkButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $diagnosticsNetworkButton
+    $resultBox = Get-ByAutomationId -Root $window -AutomationId "NetworkTestResultTextBox" -TimeoutSeconds $TimeoutSeconds
+    $invalidNetworkText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Invalid network target did not report a validation error." -Condition {
+        $text = Get-ElementValue $resultBox
+        if ($text -match "Target URL must be an absolute http or https URL") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Invalid network target: $invalidNetworkText"
     Set-ElementValue -Element $urlBox -Value $testUrl
 
     $overviewTab = Get-ByAutomationId -Root $window -AutomationId "OverviewTab" -TimeoutSeconds $TimeoutSeconds
