@@ -228,6 +228,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         FormatProfileCommand = new AsyncRelayCommand(FormatProfileAsync, () => SelectedProfile is not null);
         CopyProfileSummaryCommand = new RelayCommand(CopyProfileSummary, () => SelectedProfile is not null);
         CopyProfileConfigCommand = new RelayCommand(CopyProfileConfig, () => SelectedProfile is not null);
+        CopyProfileIssuesCommand = new RelayCommand(CopyProfileIssues, () => SelectedProfile is not null);
         UseSelectedProfileAtStartupCommand = new RelayCommand(UseSelectedProfileAtStartup, () => SelectedProfile is not null);
         ClearStartupProfileCommand = new RelayCommand(ClearStartupProfile, () => Settings.AutoConnectProfileId is not null);
         NewSubscriptionCommand = new RelayCommand(NewSubscription);
@@ -1000,6 +1001,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand FormatProfileCommand { get; }
     public RelayCommand CopyProfileSummaryCommand { get; }
     public RelayCommand CopyProfileConfigCommand { get; }
+    public RelayCommand CopyProfileIssuesCommand { get; }
     public RelayCommand UseSelectedProfileAtStartupCommand { get; }
     public RelayCommand ClearStartupProfileCommand { get; }
     public ICommand NewSubscriptionCommand { get; }
@@ -1182,6 +1184,40 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         summary.AppendLine("Config:");
         summary.AppendLine(RuntimeConfigService.Redact(profile.CoreConfigJson));
+        return summary.ToString().TrimEnd();
+    }
+
+    public string BuildSelectedProfileIssuesReport()
+    {
+        if (SelectedProfile is null)
+        {
+            return "";
+        }
+
+        var profile = SelectedProfile;
+        var summary = new StringBuilder();
+        summary.AppendLine($"Profile: {profile.Name}");
+        summary.AppendLine($"Kind: {profile.Kind}");
+        summary.AppendLine($"Source: {profile.Source}");
+        summary.AppendLine($"Validation: {profile.ValidationState} - {profile.ValidationDetail}");
+        if (!string.IsNullOrWhiteSpace(profile.LastValidationError))
+        {
+            summary.AppendLine($"Last error: {profile.LastValidationError}");
+        }
+
+        if (ProfileIssues.Count == 0)
+        {
+            summary.AppendLine("Issues: none");
+        }
+        else
+        {
+            summary.AppendLine("Issues:");
+            foreach (var issue in ProfileIssues)
+            {
+                summary.AppendLine($"- {issue.Field} [{issue.Severity}]: {issue.Message}");
+            }
+        }
+
         return summary.ToString().TrimEnd();
     }
 
@@ -2097,6 +2133,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         CopyTextRequested?.Invoke(this, SelectedProfile.CoreConfigJson);
         ErrorText = "Profile config copied";
+    }
+
+    private void CopyProfileIssues()
+    {
+        if (SelectedProfile is null)
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, BuildSelectedProfileIssuesReport());
+        ErrorText = "Profile issues copied";
     }
 
     private void UseSelectedProfileAtStartup()
@@ -3335,6 +3382,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         FormatProfileCommand.RaiseCanExecuteChanged();
         CopyProfileSummaryCommand.RaiseCanExecuteChanged();
         CopyProfileConfigCommand.RaiseCanExecuteChanged();
+        CopyProfileIssuesCommand.RaiseCanExecuteChanged();
         UseSelectedProfileAtStartupCommand.RaiseCanExecuteChanged();
         ClearStartupProfileCommand.RaiseCanExecuteChanged();
         ApplyFormCommand.RaiseCanExecuteChanged();

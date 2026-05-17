@@ -292,6 +292,7 @@
               <Button Content="Export" Click="ExportProfile_OnClick" Margin="0,0,8,8"/>
               <Button Content="Copy Summary" Command="{Binding CopyProfileSummaryCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="CopyProfileSummaryButton"/>
               <Button Content="Copy Config" Command="{Binding CopyProfileConfigCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="CopyProfileConfigButton"/>
+              <Button Content="Copy Issues" Command="{Binding CopyProfileIssuesCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="CopyProfileIssuesButton"/>
             </WrapPanel>
             <Border Grid.Row="4" Classes="panel">
               <Grid RowDefinitions="Auto,*">

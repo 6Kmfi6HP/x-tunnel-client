@@ -1317,6 +1317,20 @@ try {
     }
     Write-Host "Profile summary: $profileSummaryText"
 
+    $copyProfileIssuesButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileIssuesButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyProfileIssuesButton
+    $profileIssuesClipboardText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy profile issues did not place the validation issue report on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "Profile: Local x-tunnel" -and
+            $text -match "Validation: Issue" -and
+            ($text -match "配置 JSON 无效" -or $text -match "Expected depth" -or $text -match "profile \[error\]")) {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied profile issues: $($profileIssuesClipboardText.Split([Environment]::NewLine)[0])"
+
     Save-ElementScreenshot -Element $window -Path $ScreenshotPath
     Write-Host "GUI screenshot: $ScreenshotPath"
     $clearEndpointTestsButton = Get-ByAutomationId -Root $window -AutomationId "ClearEndpointTestsButton" -TimeoutSeconds $TimeoutSeconds
