@@ -203,6 +203,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RestartCommand = new AsyncRelayCommand(RestartAsync, CanRestart);
         RefreshDiagnosticsCommand = new AsyncRelayCommand(RefreshDiagnosticsAsync);
         TestNetworkCommand = new AsyncRelayCommand(TestNetworkAsync);
+        CopyNetworkTestResultCommand = new RelayCommand(CopyNetworkTestResult, HasNetworkTestResult);
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
         TestVisibleProfilesCommand = new AsyncRelayCommand(TestVisibleProfilesAsync, () => FilteredProfiles.Count > 0);
         SelectFastestProfileCommand = new RelayCommand(SelectFastestProfile, HasSuccessfulVisibleEndpointTest);
@@ -475,7 +476,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string NetworkTestText
     {
         get => _networkTestText;
-        set => SetProperty(ref _networkTestText, value);
+        set
+        {
+            if (SetProperty(ref _networkTestText, value))
+            {
+                CopyNetworkTestResultCommand.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     public string ProfileEndpointTestText
@@ -665,6 +672,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand RestartCommand { get; }
     public AsyncRelayCommand RefreshDiagnosticsCommand { get; }
     public AsyncRelayCommand TestNetworkCommand { get; }
+    public RelayCommand CopyNetworkTestResultCommand { get; }
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
     public AsyncRelayCommand TestVisibleProfilesCommand { get; }
     public RelayCommand SelectFastestProfileCommand { get; }
@@ -1258,6 +1266,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             NetworkTestText = $"Network test failed: {ex.Message}";
             ErrorText = ex.Message;
         }
+    }
+
+    private void CopyNetworkTestResult()
+    {
+        if (!HasNetworkTestResult())
+        {
+            return;
+        }
+        CopyTextRequested?.Invoke(this, NetworkTestText);
+        ErrorText = "Network test result copied";
     }
 
     private async Task TestProfileEndpointAsync()
@@ -2131,6 +2149,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool CanRestart()
     {
         return SelectedProfile is not null && RuntimeState is (RuntimeState.Running or RuntimeState.Degraded);
+    }
+
+    private bool HasNetworkTestResult()
+    {
+        return !string.IsNullOrWhiteSpace(NetworkTestText)
+            && !string.Equals(NetworkTestText, "Not tested", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(NetworkTestText, "Testing network...", StringComparison.OrdinalIgnoreCase);
     }
 
     private void RaiseCommandState()

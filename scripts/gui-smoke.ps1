@@ -284,6 +284,12 @@ $subscriptionJob = Start-Job -ScriptBlock {
 
 $oldHome = $env:XTUNNEL_CLIENT_HOME
 $oldInstance = $env:XTUNNEL_CLIENT_INSTANCE
+$oldClipboard = $null
+try {
+    $oldClipboard = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+}
+catch {
+}
 $process = $null
 $serverProcess = $null
 try {
@@ -397,6 +403,18 @@ try {
         }
         return $null
     }
+
+    $copyNetworkResultButton = Get-ByAutomationId -Root $window -AutomationId "CopyNetworkTestResultButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyNetworkResultButton
+    $clipboardNetworkText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy network result did not place the result on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "Direct: ok" -and $text -match "status=204") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied network result: $($clipboardNetworkText.Split([Environment]::NewLine)[0])"
 
     $endpointButton = Get-ByAutomationId -Root $window -AutomationId "TestProfileEndpointButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $endpointButton
@@ -737,5 +755,12 @@ finally {
     }
     if ($serverProcess -and !$serverProcess.HasExited) {
         Stop-Process -Id $serverProcess.Id -Force
+    }
+    if ($null -ne $oldClipboard) {
+        try {
+            Set-Clipboard -Value $oldClipboard
+        }
+        catch {
+        }
     }
 }
