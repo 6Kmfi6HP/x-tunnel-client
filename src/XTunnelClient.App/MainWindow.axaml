@@ -199,9 +199,15 @@
 
             <Border Grid.Column="2" Classes="panel">
               <Grid RowDefinitions="Auto,*,Auto,120">
-                <TextBlock Classes="section" Text="Recent Logs"/>
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Classes="section" Text="Recent Logs" VerticalAlignment="Center"/>
+                  <Button Grid.Column="1" Content="Copy" Command="{Binding CopyOverviewRecentLogsCommand}" automation:AutomationProperties.AutomationId="CopyOverviewRecentLogsButton"/>
+                </Grid>
                 <TextBox Grid.Row="1" Text="{Binding LogText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" automation:AutomationProperties.AutomationId="OverviewRecentLogsTextBox"/>
-                <TextBlock Grid.Row="2" Margin="0,10,0,6" Classes="section" Text="Runtime Details"/>
+                <Grid Grid.Row="2" Margin="0,10,0,6" ColumnDefinitions="*,Auto">
+                  <TextBlock Classes="section" Text="Runtime Details" VerticalAlignment="Center"/>
+                  <Button Grid.Column="1" Content="Copy" Command="{Binding CopyOverviewRuntimeDetailsCommand}" automation:AutomationProperties.AutomationId="CopyOverviewRuntimeDetailsButton"/>
+                </Grid>
                 <TextBox Grid.Row="3" Text="{Binding StatusText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" automation:AutomationProperties.AutomationId="OverviewRuntimeDetailsTextBox"/>
               </Grid>
             </Border>

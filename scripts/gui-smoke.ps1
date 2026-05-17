@@ -6,6 +6,7 @@ param(
     [string]$InstanceName = ("Local\x-tunnel-client-gui-" + [Guid]::NewGuid().ToString("N")),
     [string]$OverviewScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-overview.png"),
     [string]$OverviewNetworkScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-overview-network.png"),
+    [string]$OverviewRuntimeScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-overview-runtime.png"),
     [string]$ScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke.png"),
     [string]$SubscriptionScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-subscriptions.png"),
     [string]$DiagnosticsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-diagnostics.png"),
@@ -856,6 +857,35 @@ try {
         return $null
     }
     Write-Host "Overview connected details: $($overviewRecentLogs.Split([Environment]::NewLine)[0]) / $($overviewRuntimeDetails.Split([Environment]::NewLine)[0])"
+    $copyOverviewRecentLogsButton = Get-ByAutomationId -Root $window -AutomationId "CopyOverviewRecentLogsButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyOverviewRecentLogsButton
+    $clipboardOverviewLogs = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy overview recent logs did not place logs on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "\[客户端\]" -or $text -match "metrics" -or $text -match "HTTP") {
+            return $text
+        }
+        return $null
+    }
+    $copyOverviewRuntimeDetailsButton = Get-ByAutomationId -Root $window -AutomationId "CopyOverviewRuntimeDetailsButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyOverviewRuntimeDetailsButton
+    $clipboardOverviewRuntime = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy overview runtime details did not place status JSON on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "version" -and $text -match "mode") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied overview diagnostics: $($clipboardOverviewLogs.Split([Environment]::NewLine)[0]) / $($clipboardOverviewRuntime.Split([Environment]::NewLine)[0])"
+    try {
+        $scrollPattern = $copyOverviewRuntimeDetailsButton.GetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern)
+        $scrollPattern.ScrollIntoView()
+    }
+    catch {
+    }
+    Save-ElementScreenshot -Element $window -Path $OverviewRuntimeScreenshotPath
+    Write-Host "Overview runtime GUI screenshot: $OverviewRuntimeScreenshotPath"
 
     Invoke-Element $headerDiagnosticsButton
     $testButton = Get-ByAutomationId -Root $window -AutomationId "TestNetworkButton" -TimeoutSeconds $TimeoutSeconds

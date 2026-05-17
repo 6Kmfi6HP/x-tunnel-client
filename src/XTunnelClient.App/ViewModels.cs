@@ -273,6 +273,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RestoreProxyCommand = new RelayCommand(() => systemProxy.Restore());
         CopyProxyCommand = new RelayCommand(CopyProxySummary);
         CopyOverviewStatusCommand = new RelayCommand(CopyOverviewStatus);
+        CopyOverviewRecentLogsCommand = new RelayCommand(CopyOverviewRecentLogs, HasOverviewRecentLogs);
+        CopyOverviewRuntimeDetailsCommand = new RelayCommand(CopyOverviewRuntimeDetails, HasOverviewRuntimeDetails);
         OpenDataFolderCommand = new RelayCommand(() => OpenFolder(_paths.Root));
         OpenProfilesFolderCommand = new RelayCommand(() => OpenFolder(_paths.Profiles));
         OpenLogsFolderCommand = new RelayCommand(() => OpenFolder(_paths.Logs));
@@ -373,7 +375,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string StatusText
     {
         get => _statusText;
-        set => SetProperty(ref _statusText, value);
+        set
+        {
+            if (SetProperty(ref _statusText, value))
+            {
+                CopyOverviewRuntimeDetailsCommand.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     public string StatsText
@@ -390,6 +398,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _logText, value))
             {
                 UpdateFilteredLogText();
+                CopyOverviewRecentLogsCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -1034,6 +1043,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand RestoreProxyCommand { get; }
     public ICommand CopyProxyCommand { get; }
     public ICommand CopyOverviewStatusCommand { get; }
+    public RelayCommand CopyOverviewRecentLogsCommand { get; }
+    public RelayCommand CopyOverviewRuntimeDetailsCommand { get; }
     public ICommand OpenDataFolderCommand { get; }
     public ICommand OpenProfilesFolderCommand { get; }
     public ICommand OpenLogsFolderCommand { get; }
@@ -2038,6 +2049,28 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
         CopyTextRequested?.Invoke(this, BuildOverviewStatusSummary());
         ErrorText = "Overview status copied";
+    }
+
+    private void CopyOverviewRecentLogs()
+    {
+        if (!HasOverviewRecentLogs())
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, LogText);
+        ErrorText = "Overview recent logs copied";
+    }
+
+    private void CopyOverviewRuntimeDetails()
+    {
+        if (!HasOverviewRuntimeDetails())
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, StatusText);
+        ErrorText = "Overview runtime details copied";
     }
 
     private void CopyProfileSummary()
@@ -3221,6 +3254,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool HasDiagnosticsTestResults()
     {
         return HasNetworkTestResult() || HasProfileEndpointTestResult();
+    }
+
+    private bool HasOverviewRecentLogs()
+    {
+        return !string.IsNullOrWhiteSpace(LogText);
+    }
+
+    private bool HasOverviewRuntimeDetails()
+    {
+        return !string.IsNullOrWhiteSpace(StatusText)
+            && !string.Equals(StatusText, "Stopped", StringComparison.OrdinalIgnoreCase);
     }
 
     private bool HasCorePathToCopy()
