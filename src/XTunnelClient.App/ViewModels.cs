@@ -1303,6 +1303,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         summary.AppendLine($"Logs: {_paths.Logs}");
         summary.AppendLine($"Runtime: {_paths.Runtime}");
         summary.AppendLine($"Core: {FirstNonEmpty(CorePath, DetectedCorePath, "-")}");
+        summary.AppendLine($"Core status: {CorePathStatus}");
+        summary.AppendLine($"Core detail: {CorePathStatusDetail}");
         return summary.ToString().TrimEnd();
     }
 

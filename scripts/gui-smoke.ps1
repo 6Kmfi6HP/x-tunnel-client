@@ -1323,6 +1323,8 @@ try {
             $text -match "Profiles:" -and
             $text -match "Logs:" -and
             $text -match "Runtime:" -and
+            $text -match "Core status: Version OK" -and
+            $text -match "x-tunnel version=" -and
             $text -match [Regex]::Escape($AppHome) -and
             $text -match [Regex]::Escape($settingsCorePath)) {
             return $text
