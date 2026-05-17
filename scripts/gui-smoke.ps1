@@ -497,6 +497,18 @@ try {
 
     $overviewTab = Get-ByAutomationId -Root $window -AutomationId "OverviewTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $overviewTab
+    $copyProxyAddressButton = Get-ByAutomationId -Root $window -AutomationId "CopyProxyAddressButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyProxyAddressButton
+    $clipboardProxyAddress = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy proxy address did not place local HTTP and SOCKS endpoints on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "HTTP 127.0.0.1:" -and $text -match "SOCKS 127.0.0.1:") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied proxy address: $clipboardProxyAddress"
+
     $overviewTestNetworkButton = Get-ByAutomationId -Root $window -AutomationId "OverviewTestNetworkButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $overviewTestNetworkButton
 
