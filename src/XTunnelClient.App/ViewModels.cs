@@ -109,6 +109,8 @@ public sealed class ProfileIssue
     public string Message { get; init; } = "";
 }
 
+public sealed record SubscriptionUpdateResult(int Added, int Updated, int Unchanged, bool NotModified, bool Success, string Message);
+
 public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private readonly AppPaths _paths = new();
@@ -190,6 +192,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SaveSubscriptionCommand = new RelayCommand(SaveSelectedSubscription, () => SelectedSubscription is not null);
         DeleteSubscriptionCommand = new RelayCommand(DeleteSelectedSubscription, () => SelectedSubscription is not null);
         RefreshSubscriptionCommand = new AsyncRelayCommand(RefreshSelectedSubscriptionAsync, () => SelectedSubscription is not null);
+        RefreshAllSubscriptionsCommand = new AsyncRelayCommand(RefreshAllSubscriptionsAsync, () => Subscriptions.Count > 0);
         ConnectCommand = new AsyncRelayCommand(ConnectAsync, CanConnect);
         DisconnectCommand = new AsyncRelayCommand(() => _supervisor.DisconnectAsync(), CanDisconnect);
         RestartCommand = new AsyncRelayCommand(RestartAsync, CanRestart);
@@ -581,6 +584,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand SaveSubscriptionCommand { get; }
     public RelayCommand DeleteSubscriptionCommand { get; }
     public AsyncRelayCommand RefreshSubscriptionCommand { get; }
+    public AsyncRelayCommand RefreshAllSubscriptionsCommand { get; }
     public AsyncRelayCommand ConnectCommand { get; }
     public AsyncRelayCommand DisconnectCommand { get; }
     public AsyncRelayCommand RestartCommand { get; }
@@ -769,6 +773,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         };
         Subscriptions.Add(subscription);
         SelectedSubscription = subscription;
+        RaiseSubscriptionCommandState();
     }
 
     private void SaveSelectedSubscription()
@@ -795,6 +800,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Subscriptions.Remove(subscription);
         SelectedSubscription = Subscriptions.FirstOrDefault();
         SubscriptionStatusText = "Subscription deleted";
+        RaiseSubscriptionCommandState();
     }
 
     private async Task RefreshSelectedSubscriptionAsync()
@@ -805,9 +811,70 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         var subscription = SelectedSubscription;
+        SubscriptionStatusText = "Fetching subscription...";
+        var result = await UpdateSubscriptionAsync(subscription);
+        LoadProfiles(SelectedProfile?.Id);
+        LoadSubscriptions(subscription.Id);
+        SubscriptionStatusText = BuildSubscriptionStatus(SelectedSubscription ?? subscription);
+        ErrorText = result.Success
+            ? result.NotModified ? "" : "Subscription updated"
+            : result.Message;
+    }
+
+    private async Task RefreshAllSubscriptionsAsync()
+    {
+        if (Subscriptions.Count == 0)
+        {
+            SubscriptionStatusText = "No subscriptions configured";
+            ErrorText = SubscriptionStatusText;
+            return;
+        }
+
+        var selectedId = SelectedSubscription?.Id;
+        SubscriptionStatusText = $"Updating {Subscriptions.Count} subscription(s)...";
+        var total = 0;
+        var succeeded = 0;
+        var failed = 0;
+        var notModified = 0;
+        var added = 0;
+        var updated = 0;
+        var unchanged = 0;
+        foreach (var subscription in Subscriptions.ToList())
+        {
+            total++;
+            if (!ValidateSubscription(subscription))
+            {
+                failed++;
+                continue;
+            }
+
+            var result = await UpdateSubscriptionAsync(subscription);
+            if (!result.Success)
+            {
+                failed++;
+                continue;
+            }
+
+            succeeded++;
+            if (result.NotModified)
+            {
+                notModified++;
+            }
+            added += result.Added;
+            updated += result.Updated;
+            unchanged += result.Unchanged;
+        }
+
+        LoadProfiles(SelectedProfile?.Id);
+        LoadSubscriptions(selectedId);
+        SubscriptionStatusText = $"Updated all {total} subscription(s): {succeeded} succeeded, {failed} failed, added {added}, updated {updated}, unchanged {unchanged}, not modified {notModified}";
+        ErrorText = failed == 0 ? "All subscriptions updated" : "Some subscriptions failed";
+    }
+
+    private async Task<SubscriptionUpdateResult> UpdateSubscriptionAsync(Subscription subscription)
+    {
         try
         {
-            SubscriptionStatusText = "Fetching subscription...";
             _repository.SaveSubscription(subscription);
             var result = await _subscriptionService.FetchAsync(subscription);
             if (result.NotModified)
@@ -815,13 +882,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 subscription.LastResult = "not modified";
                 subscription.LastUpdatedAt = DateTimeOffset.UtcNow;
                 _repository.SaveSubscription(subscription);
-                LoadSubscriptions(subscription.Id);
-                SubscriptionStatusText = "Subscription not modified";
-                ErrorText = "";
-                return;
+                return new SubscriptionUpdateResult(0, 0, 0, true, true, subscription.LastResult);
             }
 
-            var diff = _subscriptionService.Diff(Profiles, result.Profiles);
+            var diff = _subscriptionService.Diff(_repository.GetProfiles(), result.Profiles);
             foreach (var profile in diff.Added.Concat(diff.Updated))
             {
                 _repository.SaveProfile(profile);
@@ -829,19 +893,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             var unchanged = Math.Max(0, result.Profiles.Count - diff.Added.Count - diff.Updated.Count);
             subscription.LastResult = $"added {diff.Added.Count}, updated {diff.Updated.Count}, unchanged {unchanged}";
+            subscription.LastUpdatedAt = DateTimeOffset.UtcNow;
             _repository.SaveSubscription(subscription);
-            LoadProfiles(SelectedProfile?.Id);
-            LoadSubscriptions(subscription.Id);
-            SubscriptionStatusText = BuildSubscriptionStatus(SelectedSubscription ?? subscription);
-            ErrorText = "Subscription updated";
+            return new SubscriptionUpdateResult(diff.Added.Count, diff.Updated.Count, unchanged, false, true, subscription.LastResult);
         }
         catch (Exception ex)
         {
             subscription.LastResult = $"failed: {ex.Message}";
             _repository.SaveSubscription(subscription);
-            LoadSubscriptions(subscription.Id);
-            SubscriptionStatusText = subscription.LastResult;
-            ErrorText = ex.Message;
+            return new SubscriptionUpdateResult(0, 0, 0, false, false, ex.Message);
         }
     }
 
@@ -1902,5 +1962,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SaveSubscriptionCommand.RaiseCanExecuteChanged();
         DeleteSubscriptionCommand.RaiseCanExecuteChanged();
         RefreshSubscriptionCommand.RaiseCanExecuteChanged();
+        RefreshAllSubscriptionsCommand.RaiseCanExecuteChanged();
     }
 }

@@ -253,30 +253,32 @@ $serverJob = Start-Job -ScriptBlock {
 } -ArgumentList $port, 3
 
 $subscriptionJob = Start-Job -ScriptBlock {
-    param([int]$Port)
+    param([int]$Port, [int]$RequestCount)
     $body = '[{"name":"Smoke subscription profile","core_config":{"listen":"socks5://127.0.0.1:12080","forward":"ws://127.0.0.1:18080/tunnel","token_ref":"secret:profile-token","connections":1}}]'
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
     $listener.Start()
     try {
-        $client = $listener.AcceptTcpClient()
-        try {
-            $stream = $client.GetStream()
-            $buffer = New-Object byte[] 2048
-            $null = $stream.Read($buffer, 0, $buffer.Length)
-            $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
-            $header = "HTTP/1.1 200 OK`r`nContent-Type: application/json`r`nContent-Length: $($bodyBytes.Length)`r`nConnection: close`r`n`r`n"
-            $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($header)
-            $stream.Write($headerBytes, 0, $headerBytes.Length)
-            $stream.Write($bodyBytes, 0, $bodyBytes.Length)
-        }
-        finally {
-            $client.Dispose()
+        for ($i = 0; $i -lt $RequestCount; $i++) {
+            $client = $listener.AcceptTcpClient()
+            try {
+                $stream = $client.GetStream()
+                $buffer = New-Object byte[] 2048
+                $null = $stream.Read($buffer, 0, $buffer.Length)
+                $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+                $header = "HTTP/1.1 200 OK`r`nContent-Type: application/json`r`nContent-Length: $($bodyBytes.Length)`r`nConnection: close`r`n`r`n"
+                $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($header)
+                $stream.Write($headerBytes, 0, $headerBytes.Length)
+                $stream.Write($bodyBytes, 0, $bodyBytes.Length)
+            }
+            finally {
+                $client.Dispose()
+            }
         }
     }
     finally {
         $listener.Stop()
     }
-} -ArgumentList $subscriptionPort
+} -ArgumentList $subscriptionPort, 2
 
 $oldHome = $env:XTUNNEL_CLIENT_HOME
 $oldInstance = $env:XTUNNEL_CLIENT_INSTANCE
@@ -508,6 +510,16 @@ try {
         return $null
     }
     Write-Host $subscriptionText
+    $updateAllSubscriptionsButton = Get-ByAutomationId -Root $window -AutomationId "UpdateAllSubscriptionsNowButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $updateAllSubscriptionsButton
+    $updateAllText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Update All subscriptions did not report the aggregate result." -Condition {
+        $text = Get-ElementValue $subscriptionStatusBox
+        if ($text -match "Updated all 1 subscription" -and $text -match "1 succeeded" -and $text -match "unchanged 1") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host $updateAllText
 
     Select-Element $profilesTab
     $profileSearchBox = Get-ByAutomationId -Root $window -AutomationId "ProfileSearchTextBox" -TimeoutSeconds $TimeoutSeconds

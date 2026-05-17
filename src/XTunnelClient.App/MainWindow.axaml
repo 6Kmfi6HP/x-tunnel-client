@@ -281,6 +281,7 @@
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
               <Button Content="New" Command="{Binding NewSubscriptionCommand}" automation:AutomationProperties.AutomationId="NewSubscriptionButton"/>
               <Button Content="Update" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionButton"/>
+              <Button Content="Update All" Command="{Binding RefreshAllSubscriptionsCommand}" automation:AutomationProperties.AutomationId="UpdateAllSubscriptionsButton"/>
               <Button Content="Save" Command="{Binding SaveSubscriptionCommand}" automation:AutomationProperties.AutomationId="SaveSubscriptionButton"/>
               <Button Content="Delete" Command="{Binding DeleteSubscriptionCommand}"/>
             </StackPanel>
@@ -300,6 +301,7 @@
             </Grid>
             <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
               <Button Content="Update Now" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionNowButton"/>
+              <Button Content="Update All" Command="{Binding RefreshAllSubscriptionsCommand}" automation:AutomationProperties.AutomationId="UpdateAllSubscriptionsNowButton"/>
               <Button Content="Save Subscription" Command="{Binding SaveSubscriptionCommand}"/>
             </StackPanel>
             <TextBox Grid.Row="2" Text="{Binding SubscriptionStatusText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="SubscriptionStatusTextBox"/>
