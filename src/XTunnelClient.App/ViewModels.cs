@@ -143,6 +143,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _subscriptionStatusText = "";
     private string _subscriptionSummaryText = "";
     private string _subscriptionSearchText = "";
+    private string _selectedSubscriptionSort = "Saved";
     private string _networkTestUrl = "https://www.gstatic.com/generate_204";
     private string _networkTestText = "Not tested";
     private string _profileEndpointTestText = "Not tested";
@@ -237,6 +238,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public IReadOnlyList<string> SubscriptionTrustPolicies { get; } = ["confirm", "auto"];
     public IReadOnlyList<string> LogLevelFilters { get; } = ["All", "debug", "info", "warn", "error"];
     public IReadOnlyList<string> ProfileSortOptions { get; } = ["Saved", "Name", "Endpoint"];
+    public IReadOnlyList<string> SubscriptionSortOptions { get; } = ["Saved", "Name", "Updated", "Status"];
 
     public Profile? SelectedProfile
     {
@@ -407,6 +409,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set
         {
             if (SetProperty(ref _subscriptionSearchText, value))
+            {
+                UpdateFilteredSubscriptions();
+            }
+        }
+    }
+
+    public string SelectedSubscriptionSort
+    {
+        get => _selectedSubscriptionSort;
+        set
+        {
+            if (SetProperty(ref _selectedSubscriptionSort, value))
             {
                 UpdateFilteredSubscriptions();
             }
@@ -1809,7 +1823,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private void UpdateFilteredSubscriptions(Guid? preferredSubscriptionId = null)
     {
         var selectedId = preferredSubscriptionId ?? SelectedSubscription?.Id;
-        var matches = Subscriptions.Where(MatchesSubscriptionSearch).ToList();
+        var matches = ApplySubscriptionSort(Subscriptions.Where(MatchesSubscriptionSearch)).ToList();
         ReplaceCollection(FilteredSubscriptions, matches);
         UpdateSubscriptionSummary();
 
@@ -1846,6 +1860,31 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         return !string.IsNullOrWhiteSpace(value)
             && value.Contains(filter, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private IEnumerable<Subscription> ApplySubscriptionSort(IEnumerable<Subscription> subscriptions)
+    {
+        return SelectedSubscriptionSort switch
+        {
+            "Name" => subscriptions.OrderBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase),
+            "Updated" => subscriptions
+                .OrderByDescending(x => x.LastUpdatedAt ?? DateTimeOffset.MinValue)
+                .ThenBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase),
+            "Status" => subscriptions
+                .OrderBy(SubscriptionStatusSortGroup)
+                .ThenBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase),
+            _ => subscriptions
+        };
+    }
+
+    private static int SubscriptionStatusSortGroup(Subscription subscription)
+    {
+        return subscription.UpdateState switch
+        {
+            "Failed" => 0,
+            "New" => 1,
+            _ => 2
+        };
     }
 
     private void UpdateSubscriptionSummary()

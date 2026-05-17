@@ -577,6 +577,20 @@ try {
         return $null
     }
     Write-Host "Subscription search cleared: $clearedSubscriptionText"
+    $subscriptionSortCombo = Get-ByAutomationId -Root $window -AutomationId "SubscriptionSortComboBox" -TimeoutSeconds $TimeoutSeconds
+    Select-ComboBoxItem -Element $subscriptionSortCombo -Name "Updated" -TimeoutSeconds $TimeoutSeconds
+    $updatedSortedSubscription = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Updated subscription sort did not keep the updated subscription visible." -Condition {
+        $item = Find-ByAutomationId -Root $window -AutomationId "SubscriptionListItemName"
+        if (!$item) {
+            return $null
+        }
+        $text = Get-ElementValue $item
+        if ($text -match "Smoke subscription") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Subscription updated sort first item: $updatedSortedSubscription"
     Save-ElementScreenshot -Element $window -Path $SubscriptionScreenshotPath
     Write-Host "Subscription GUI screenshot: $SubscriptionScreenshotPath"
 

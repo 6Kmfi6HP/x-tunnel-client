@@ -282,6 +282,10 @@
               <TextBox Text="{Binding SubscriptionSearchText}" PlaceholderText="Search subscriptions" automation:AutomationProperties.AutomationId="SubscriptionSearchTextBox"/>
               <Button Grid.Column="1" Content="Clear" Command="{Binding ClearSubscriptionSearchCommand}" automation:AutomationProperties.AutomationId="ClearSubscriptionSearchButton"/>
             </Grid>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,0,0,8">
+              <TextBlock Text="Sort" Classes="caption" VerticalAlignment="Center"/>
+              <ComboBox Grid.Column="1" ItemsSource="{Binding SubscriptionSortOptions}" SelectedItem="{Binding SelectedSubscriptionSort}" MinHeight="30" automation:AutomationProperties.AutomationId="SubscriptionSortComboBox"/>
+            </Grid>
             <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
               <Button Content="New" Command="{Binding NewSubscriptionCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="NewSubscriptionButton"/>
               <Button Content="Update" Command="{Binding RefreshSubscriptionCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="UpdateSubscriptionButton"/>

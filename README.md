@@ -15,7 +15,7 @@ Windows desktop client for `x-tunnel`, implemented as a separate C# / Avalonia r
 - Global status bar for runtime state, active profile, proxy endpoints, core version, and current issue.
 - Overview dashboard with runtime, traffic, channel, listener, reconnect, proxy, recent-log, and raw-detail panels.
 - Profiles page with search/filter, saved/name/endpoint sorting, profile summary counts, fastest-profile selection, clearable forward-endpoint latency badges, structured form editing, advanced JSON editing, core-backed format/check, field issue list, secret validation, and local port checks.
-- Subscriptions page with search/filter, saving sources, updating selected or all subscriptions, updating profiles by name, and tracking aggregate/list-item fetch/cache status.
+- Subscriptions page with search/filter, saved/name/updated/status sorting, saving sources, updating selected or all subscriptions, updating profiles by name, and tracking aggregate/list-item fetch/cache status.
 - Logs page with runtime log level and text filtering.
 - Diagnostics page with direct/local-proxy HTTP tests, profile forward endpoint TCP tests, redacted export, and log access.
 - Settings page with core executable auto-detect, app-data, profile, log, and runtime folder shortcuts.
@@ -80,5 +80,5 @@ Run the desktop GUI smoke after a debug build:
 .\scripts\gui-smoke.ps1
 ```
 
-The GUI smoke launches the app with an isolated `XTUNNEL_CLIENT_HOME`, starts a local x-tunnel server, controls the Profiles, Subscriptions, and Diagnostics tabs through Windows UI Automation, runs visible-profile endpoint latency checks, verifies endpoint sorting and fastest-profile selection, runs the network test against a local HTTP 204 endpoint, verifies the connected HTTP proxy route, checks the selected profile's forward endpoint, connects and disconnects through the GUI, updates one subscription and then all subscriptions from a local feed, verifies subscription search/clear and summary text, verifies profile search/clear behavior, saves `artifacts\gui-smoke-subscriptions.png` and `artifacts\gui-smoke.png` for visual layout review, then clears endpoint test results through the GUI.
+The GUI smoke launches the app with an isolated `XTUNNEL_CLIENT_HOME`, starts a local x-tunnel server, controls the Profiles, Subscriptions, and Diagnostics tabs through Windows UI Automation, runs visible-profile endpoint latency checks, verifies endpoint sorting and fastest-profile selection, runs the network test against a local HTTP 204 endpoint, verifies the connected HTTP proxy route, checks the selected profile's forward endpoint, connects and disconnects through the GUI, updates one subscription and then all subscriptions from a local feed, verifies subscription search/clear, updated sorting, and summary text, verifies profile search/clear behavior, saves `artifacts\gui-smoke-subscriptions.png` and `artifacts\gui-smoke.png` for visual layout review, then clears endpoint test results through the GUI.
 If `..\x-tunnel\build\x-tunnel.exe` is missing, the script builds it from the sibling core repository first.
