@@ -473,6 +473,25 @@ try {
         return $null
     }
     Write-Host "Startup profile summary: $startupProfileSummary"
+    $clearStartupProfileButton = Get-ByAutomationId -Root $window -AutomationId "ClearStartupProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $clearStartupProfileButton
+    $clearedStartupProfileSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear startup profile did not reset the profile summary." -Condition {
+        $text = Get-ElementValue $startupProfileSummaryBlock
+        if ($text -match "Startup: not set") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Startup profile cleared: $clearedStartupProfileSummary"
+    Invoke-Element $startupProfileButton
+    $restoredStartupProfileSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Startup profile shortcut did not restore after clearing." -Condition {
+        $text = Get-ElementValue $startupProfileSummaryBlock
+        if ($text -match "Startup: Local x-tunnel") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Startup profile restored: $restoredStartupProfileSummary"
 
     $profileBatchTestTextBlock = Get-ByAutomationId -Root $window -AutomationId "ProfileBatchTestTextBlock" -TimeoutSeconds $TimeoutSeconds
     $testSelectedProfileButton = Get-ByAutomationId -Root $window -AutomationId "TestSelectedProfileButton" -TimeoutSeconds $TimeoutSeconds
