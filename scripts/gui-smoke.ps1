@@ -1213,6 +1213,17 @@ try {
     }
     Write-Host "Connected network test: $connectedNetworkText"
     Write-Host "Connected proxy route chip: $connectedProxyRouteText"
+    $copyConnectedNetworkResultButton = Get-ByAutomationId -Root $window -AutomationId "CopyNetworkTestResultButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyConnectedNetworkResultButton
+    $connectedNetworkClipboardText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy network result did not include the connected proxy success." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "Direct: ok status=204" -and $text -match "HTTP proxy: ok status=204") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied connected network result: $($connectedNetworkClipboardText.Split([Environment]::NewLine)[0])"
 
     $disconnectButton = Get-ByAutomationId -Root $window -AutomationId "DisconnectButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $disconnectButton
