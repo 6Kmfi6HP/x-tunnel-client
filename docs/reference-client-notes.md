@@ -78,6 +78,7 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added GUI smoke coverage for the Logs-page Refresh Diagnostics entry point.
 - Wrapped the Logs toolbar actions so diagnostics, filter, clear, and copy controls remain reachable as the window narrows.
 - Wrapped the Subscription detail actions so update, save, and copy controls stay reachable at narrower widths.
+- Wrapped the Settings local-folder actions so folder shortcuts remain visible in tighter windows.
 - Added a Diagnostics Run All action that refreshes the diagnostics report and reruns network plus selected-profile forward tests from one visible control.
 - Tightened HTTP connectivity tests so non-2xx HTTP responses are shown as failed instead of route-ok false positives.
 - Added selected-profile forward test freshness text so Diagnostics shows when the last TCP check ran or was cleared.
