@@ -55,8 +55,8 @@
           <TextBlock Text="{Binding RuntimeState}" VerticalAlignment="Center"/>
           <TextBlock Text="{Binding ErrorText}" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" automation:AutomationProperties.AutomationId="AppErrorTextBlock"/>
         </StackPanel>
-        <Button Grid.Column="1" Content="Connect" Command="{Binding ConnectCommand}" Margin="0,0,8,0"/>
-        <Button Grid.Column="2" Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,8,0"/>
+        <Button Grid.Column="1" Content="Connect" Command="{Binding ConnectCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="ConnectButton"/>
+        <Button Grid.Column="2" Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="DisconnectButton"/>
         <Button Grid.Column="3" Content="Restart" Command="{Binding RestartCommand}" Margin="0,0,8,0"/>
         <Button Grid.Column="4" Content="Diagnostics" Command="{Binding RefreshDiagnosticsCommand}"/>
       </Grid>
@@ -196,7 +196,7 @@
               <TextBox Grid.Column="2" Text="{Binding SelectedProfile.Source}" PlaceholderText="source"/>
             </Grid>
             <Grid Grid.Row="1" ColumnDefinitions="2*,2*,120,120,160" ColumnSpacing="8">
-              <TextBox Text="{Binding ProfileListen}" PlaceholderText="listen"/>
+              <TextBox Text="{Binding ProfileListen}" PlaceholderText="listen" automation:AutomationProperties.AutomationId="ProfileListenTextBox"/>
               <TextBox Grid.Column="1" Text="{Binding ProfileForward}" PlaceholderText="forward" automation:AutomationProperties.AutomationId="ProfileForwardTextBox"/>
               <NumericUpDown Grid.Column="2" Value="{Binding ProfileConnections}" Minimum="1" Maximum="32"/>
               <CheckBox Grid.Column="3" IsChecked="{Binding ProfileFallback}" Content="fallback" VerticalAlignment="Center"/>
@@ -204,7 +204,7 @@
             </Grid>
             <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="8">
               <TextBox Text="{Binding SelectedProfile.SecretRef}" PlaceholderText="secret ref, e.g. profile-token"/>
-              <TextBox Grid.Column="1" Text="{Binding SecretValue}" PasswordChar="*" PlaceholderText="profile secret saved with DPAPI"/>
+              <TextBox Grid.Column="1" Text="{Binding SecretValue}" PasswordChar="*" PlaceholderText="profile secret saved with DPAPI" automation:AutomationProperties.AutomationId="ProfileSecretTextBox"/>
             </Grid>
             <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
               <Button Content="Apply Form" Command="{Binding ApplyFormCommand}" automation:AutomationProperties.AutomationId="ApplyProfileFormButton"/>

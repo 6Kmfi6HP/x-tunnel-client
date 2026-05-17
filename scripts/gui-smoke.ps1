@@ -1,5 +1,6 @@
 param(
     [string]$AppExe = (Join-Path $PSScriptRoot "..\src\XTunnelClient.App\bin\Debug\net8.0-windows\XTunnelClient.App.exe"),
+    [string]$CoreExe = (Join-Path $PSScriptRoot "..\..\x-tunnel\build\x-tunnel.exe"),
     [string]$AppHome = (Join-Path $env:TEMP ("xtunnel-client-gui-" + [Guid]::NewGuid().ToString("N"))),
     [string]$InstanceName = ("Local\x-tunnel-client-gui-" + [Guid]::NewGuid().ToString("N")),
     [int]$TimeoutSeconds = 25
@@ -19,6 +20,30 @@ function Get-FreeTcpPort {
     finally {
         $listener.Stop()
     }
+}
+
+function Wait-Tcp {
+    param(
+        [string]$HostName,
+        [int]$Port,
+        [int]$TimeoutSeconds
+    )
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Timed out waiting for TCP $HostName`:$Port." -Condition {
+        $client = [System.Net.Sockets.TcpClient]::new()
+        try {
+            $task = $client.ConnectAsync($HostName, $Port)
+            if (!$task.Wait(250)) {
+                return $null
+            }
+            return $client.Connected
+        }
+        catch {
+            return $null
+        }
+        finally {
+            $client.Dispose()
+        }
+    } | Out-Null
 }
 
 function Wait-Until {
@@ -104,12 +129,18 @@ function Get-ElementValue {
 if (!(Test-Path $AppExe)) {
     throw "App executable not found: $AppExe"
 }
+if (!(Test-Path $CoreExe)) {
+    throw "Core executable not found: $CoreExe"
+}
 
 $port = Get-FreeTcpPort
-$forwardPort = Get-FreeTcpPort
 $subscriptionPort = Get-FreeTcpPort
+$coreServerPort = Get-FreeTcpPort
+$socksPort = Get-FreeTcpPort
+$httpPort = Get-FreeTcpPort
 $testUrl = "http://127.0.0.1:$port/generate_204"
-$forwardUrl = "ws://127.0.0.1:$forwardPort/tunnel"
+$coreForwardUrl = "ws://127.0.0.1:$coreServerPort/tunnel"
+$profileListen = "socks5://127.0.0.1:$socksPort,http://127.0.0.1:$httpPort"
 $subscriptionUrl = "http://127.0.0.1:$subscriptionPort/subscription.json"
 $serverJob = Start-Job -ScriptBlock {
     param([int]$Port)
@@ -132,19 +163,6 @@ $serverJob = Start-Job -ScriptBlock {
         $listener.Stop()
     }
 } -ArgumentList $port
-
-$forwardJob = Start-Job -ScriptBlock {
-    param([int]$Port)
-    $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
-    $listener.Start()
-    try {
-        $client = $listener.AcceptTcpClient()
-        $client.Dispose()
-    }
-    finally {
-        $listener.Stop()
-    }
-} -ArgumentList $forwardPort
 
 $subscriptionJob = Start-Job -ScriptBlock {
     param([int]$Port)
@@ -175,8 +193,23 @@ $subscriptionJob = Start-Job -ScriptBlock {
 $oldHome = $env:XTUNNEL_CLIENT_HOME
 $oldInstance = $env:XTUNNEL_CLIENT_INSTANCE
 $process = $null
+$serverProcess = $null
 try {
     New-Item -ItemType Directory -Force -Path $AppHome | Out-Null
+    $serverConfig = Join-Path $AppHome "gui-smoke-server.json"
+    @"
+{
+  "listen": "ws://127.0.0.1:$coreServerPort/tunnel",
+  "token": "smoke-token",
+  "cidr": "127.0.0.1/32",
+  "allow-target": "127.0.0.0/8",
+  "fallback": true,
+  "shutdown_timeout": "2s"
+}
+"@ | Set-Content -Encoding UTF8 $serverConfig
+    $serverProcess = Start-Process -FilePath (Resolve-Path $CoreExe).Path -ArgumentList "-config `"$serverConfig`"" -PassThru -WindowStyle Hidden
+    Wait-Tcp -HostName "127.0.0.1" -Port $coreServerPort -TimeoutSeconds $TimeoutSeconds
+
     $env:XTUNNEL_CLIENT_HOME = $AppHome
     $env:XTUNNEL_CLIENT_INSTANCE = $InstanceName
     $process = Start-Process -FilePath (Resolve-Path $AppExe).Path -PassThru
@@ -202,11 +235,20 @@ try {
     $profilesTab = Get-ByAutomationId -Root $window -AutomationId "ProfilesTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $profilesTab
 
+    $listenBox = Get-ByAutomationId -Root $window -AutomationId "ProfileListenTextBox" -TimeoutSeconds $TimeoutSeconds
+    Set-ElementValue -Element $listenBox -Value $profileListen
+
     $forwardBox = Get-ByAutomationId -Root $window -AutomationId "ProfileForwardTextBox" -TimeoutSeconds $TimeoutSeconds
-    Set-ElementValue -Element $forwardBox -Value $forwardUrl
+    Set-ElementValue -Element $forwardBox -Value $coreForwardUrl
+
+    $secretBox = Get-ByAutomationId -Root $window -AutomationId "ProfileSecretTextBox" -TimeoutSeconds $TimeoutSeconds
+    Set-ElementValue -Element $secretBox -Value "smoke-token"
 
     $applyProfileButton = Get-ByAutomationId -Root $window -AutomationId "ApplyProfileFormButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $applyProfileButton
+
+    $saveProfileButton = Get-ByAutomationId -Root $window -AutomationId "SaveProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $saveProfileButton
 
     $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $diagnosticsTab
@@ -232,7 +274,7 @@ try {
     $endpointResultBox = Get-ByAutomationId -Root $window -AutomationId "ProfileEndpointTestResultTextBox" -TimeoutSeconds $TimeoutSeconds
     $endpointText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile endpoint test did not report success." -Condition {
         $text = Get-ElementValue $endpointResultBox
-        if ($text -match "Forward TCP: ok" -and $text -match [Regex]::Escape($forwardUrl.Replace("/tunnel", ""))) {
+        if ($text -match "Forward TCP: ok" -and $text -match [Regex]::Escape($coreForwardUrl.Replace("/tunnel", ""))) {
             return $text
         }
         return $null
@@ -240,6 +282,30 @@ try {
 
     Write-Host $resultText
     Write-Host $endpointText
+
+    $connectButton = Get-ByAutomationId -Root $window -AutomationId "ConnectButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $connectButton
+
+    $connectedText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "GUI connect did not reach Connected or Degraded state." -Condition {
+        $text = Get-ElementValue $statusState
+        if ($text -match "Connected" -or $text -match "Degraded") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Connection state: $connectedText"
+
+    $disconnectButton = Get-ByAutomationId -Root $window -AutomationId "DisconnectButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $disconnectButton
+
+    $disconnectedText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "GUI disconnect did not return to Disconnected state." -Condition {
+        $text = Get-ElementValue $statusState
+        if ($text -match "Disconnected") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Connection state: $disconnectedText"
 
     $subscriptionsTab = Get-ByAutomationId -Root $window -AutomationId "SubscriptionsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $subscriptionsTab
@@ -294,12 +360,11 @@ finally {
         Stop-Job $serverJob -ErrorAction SilentlyContinue | Out-Null
         Remove-Job $serverJob -Force -ErrorAction SilentlyContinue
     }
-    if ($forwardJob) {
-        Stop-Job $forwardJob -ErrorAction SilentlyContinue | Out-Null
-        Remove-Job $forwardJob -Force -ErrorAction SilentlyContinue
-    }
     if ($subscriptionJob) {
         Stop-Job $subscriptionJob -ErrorAction SilentlyContinue | Out-Null
         Remove-Job $subscriptionJob -Force -ErrorAction SilentlyContinue
+    }
+    if ($serverProcess -and !$serverProcess.HasExited) {
+        Stop-Process -Id $serverProcess.Id -Force
     }
 }
