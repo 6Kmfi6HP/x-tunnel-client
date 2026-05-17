@@ -212,6 +212,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
         CopyProfileEndpointTestResultCommand = new RelayCommand(CopyProfileEndpointTestResult, HasProfileEndpointTestResult);
         TestVisibleProfilesCommand = new AsyncRelayCommand(TestVisibleProfilesAsync, () => FilteredProfiles.Count > 0);
+        TestAndSelectFastestProfileCommand = new AsyncRelayCommand(TestAndSelectFastestProfileAsync, () => FilteredProfiles.Count > 0);
         SelectFastestProfileCommand = new RelayCommand(SelectFastestProfile, HasSuccessfulVisibleEndpointTest);
         ClearVisibleProfileEndpointTestsCommand = new RelayCommand(ClearVisibleProfileEndpointTests, HasVisibleEndpointTestResults);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
@@ -722,6 +723,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
     public RelayCommand CopyProfileEndpointTestResultCommand { get; }
     public AsyncRelayCommand TestVisibleProfilesCommand { get; }
+    public AsyncRelayCommand TestAndSelectFastestProfileCommand { get; }
     public RelayCommand SelectFastestProfileCommand { get; }
     public RelayCommand ClearVisibleProfileEndpointTestsCommand { get; }
     public ICommand SaveSettingsCommand { get; }
@@ -1451,6 +1453,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
+    private async Task TestAndSelectFastestProfileAsync()
+    {
+        await TestVisibleProfilesAsync();
+        SelectFastestProfile();
+    }
+
     private void SelectFastestProfile()
     {
         var fastest = FilteredProfiles
@@ -1877,6 +1885,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ReplaceCollection(FilteredProfiles, matches);
         UpdateProfileSummary();
         TestVisibleProfilesCommand.RaiseCanExecuteChanged();
+        TestAndSelectFastestProfileCommand.RaiseCanExecuteChanged();
         SelectFastestProfileCommand.RaiseCanExecuteChanged();
         ClearVisibleProfileEndpointTestsCommand.RaiseCanExecuteChanged();
 

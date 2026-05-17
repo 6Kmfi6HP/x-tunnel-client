@@ -197,6 +197,7 @@
                 <Button Content="Copy" Command="{Binding DuplicateProfileCommand}" Margin="8,0,0,0"/>
                 <Button Content="Delete" Command="{Binding DeleteProfileCommand}" Margin="8,0,0,0"/>
                 <Button Content="Test Visible" Command="{Binding TestVisibleProfilesCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="TestVisibleProfilesButton"/>
+                <Button Content="Test + Fastest" Command="{Binding TestAndSelectFastestProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="TestAndSelectFastestProfileButton"/>
                 <Button Content="Fastest" Command="{Binding SelectFastestProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="SelectFastestProfileButton"/>
                 <Button Content="Clear Tests" Command="{Binding ClearVisibleProfileEndpointTestsCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="ClearEndpointTestsButton"/>
                 <Button Content="Startup" Command="{Binding UseSelectedProfileAtStartupCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="UseStartupProfileButton"/>

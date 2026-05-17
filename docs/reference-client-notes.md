@@ -45,3 +45,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added a profile-page startup shortcut so the selected node can be saved for auto-connect from the same workflow where it is tested and edited.
 - Added copyable filtered logs to keep troubleshooting output available after narrowing the runtime log view.
 - Added copyable subscription update results so aggregate subscription refresh outcomes can be pasted into troubleshooting notes.
+- Added a one-click test-and-select-fastest profile action to reduce the common latency-check then choose-node workflow.

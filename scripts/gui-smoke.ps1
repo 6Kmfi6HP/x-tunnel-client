@@ -407,6 +407,25 @@ try {
     }
     Write-Host "Profile endpoint batch: $profileBatchTestText / $profileEndpointState"
 
+    $testAndSelectFastestButton = Get-ByAutomationId -Root $window -AutomationId "TestAndSelectFastestProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $testAndSelectFastestButton
+    $profileNameBox = Get-ByAutomationId -Root $window -AutomationId "ProfileNameTextBox" -TimeoutSeconds $TimeoutSeconds
+    $fastestProfileName = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Test + Fastest did not switch to the tested local profile." -Condition {
+        $text = Get-ElementValue $profileNameBox
+        if ($text -match "Local x-tunnel") {
+            return $text
+        }
+        return $null
+    }
+    $fastestText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Test + Fastest did not report the selected profile." -Condition {
+        $text = Get-ElementValue $profileBatchTestTextBlock
+        if ($text -match "Selected fastest: Local x-tunnel") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Test + Fastest selected: $fastestProfileName / $fastestText"
+
     $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $diagnosticsTab
 
