@@ -64,3 +64,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added a Settings copy-core-path action so users can paste the configured or auto-detected `x-tunnel.exe` path into bug reports or terminals.
 - Added GUI smoke coverage for the Overview proxy-address copy action using a stable AutomationId.
 - Added stable AutomationIds and smoke assertions for the status bar proxy mode, local proxy, core, and issue fields.
+- Extended status bar smoke coverage to assert the core field changes on connect and returns to stopped on disconnect.

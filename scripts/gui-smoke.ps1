@@ -657,6 +657,18 @@ try {
         return $null
     }
     Write-Host "Connection state: $connectedText"
+    $connectedCoreStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Status bar core field did not show a running core after connect." -Condition {
+        $text = Get-ElementValue $statusCore
+        if ($text -notmatch "Core not running" -and $text -match "/") {
+            return $text
+        }
+        return $null
+    }
+    $connectedLocalProxy = Get-ElementValue $statusLocalProxy
+    if ($connectedLocalProxy -notmatch "HTTP 127.0.0.1:" -or $connectedLocalProxy -notmatch "SOCKS 127.0.0.1:") {
+        throw "Status bar local proxy changed unexpectedly after connect: '$connectedLocalProxy'"
+    }
+    Write-Host "Connected status bar: $connectedCoreStatus / $connectedLocalProxy"
 
     Invoke-Element $headerDiagnosticsButton
     $testButton = Get-ByAutomationId -Root $window -AutomationId "TestNetworkButton" -TimeoutSeconds $TimeoutSeconds
@@ -689,6 +701,13 @@ try {
         return $null
     }
     Write-Host "Connection state: $disconnectedText"
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Status bar core field did not return to stopped after disconnect." -Condition {
+        $text = Get-ElementValue $statusCore
+        if ($text -match "Core not running") {
+            return $text
+        }
+        return $null
+    } | Out-Null
 
     $settingsTab = Get-ByAutomationId -Root $window -AutomationId "SettingsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $settingsTab
