@@ -279,6 +279,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         CopyOverviewStatusCommand = new RelayCommand(CopyOverviewStatus);
         CopyOverviewRecentLogsCommand = new RelayCommand(CopyOverviewRecentLogs, HasOverviewRecentLogs);
         CopyOverviewRuntimeDetailsCommand = new RelayCommand(CopyOverviewRuntimeDetails, HasOverviewRuntimeDetails);
+        CopyRuntimeMetricsCommand = new AsyncRelayCommand(CopyRuntimeMetricsAsync, HasRuntimeControl);
         OpenDataFolderCommand = new RelayCommand(() => OpenFolder(_paths.Root));
         OpenProfilesFolderCommand = new RelayCommand(() => OpenFolder(_paths.Profiles));
         OpenLogsFolderCommand = new RelayCommand(() => OpenFolder(_paths.Logs));
@@ -1053,6 +1054,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand CopyOverviewStatusCommand { get; }
     public RelayCommand CopyOverviewRecentLogsCommand { get; }
     public RelayCommand CopyOverviewRuntimeDetailsCommand { get; }
+    public AsyncRelayCommand CopyRuntimeMetricsCommand { get; }
     public ICommand OpenDataFolderCommand { get; }
     public ICommand OpenProfilesFolderCommand { get; }
     public ICommand OpenLogsFolderCommand { get; }
@@ -2132,6 +2134,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ErrorText = "Overview runtime details copied";
     }
 
+    private async Task CopyRuntimeMetricsAsync()
+    {
+        var control = _supervisor.Control;
+        if (control is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var metrics = await control.GetMetricsAsync();
+            CopyTextRequested?.Invoke(this, metrics);
+            ErrorText = "Runtime metrics copied";
+        }
+        catch (Exception ex)
+        {
+            ErrorText = ex.Message;
+        }
+    }
+
     private void CopyProfileSummary()
     {
         if (SelectedProfile is null)
@@ -2272,6 +2294,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _logEntries = _supervisor.Logs.ToList();
             LogText = FormatLogs(_supervisor.Logs);
             RefreshOverview(e.Status, e.Stats);
+            CopyRuntimeMetricsCommand.RaiseCanExecuteChanged();
         });
     }
 
@@ -3371,6 +3394,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         return !string.IsNullOrWhiteSpace(StatusText)
             && !string.Equals(StatusText, "Stopped", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool HasRuntimeControl()
+    {
+        return _supervisor.Control is not null && RuntimeState is RuntimeState.Running or RuntimeState.Degraded;
     }
 
     private bool HasSelectedProfileConfig()

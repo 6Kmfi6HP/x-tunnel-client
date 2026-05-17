@@ -396,6 +396,17 @@ public sealed class ClientCoreTests
     }
 
     [Fact]
+    public async Task ControlApiClientReadsMetricsText()
+    {
+        var http = new HttpClient(new StaticHandler("x_tunnel_runtime_bytes_sent_total 7\n"));
+        var client = new ControlApiClient("http://127.0.0.1:1", "token", http);
+
+        var metrics = await client.GetMetricsAsync();
+
+        Assert.Contains("x_tunnel_runtime_bytes_sent_total", metrics);
+    }
+
+    [Fact]
     public async Task CoreConfigToolChecksAndFormatsWithRealCore()
     {
         var corePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..", "x-tunnel", "build", "x-tunnel.exe"));

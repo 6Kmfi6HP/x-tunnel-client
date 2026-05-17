@@ -84,3 +84,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added a Settings Copy Folders action for sharing app-data, profile, log, runtime, and core paths.
 - Added GUI smoke coverage for the Settings save action through a stable AutomationId.
 - Added GUI smoke coverage for the runtime Restart control before the connected proxy-route test.
+- Added an Overview Copy Metrics action backed by the x-tunnel sidecar control API metrics endpoint.

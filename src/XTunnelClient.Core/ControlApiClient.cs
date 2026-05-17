@@ -42,6 +42,13 @@ public sealed class ControlApiClient : IDisposable
         return await GetAsync<CoreStats>("v1/stats", cancellationToken);
     }
 
+    public async Task<string> GetMetricsAsync(CancellationToken cancellationToken = default)
+    {
+        using var response = await _http.GetAsync("v1/metrics", cancellationToken);
+        await EnsureSuccessAsync(response, cancellationToken);
+        return await response.Content.ReadAsStringAsync(cancellationToken);
+    }
+
     public async Task<List<ControlLogEntry>> GetLogsAsync(int limit = 200, CancellationToken cancellationToken = default)
     {
         using var response = await _http.GetAsync($"v1/logs?limit={limit}", cancellationToken);

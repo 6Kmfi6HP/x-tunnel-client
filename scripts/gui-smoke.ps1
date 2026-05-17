@@ -915,7 +915,18 @@ try {
         }
         return $null
     }
-    Write-Host "Copied overview diagnostics: $($clipboardOverviewLogs.Split([Environment]::NewLine)[0]) / $($clipboardOverviewRuntime.Split([Environment]::NewLine)[0])"
+    $copyRuntimeMetricsButton = Get-ByAutomationId -Root $window -AutomationId "CopyRuntimeMetricsButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyRuntimeMetricsButton
+    $clipboardRuntimeMetrics = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy runtime metrics did not place Prometheus metrics on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "x_tunnel_") {
+            return $text
+        }
+        return $null
+    }
+    $runtimeMetricsFirstLine = ($clipboardRuntimeMetrics -split "`r?`n")[0]
+    Write-Host "Copied overview diagnostics: $($clipboardOverviewLogs.Split([Environment]::NewLine)[0]) / $($clipboardOverviewRuntime.Split([Environment]::NewLine)[0]) / $runtimeMetricsFirstLine"
     try {
         $scrollPattern = $copyOverviewRuntimeDetailsButton.GetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern)
         $scrollPattern.ScrollIntoView()
