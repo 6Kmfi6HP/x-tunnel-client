@@ -209,6 +209,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _repository = new ProfileRepository(_paths);
         _settings = _repository.GetSettings();
         _selectedProxyMode = _settings.DefaultProxyMode;
+        _networkTestUrl = string.IsNullOrWhiteSpace(_settings.NetworkTestUrl)
+            ? "https://www.gstatic.com/generate_204"
+            : _settings.NetworkTestUrl;
+        _selectedNetworkTestTarget = FindNetworkTestTargetForUrl(_networkTestUrl);
+        _settings.NetworkTestUrl = _networkTestUrl;
+        _settings.NetworkTestTarget = _selectedNetworkTestTarget;
         ApplyTheme(_settings.Theme);
 
         var systemProxy = new SystemProxyService(new RegistryProxySettingsStore());
@@ -601,18 +607,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         get => _networkTestUrl;
         set
         {
+            value ??= "";
             if (!SetProperty(ref _networkTestUrl, value))
             {
                 return;
             }
 
+            var trimmed = value.Trim();
+            Settings.NetworkTestUrl = trimmed;
             NetworkTestSummary = "Ready to test";
-            NetworkTestDetail = value.Trim();
+            NetworkTestDetail = trimmed;
             NetworkTestLastRunText = "Target changed; run test";
-            SetNetworkRouteReady(value.Trim());
+            SetNetworkRouteReady(trimmed);
             if (!_applyingNetworkTestTarget)
             {
                 var target = FindNetworkTestTargetForUrl(value);
+                Settings.NetworkTestTarget = target;
                 if (!string.Equals(_selectedNetworkTestTarget, target, StringComparison.Ordinal))
                 {
                     _selectedNetworkTestTarget = target;
@@ -627,11 +637,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         get => _selectedNetworkTestTarget;
         set
         {
+            value ??= "Custom";
             if (!SetProperty(ref _selectedNetworkTestTarget, value))
             {
                 return;
             }
 
+            Settings.NetworkTestTarget = value;
             if (TryGetNetworkTestTargetUrl(value, out var url))
             {
                 _applyingNetworkTestTarget = true;

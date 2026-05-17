@@ -198,6 +198,30 @@ public sealed class ClientCoreTests
     }
 
     [Fact]
+    public void RepositoryPersistsNetworkTestSettings()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "xtunnel-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            var repository = new ProfileRepository(new AppPaths(root));
+
+            repository.SaveSettings(new AppSettings
+            {
+                NetworkTestTarget = "Custom",
+                NetworkTestUrl = "http://127.0.0.1:18080/generate_204"
+            });
+
+            var saved = repository.GetSettings();
+            Assert.Equal("Custom", saved.NetworkTestTarget);
+            Assert.Equal("http://127.0.0.1:18080/generate_204", saved.NetworkTestUrl);
+        }
+        finally
+        {
+            DeleteDirectoryWithRetry(root);
+        }
+    }
+
+    [Fact]
     public void RepositoryPersistsProfileEndpointTestResults()
     {
         var root = Path.Combine(Path.GetTempPath(), "xtunnel-tests", Guid.NewGuid().ToString("N"));

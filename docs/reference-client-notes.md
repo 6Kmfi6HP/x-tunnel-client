@@ -77,6 +77,7 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added GUI smoke coverage for the Logs-page Export Diagnostics entry point to keep both diagnostics export buttons verified.
 - Added GUI smoke coverage for the Logs-page Refresh Diagnostics entry point.
 - Added GUI smoke coverage for invalid network-test target feedback, including route-chip state, before the local HTTP 204 success path.
+- Persisted the selected network-test target and URL with application settings so custom diagnostics targets survive explicit saves.
 - Wrapped the Logs toolbar actions so diagnostics, filter, clear, and copy controls remain reachable as the window narrows.
 - Wrapped the Subscription detail actions so update, save, and copy controls stay reachable at narrower widths.
 - Wrapped the Settings local-folder actions so folder shortcuts remain visible in tighter windows.

@@ -154,6 +154,8 @@ public sealed class AppSettings
     public bool LowPrivacyDiagnostics { get; set; }
     public int StartupDelaySeconds { get; set; } = 8;
     public string PacBypassRules { get; set; } = "localhost;127.*;10.*;192.168.*;*.local";
+    public string NetworkTestTarget { get; set; } = "Google 204";
+    public string NetworkTestUrl { get; set; } = "https://www.gstatic.com/generate_204";
 }
 
 public sealed class Subscription
