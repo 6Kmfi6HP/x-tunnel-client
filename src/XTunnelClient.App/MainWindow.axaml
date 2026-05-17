@@ -267,24 +267,26 @@
             </ListBox>
           </DockPanel>
 
-          <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto,120,*,Auto" RowSpacing="10">
+          <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto,Auto,120,*,Auto" RowSpacing="10">
             <Grid ColumnDefinitions="*,160,160" ColumnSpacing="8">
               <TextBox Text="{Binding SelectedProfile.Name}" PlaceholderText="Profile name" automation:AutomationProperties.AutomationId="ProfileNameTextBox"/>
               <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileKinds}" SelectedItem="{Binding SelectedProfile.Kind}"/>
               <TextBox Grid.Column="2" Text="{Binding SelectedProfile.Source}" PlaceholderText="source"/>
             </Grid>
-            <Grid Grid.Row="1" ColumnDefinitions="2*,2*,120,120,160" ColumnSpacing="8">
+            <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8">
               <TextBox Text="{Binding ProfileListen}" PlaceholderText="listen" automation:AutomationProperties.AutomationId="ProfileListenTextBox"/>
               <TextBox Grid.Column="1" Text="{Binding ProfileForward}" PlaceholderText="forward" automation:AutomationProperties.AutomationId="ProfileForwardTextBox"/>
-              <NumericUpDown Grid.Column="2" Value="{Binding ProfileConnections}" Minimum="1" Maximum="32"/>
-              <CheckBox Grid.Column="3" IsChecked="{Binding ProfileFallback}" Content="fallback" VerticalAlignment="Center"/>
-              <TextBox Grid.Column="4" Text="{Binding ProfileMetrics}" PlaceholderText="metrics"/>
             </Grid>
-            <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="8">
+            <Grid Grid.Row="2" ColumnDefinitions="120,120,160,*" ColumnSpacing="8">
+              <NumericUpDown Value="{Binding ProfileConnections}" Minimum="1" Maximum="32"/>
+              <CheckBox Grid.Column="1" IsChecked="{Binding ProfileFallback}" Content="fallback" VerticalAlignment="Center"/>
+              <TextBox Grid.Column="2" Text="{Binding ProfileMetrics}" PlaceholderText="metrics"/>
+            </Grid>
+            <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
               <TextBox Text="{Binding SelectedProfile.SecretRef}" PlaceholderText="secret ref, e.g. profile-token"/>
               <TextBox Grid.Column="1" Text="{Binding SecretValue}" PasswordChar="*" PlaceholderText="profile secret saved with DPAPI" automation:AutomationProperties.AutomationId="ProfileSecretTextBox"/>
             </Grid>
-            <WrapPanel Grid.Row="3" ItemSpacing="8" LineSpacing="8">
+            <WrapPanel Grid.Row="4" ItemSpacing="8" LineSpacing="8">
               <Button Content="Apply Form" Command="{Binding ApplyFormCommand}" automation:AutomationProperties.AutomationId="ApplyProfileFormButton"/>
               <Button Content="Save" Command="{Binding SaveProfileCommand}" automation:AutomationProperties.AutomationId="SaveProfileButton"/>
               <Button Content="Validate" Command="{Binding ValidateProfileCommand}" automation:AutomationProperties.AutomationId="ValidateProfileButton"/>
@@ -296,7 +298,7 @@
               <Button Content="Copy Config" Command="{Binding CopyProfileConfigCommand}" automation:AutomationProperties.AutomationId="CopyProfileConfigButton"/>
               <Button Content="Copy Issues" Command="{Binding CopyProfileIssuesCommand}" automation:AutomationProperties.AutomationId="CopyProfileIssuesButton"/>
             </WrapPanel>
-            <Border Grid.Row="4" Classes="panel">
+            <Border Grid.Row="5" Classes="panel">
               <Grid RowDefinitions="Auto,*">
                 <TextBlock Classes="section" Text="Profile Checks"/>
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -314,8 +316,8 @@
                 </ScrollViewer>
               </Grid>
             </Border>
-            <TextBox Grid.Row="5" Text="{Binding SelectedProfile.CoreConfigJson}" AcceptsReturn="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" automation:AutomationProperties.AutomationId="ProfileJsonTextBox"/>
-            <TextBlock Grid.Row="6" Text="{Binding SelectedProfile.LastValidationError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"/>
+            <TextBox Grid.Row="6" Text="{Binding SelectedProfile.CoreConfigJson}" AcceptsReturn="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" automation:AutomationProperties.AutomationId="ProfileJsonTextBox"/>
+            <TextBlock Grid.Row="7" Text="{Binding SelectedProfile.LastValidationError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"/>
           </Grid>
         </Grid>
       </TabItem>
