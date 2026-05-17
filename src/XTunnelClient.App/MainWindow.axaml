@@ -396,6 +396,10 @@
             <Button Content="Export Zip" Click="ExportDiagnostics_OnClick"/>
             <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}"/>
             <Button Content="Open Logs" Command="{Binding OpenLogsFolderCommand}"/>
+            <Border Background="{Binding DiagnosticsPortBackground}" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
+              <TextBlock Text="{Binding DiagnosticsPortStatus}" Foreground="{Binding DiagnosticsPortForeground}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="DiagnosticsPortStatusText"/>
+            </Border>
+            <TextBlock Text="{Binding DiagnosticsPortDetail}" Classes="caption" VerticalAlignment="Center" MaxWidth="460" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="DiagnosticsPortDetailText"/>
           </StackPanel>
           <Grid Grid.Row="1" ColumnDefinitions="90,*" ColumnSpacing="8">
             <TextBlock Text="Target" VerticalAlignment="Center"/>

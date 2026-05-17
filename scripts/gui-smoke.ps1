@@ -467,6 +467,21 @@ try {
     $headerDiagnosticsButton = Get-ByAutomationId -Root $window -AutomationId "HeaderDiagnosticsButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $headerDiagnosticsButton
 
+    $diagnosticsPortStatusText = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsPortStatusText" -TimeoutSeconds $TimeoutSeconds
+    $diagnosticsPortStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Diagnostics port status did not show available listen ports." -Condition {
+        $text = Get-ElementValue $diagnosticsPortStatusText
+        if ($text -match "Ports: available") {
+            return $text
+        }
+        return $null
+    }
+    $diagnosticsPortDetailText = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsPortDetailText" -TimeoutSeconds $TimeoutSeconds
+    $diagnosticsPortDetail = Get-ElementValue $diagnosticsPortDetailText
+    if ($diagnosticsPortDetail -notmatch "127.0.0.1") {
+        throw "Diagnostics port detail did not include local listen addresses: '$diagnosticsPortDetail'"
+    }
+    Write-Host "Diagnostics ports: $diagnosticsPortStatus / $diagnosticsPortDetail"
+
     $targetCombo = Get-ByAutomationId -Root $window -AutomationId "NetworkTestTargetComboBox" -TimeoutSeconds $TimeoutSeconds
     Select-ComboBoxItem -Element $targetCombo -Name "Cloudflare Trace" -TimeoutSeconds $TimeoutSeconds
     $urlBox = Get-ByAutomationId -Root $window -AutomationId "NetworkTestUrlTextBox" -TimeoutSeconds $TimeoutSeconds

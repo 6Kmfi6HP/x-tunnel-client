@@ -147,6 +147,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private int _selectedMainTabIndex;
     private string _diagnosticsText = "";
     private string _diagnosticsSummaryText = "";
+    private string _diagnosticsPortStatus = "Ports: not checked";
+    private string _diagnosticsPortDetail = "Run checks to inspect selected profile listen ports.";
+    private string _diagnosticsPortBackground = "#374151";
+    private string _diagnosticsPortForeground = "#E5E7EB";
     private string _subscriptionStatusText = "";
     private string _subscriptionSummaryText = "";
     private string _subscriptionSearchText = "";
@@ -481,6 +485,30 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 CopyDiagnosticsSummaryCommand.RaiseCanExecuteChanged();
             }
         }
+    }
+
+    public string DiagnosticsPortStatus
+    {
+        get => _diagnosticsPortStatus;
+        private set => SetProperty(ref _diagnosticsPortStatus, value);
+    }
+
+    public string DiagnosticsPortDetail
+    {
+        get => _diagnosticsPortDetail;
+        private set => SetProperty(ref _diagnosticsPortDetail, value);
+    }
+
+    public string DiagnosticsPortBackground
+    {
+        get => _diagnosticsPortBackground;
+        private set => SetProperty(ref _diagnosticsPortBackground, value);
+    }
+
+    public string DiagnosticsPortForeground
+    {
+        get => _diagnosticsPortForeground;
+        private set => SetProperty(ref _diagnosticsPortForeground, value);
     }
 
     public string SubscriptionStatusText
@@ -1117,6 +1145,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var report = await _diagnostics.CreateReportAsync(SelectedProfile, _supervisor.Control);
         DiagnosticsSummaryText = BuildDiagnosticsSummary(report);
         DiagnosticsText = JsonSerializer.Serialize(report, JsonDefaults.Pretty);
+        UpdateDiagnosticsPortStatus(report);
         return await _diagnostics.ExportAsync(report);
     }
 
@@ -1575,6 +1604,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var report = await _diagnostics.CreateReportAsync(SelectedProfile, _supervisor.Control);
         DiagnosticsSummaryText = BuildDiagnosticsSummary(report);
         DiagnosticsText = JsonSerializer.Serialize(report, JsonDefaults.Pretty);
+        UpdateDiagnosticsPortStatus(report);
     }
 
     private async Task OpenDiagnosticsAsync()
@@ -2779,6 +2809,52 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return "Custom";
     }
 
+    private void UpdateDiagnosticsPortStatus(DiagnosticReport report)
+    {
+        if (report.ActiveProfile is null)
+        {
+            SetDiagnosticsPortStatus("Ports: no profile", "Select a profile before running diagnostics.", "#92400E", "#FEF3C7");
+            return;
+        }
+
+        if (report.PortChecks.Count == 0)
+        {
+            var warning = report.Warnings.FirstOrDefault(x => x.Contains("port check failed", StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(warning))
+            {
+                SetDiagnosticsPortStatus("Ports: check failed", warning, "#7F1D1D", "#FECACA");
+                return;
+            }
+
+            SetDiagnosticsPortStatus("Ports: none", "Selected profile has no local listen endpoint.", "#374151", "#E5E7EB");
+            return;
+        }
+
+        var detail = string.Join("; ", report.PortChecks.Select(FormatPortCheck));
+        if (report.PortChecks.Any(x => !x.Available))
+        {
+            SetDiagnosticsPortStatus("Ports: blocked", detail, "#7F1D1D", "#FECACA");
+            return;
+        }
+
+        SetDiagnosticsPortStatus("Ports: available", detail, "#065F46", "#D1FAE5");
+    }
+
+    private void SetDiagnosticsPortStatus(string status, string detail, string background, string foreground)
+    {
+        DiagnosticsPortStatus = status;
+        DiagnosticsPortDetail = detail;
+        DiagnosticsPortBackground = background;
+        DiagnosticsPortForeground = foreground;
+    }
+
+    private static string FormatPortCheck(PortCheckResult result)
+    {
+        return result.Available
+            ? $"{result.Address} ok"
+            : $"{result.Address} blocked ({result.Error})";
+    }
+
     private static string BuildDiagnosticsSummary(DiagnosticReport report)
     {
         var lines = new List<string>
@@ -2792,7 +2868,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         };
         if (report.PortChecks.Count > 0)
         {
-            lines.Add("Ports: " + string.Join("; ", report.PortChecks.Select(x => x.Available ? $"{x.Address} ok" : $"{x.Address} blocked ({x.Error})")));
+            lines.Add("Ports: " + string.Join("; ", report.PortChecks.Select(FormatPortCheck)));
         }
         if (report.Warnings.Count > 0)
         {
