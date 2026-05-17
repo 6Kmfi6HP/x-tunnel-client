@@ -1721,6 +1721,42 @@ try {
         return $null
     }
     Write-Host "Profile copy deleted: $deletedProfileSummary"
+
+    if ($process -and !$process.HasExited) {
+        Stop-Process -Id $process.Id -Force
+        Wait-Process -Id $process.Id -Timeout 5 -ErrorAction SilentlyContinue | Out-Null
+    }
+    $env:XTUNNEL_CLIENT_HOME = $AppHome
+    $env:XTUNNEL_CLIENT_INSTANCE = "$InstanceName-restart"
+    $process = Start-Process -FilePath (Resolve-Path $AppExe).Path -PassThru
+    $env:XTUNNEL_CLIENT_HOME = $oldHome
+    $env:XTUNNEL_CLIENT_INSTANCE = $oldInstance
+
+    $window = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Timed out waiting for restarted x-tunnel Client window." -Condition {
+        $condition = [System.Windows.Automation.PropertyCondition]::new(
+            [System.Windows.Automation.AutomationElement]::ProcessIdProperty,
+            $process.Id)
+        $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
+    }
+    $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $diagnosticsTab
+    $persistedTargetCombo = Get-ByAutomationId -Root $window -AutomationId "NetworkTestTargetComboBox" -TimeoutSeconds $TimeoutSeconds
+    $persistedTarget = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Network test target did not persist after restart." -Condition {
+        $text = Get-ElementValue $persistedTargetCombo
+        if ($text -match "Custom") {
+            return $text
+        }
+        return $null
+    }
+    $persistedUrlBox = Get-ByAutomationId -Root $window -AutomationId "NetworkTestUrlTextBox" -TimeoutSeconds $TimeoutSeconds
+    $persistedUrl = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Network test URL did not persist after restart." -Condition {
+        $text = Get-ElementValue $persistedUrlBox
+        if ($text -eq $testUrl) {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Network target persisted after restart: $persistedTarget / $persistedUrl"
     Write-Host "GUI smoke passed"
 }
 finally {
