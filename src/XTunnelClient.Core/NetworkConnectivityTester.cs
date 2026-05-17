@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
 
 namespace XTunnelClient.Core;
 
@@ -21,6 +22,38 @@ public sealed class NetworkConnectivityTester
         }
 
         return results;
+    }
+
+    public async Task<NetworkTestResult> TestEndpointAsync(NetworkEndpoint endpoint, CancellationToken cancellationToken = default)
+    {
+        var timer = Stopwatch.StartNew();
+        try
+        {
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(5));
+            using var client = new TcpClient();
+            await client.ConnectAsync(endpoint.Host, endpoint.Port, timeout.Token);
+            timer.Stop();
+            return new NetworkTestResult
+            {
+                Route = "Forward TCP",
+                Target = endpoint.Display,
+                Success = true,
+                DurationMs = (long)timer.Elapsed.TotalMilliseconds
+            };
+        }
+        catch (Exception ex) when (ex is SocketException or TimeoutException or OperationCanceledException or InvalidOperationException)
+        {
+            timer.Stop();
+            return new NetworkTestResult
+            {
+                Route = "Forward TCP",
+                Target = endpoint.Display,
+                Success = false,
+                DurationMs = (long)timer.Elapsed.TotalMilliseconds,
+                Error = ex.Message
+            };
+        }
     }
 
     private static async Task<NetworkTestResult> TestHttpAsync(string route, Uri target, Uri? proxyUri, CancellationToken cancellationToken)

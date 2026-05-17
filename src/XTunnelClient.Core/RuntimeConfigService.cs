@@ -174,6 +174,39 @@ public sealed class RuntimeConfigService
         return endpoints;
     }
 
+    public NetworkEndpoint GetForwardEndpoint(string runtimeConfigJson)
+    {
+        var obj = ParseAndValidate(runtimeConfigJson);
+        var forward = obj.TryGetPropertyValue("forward", out var node) ? node?.GetValue<string>() ?? "" : "";
+        if (string.IsNullOrWhiteSpace(forward))
+        {
+            throw new InvalidOperationException("profile 没有配置 forward");
+        }
+        if (!Uri.TryCreate(forward, UriKind.Absolute, out var uri))
+        {
+            throw new InvalidOperationException($"forward 不是有效 URL: {forward}");
+        }
+
+        var port = uri.Port;
+        if (port <= 0)
+        {
+            port = uri.Scheme.ToLowerInvariant() switch
+            {
+                "wss" or "https" => 443,
+                "ws" or "http" => 80,
+                _ => throw new InvalidOperationException($"forward 缺少端口: {forward}")
+            };
+        }
+
+        return new NetworkEndpoint
+        {
+            Scheme = uri.Scheme,
+            Host = uri.Host,
+            Port = port,
+            Display = $"{uri.Scheme}://{uri.Host}:{port}"
+        };
+    }
+
     public static string Redact(string text)
     {
         if (string.IsNullOrEmpty(text))
@@ -225,4 +258,12 @@ public sealed class LocalProxyEndpoints
     public string? Socks { get; set; }
 
     public string PreferredHttpOrSocks => Http ?? Socks ?? throw new InvalidOperationException("profile 没有 HTTP 或 SOCKS5 本地监听");
+}
+
+public sealed class NetworkEndpoint
+{
+    public string Scheme { get; init; } = "";
+    public string Host { get; init; } = "";
+    public int Port { get; init; }
+    public string Display { get; init; } = "";
 }

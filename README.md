@@ -16,7 +16,7 @@ Windows desktop client for `x-tunnel`, implemented as a separate C# / Avalonia r
 - Profiles page with structured form editing, advanced JSON editing, core-backed format/check, field issue list, secret validation, and local port checks.
 - Subscriptions page for saving sources, updating profiles by name, and tracking fetch/cache status.
 - Logs page with runtime log filtering.
-- Diagnostics page with direct/local-proxy network tests, redacted export, and log access.
+- Diagnostics page with direct/local-proxy HTTP tests, profile forward endpoint TCP tests, redacted export, and log access.
 - Settings page with app-data, profile, log, and runtime folder shortcuts.
 - Tray menu for connect, disconnect, restart, copy proxy address, subscription update, diagnostics, log folder access, restore proxy, and quit.
 - SQLite profile/settings/subscription storage.
@@ -79,4 +79,4 @@ Run the desktop GUI smoke after a debug build:
 .\scripts\gui-smoke.ps1
 ```
 
-The GUI smoke launches the app with an isolated `XTUNNEL_CLIENT_HOME`, controls the Diagnostics tab through Windows UI Automation, runs the network test against a local HTTP 204 endpoint, and verifies the result text.
+The GUI smoke launches the app with an isolated `XTUNNEL_CLIENT_HOME`, controls the Profiles and Diagnostics tabs through Windows UI Automation, runs the network test against a local HTTP 204 endpoint, checks the selected profile's forward endpoint against a local TCP listener, and verifies the result text.

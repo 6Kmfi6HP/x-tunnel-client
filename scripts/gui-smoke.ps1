@@ -106,7 +106,9 @@ if (!(Test-Path $AppExe)) {
 }
 
 $port = Get-FreeTcpPort
+$forwardPort = Get-FreeTcpPort
 $testUrl = "http://127.0.0.1:$port/generate_204"
+$forwardUrl = "ws://127.0.0.1:$forwardPort/tunnel"
 $serverJob = Start-Job -ScriptBlock {
     param([int]$Port)
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
@@ -129,6 +131,19 @@ $serverJob = Start-Job -ScriptBlock {
     }
 } -ArgumentList $port
 
+$forwardJob = Start-Job -ScriptBlock {
+    param([int]$Port)
+    $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
+    $listener.Start()
+    try {
+        $client = $listener.AcceptTcpClient()
+        $client.Dispose()
+    }
+    finally {
+        $listener.Stop()
+    }
+} -ArgumentList $forwardPort
+
 $oldHome = $env:XTUNNEL_CLIENT_HOME
 $oldInstance = $env:XTUNNEL_CLIENT_INSTANCE
 $process = $null
@@ -148,6 +163,15 @@ try {
         $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
     }
 
+    $profilesTab = Get-ByAutomationId -Root $window -AutomationId "ProfilesTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $profilesTab
+
+    $forwardBox = Get-ByAutomationId -Root $window -AutomationId "ProfileForwardTextBox" -TimeoutSeconds $TimeoutSeconds
+    Set-ElementValue -Element $forwardBox -Value $forwardUrl
+
+    $applyProfileButton = Get-ByAutomationId -Root $window -AutomationId "ApplyProfileFormButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $applyProfileButton
+
     $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $diagnosticsTab
 
@@ -166,8 +190,21 @@ try {
         return $null
     }
 
+    $endpointButton = Get-ByAutomationId -Root $window -AutomationId "TestProfileEndpointButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $endpointButton
+
+    $endpointResultBox = Get-ByAutomationId -Root $window -AutomationId "ProfileEndpointTestResultTextBox" -TimeoutSeconds $TimeoutSeconds
+    $endpointText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile endpoint test did not report success." -Condition {
+        $text = Get-ElementValue $endpointResultBox
+        if ($text -match "Forward TCP: ok" -and $text -match [Regex]::Escape($forwardUrl.Replace("/tunnel", ""))) {
+            return $text
+        }
+        return $null
+    }
+
     Write-Host "GUI smoke passed"
     Write-Host $resultText
+    Write-Host $endpointText
 }
 finally {
     $env:XTUNNEL_CLIENT_HOME = $oldHome
@@ -178,5 +215,9 @@ finally {
     if ($serverJob) {
         Stop-Job $serverJob -ErrorAction SilentlyContinue | Out-Null
         Remove-Job $serverJob -Force -ErrorAction SilentlyContinue
+    }
+    if ($forwardJob) {
+        Stop-Job $forwardJob -ErrorAction SilentlyContinue | Out-Null
+        Remove-Job $forwardJob -Force -ErrorAction SilentlyContinue
     }
 }

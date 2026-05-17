@@ -165,7 +165,7 @@
         </Grid>
       </TabItem>
 
-      <TabItem Header="Profiles">
+      <TabItem Header="Profiles" automation:AutomationProperties.AutomationId="ProfilesTab">
         <Grid Margin="16" ColumnDefinitions="320,*" ColumnSpacing="16">
           <DockPanel>
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
@@ -184,7 +184,7 @@
             </Grid>
             <Grid Grid.Row="1" ColumnDefinitions="2*,2*,120,120,160" ColumnSpacing="8">
               <TextBox Text="{Binding ProfileListen}" PlaceholderText="listen"/>
-              <TextBox Grid.Column="1" Text="{Binding ProfileForward}" PlaceholderText="forward"/>
+              <TextBox Grid.Column="1" Text="{Binding ProfileForward}" PlaceholderText="forward" automation:AutomationProperties.AutomationId="ProfileForwardTextBox"/>
               <NumericUpDown Grid.Column="2" Value="{Binding ProfileConnections}" Minimum="1" Maximum="32"/>
               <CheckBox Grid.Column="3" IsChecked="{Binding ProfileFallback}" Content="fallback" VerticalAlignment="Center"/>
               <TextBox Grid.Column="4" Text="{Binding ProfileMetrics}" PlaceholderText="metrics"/>
@@ -194,7 +194,7 @@
               <TextBox Grid.Column="1" Text="{Binding SecretValue}" PasswordChar="*" PlaceholderText="profile secret saved with DPAPI"/>
             </Grid>
             <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
-              <Button Content="Apply Form" Command="{Binding ApplyFormCommand}"/>
+              <Button Content="Apply Form" Command="{Binding ApplyFormCommand}" automation:AutomationProperties.AutomationId="ApplyProfileFormButton"/>
               <Button Content="Save" Command="{Binding SaveProfileCommand}"/>
               <Button Content="Validate" Command="{Binding ValidateProfileCommand}"/>
               <Button Content="Format" Command="{Binding FormatProfileCommand}"/>
@@ -270,7 +270,7 @@
       </TabItem>
 
       <TabItem Header="Diagnostics" automation:AutomationProperties.AutomationId="DiagnosticsTab">
-        <Grid Margin="16" RowDefinitions="Auto,Auto,110,150,*" RowSpacing="10">
+        <Grid Margin="16" RowDefinitions="Auto,Auto,92,Auto,92,140,*" RowSpacing="10">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Content="Run Checks" Command="{Binding RefreshDiagnosticsCommand}" automation:AutomationProperties.AutomationId="RunDiagnosticsButton"/>
             <Button Content="Export Zip" Click="ExportDiagnostics_OnClick"/>
@@ -283,8 +283,12 @@
             <Button Grid.Column="2" Content="Test Network" Command="{Binding TestNetworkCommand}" automation:AutomationProperties.AutomationId="TestNetworkButton"/>
           </Grid>
           <TextBox Grid.Row="2" Text="{Binding NetworkTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="NetworkTestResultTextBox"/>
-          <TextBox Grid.Row="3" Text="{Binding DiagnosticsSummaryText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
-          <TextBox Grid.Row="4" Text="{Binding DiagnosticsText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+          <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+            <Button Content="Test Forward" Command="{Binding TestProfileEndpointCommand}" automation:AutomationProperties.AutomationId="TestProfileEndpointButton"/>
+          </StackPanel>
+          <TextBox Grid.Row="4" Text="{Binding ProfileEndpointTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="ProfileEndpointTestResultTextBox"/>
+          <TextBox Grid.Row="5" Text="{Binding DiagnosticsSummaryText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+          <TextBox Grid.Row="6" Text="{Binding DiagnosticsText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
         </Grid>
       </TabItem>
 

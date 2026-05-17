@@ -137,6 +137,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _subscriptionStatusText = "";
     private string _networkTestUrl = "https://www.gstatic.com/generate_204";
     private string _networkTestText = "Not tested";
+    private string _profileEndpointTestText = "Not tested";
     private string _errorText = "";
     private string _secretValue = "";
     private string _profileListen = "";
@@ -187,6 +188,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RestartCommand = new AsyncRelayCommand(RestartAsync, CanRestart);
         RefreshDiagnosticsCommand = new AsyncRelayCommand(RefreshDiagnosticsAsync);
         TestNetworkCommand = new AsyncRelayCommand(TestNetworkAsync);
+        TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         RestoreProxyCommand = new RelayCommand(() => systemProxy.Restore());
         CopyProxyCommand = new RelayCommand(CopyProxySummary);
@@ -346,6 +348,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set => SetProperty(ref _networkTestText, value);
     }
 
+    public string ProfileEndpointTestText
+    {
+        get => _profileEndpointTestText;
+        set => SetProperty(ref _profileEndpointTestText, value);
+    }
+
     public string ErrorText
     {
         get => _errorText;
@@ -495,6 +503,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand RestartCommand { get; }
     public AsyncRelayCommand RefreshDiagnosticsCommand { get; }
     public AsyncRelayCommand TestNetworkCommand { get; }
+    public AsyncRelayCommand TestProfileEndpointCommand { get; }
     public ICommand SaveSettingsCommand { get; }
     public ICommand RestoreProxyCommand { get; }
     public ICommand CopyProxyCommand { get; }
@@ -971,6 +980,29 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             NetworkTestText = $"Network test failed: {ex.Message}";
+            ErrorText = ex.Message;
+        }
+    }
+
+    private async Task TestProfileEndpointAsync()
+    {
+        if (SelectedProfile is null)
+        {
+            ProfileEndpointTestText = "No selected profile";
+            return;
+        }
+
+        try
+        {
+            ProfileEndpointTestText = "Testing profile forward endpoint...";
+            var endpoint = _configService.GetForwardEndpoint(SelectedProfile.CoreConfigJson);
+            var result = await _networkTester.TestEndpointAsync(endpoint);
+            ProfileEndpointTestText = FormatNetworkTestResults([result], note: null);
+            ErrorText = result.Success ? "" : "Profile endpoint test failed";
+        }
+        catch (Exception ex)
+        {
+            ProfileEndpointTestText = $"Profile endpoint test failed: {ex.Message}";
             ErrorText = ex.Message;
         }
     }
@@ -1474,6 +1506,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ConnectCommand.RaiseCanExecuteChanged();
         DisconnectCommand.RaiseCanExecuteChanged();
         RestartCommand.RaiseCanExecuteChanged();
+        TestProfileEndpointCommand.RaiseCanExecuteChanged();
     }
 
     private void RaiseSubscriptionCommandState()

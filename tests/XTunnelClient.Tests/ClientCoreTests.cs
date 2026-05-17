@@ -232,6 +232,37 @@ public sealed class ClientCoreTests
     }
 
     [Fact]
+    public void RuntimeConfigParsesForwardEndpointDefaults()
+    {
+        var endpoint = new RuntimeConfigService().GetForwardEndpoint("""{"listen":"socks5://127.0.0.1:1","forward":"wss://example.com/tunnel"}""");
+
+        Assert.Equal("wss", endpoint.Scheme);
+        Assert.Equal("example.com", endpoint.Host);
+        Assert.Equal(443, endpoint.Port);
+    }
+
+    [Fact]
+    public async Task NetworkConnectivityTesterReportsForwardTcpSuccess()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var server = AcceptOneTcpClientAsync(listener);
+        var tester = new NetworkConnectivityTester();
+
+        var result = await tester.TestEndpointAsync(new NetworkEndpoint
+        {
+            Scheme = "ws",
+            Host = "127.0.0.1",
+            Port = port,
+            Display = $"ws://127.0.0.1:{port}"
+        });
+
+        Assert.True(result.Success, result.Error);
+        await server;
+    }
+
+    [Fact]
     public void UpdateManifestRequiresChecksums()
     {
         Assert.Throws<InvalidOperationException>(() => UpdateService.ValidateManifest(new UpdateManifest { Version = "1.0.0" }));
@@ -435,6 +466,12 @@ public sealed class ClientCoreTests
         await stream.ReadAsync(buffer);
         var response = Encoding.ASCII.GetBytes("HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
         await stream.WriteAsync(response);
+        listener.Stop();
+    }
+
+    private static async Task AcceptOneTcpClientAsync(TcpListener listener)
+    {
+        using var client = await listener.AcceptTcpClientAsync();
         listener.Stop();
     }
 
