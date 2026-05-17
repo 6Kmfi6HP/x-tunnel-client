@@ -160,6 +160,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _profileBatchTestText = "Endpoint tests not run";
     private string _profileSummaryText = "";
     private string _detectedCorePath = "";
+    private string _corePathStatus = "Core not checked";
+    private string _corePathStatusDetail = "Set or auto-detect x-tunnel.exe.";
+    private string _corePathStatusBackground = "#374151";
+    private string _corePathStatusForeground = "#E5E7EB";
     private string _errorText = "";
     private string _secretValue = "";
     private string _profileListen = "";
@@ -599,7 +603,37 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string DetectedCorePath
     {
         get => _detectedCorePath;
-        set => SetProperty(ref _detectedCorePath, value);
+        set
+        {
+            if (SetProperty(ref _detectedCorePath, value))
+            {
+                UpdateCorePathStatus();
+            }
+        }
+    }
+
+    public string CorePathStatus
+    {
+        get => _corePathStatus;
+        private set => SetProperty(ref _corePathStatus, value);
+    }
+
+    public string CorePathStatusDetail
+    {
+        get => _corePathStatusDetail;
+        private set => SetProperty(ref _corePathStatusDetail, value);
+    }
+
+    public string CorePathStatusBackground
+    {
+        get => _corePathStatusBackground;
+        private set => SetProperty(ref _corePathStatusBackground, value);
+    }
+
+    public string CorePathStatusForeground
+    {
+        get => _corePathStatusForeground;
+        private set => SetProperty(ref _corePathStatusForeground, value);
     }
 
     public string ErrorText
@@ -701,6 +735,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 Settings.CorePath = string.IsNullOrWhiteSpace(value) ? null : value;
                 OnPropertyChanged();
+                UpdateCorePathStatus();
             }
         }
     }
@@ -821,6 +856,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         LoadProfiles(Settings.AutoConnectProfileId);
         LoadSubscriptions();
         StatusText = "Stopped";
+        UpdateCorePathStatus();
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
@@ -1621,6 +1657,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ApplyTheme(Settings.Theme);
         var exe = Environment.ProcessPath ?? AppContext.BaseDirectory;
         _startupService.SetEnabled(Settings.LaunchAtLogin, exe, Settings.StartMinimized);
+        UpdateCorePathStatus();
         ErrorText = "Settings saved";
     }
 
@@ -1637,11 +1674,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         DetectedCorePath = _coreLocator.Resolve(new AppSettings()) ?? "";
         if (string.IsNullOrWhiteSpace(DetectedCorePath))
         {
+            UpdateCorePathStatus();
             ErrorText = "No x-tunnel.exe was auto-detected";
             return;
         }
         Settings.CorePath = DetectedCorePath;
         OnPropertyChanged(nameof(CorePath));
+        UpdateCorePathStatus();
         ErrorText = "Core path set from auto-detect";
     }
 
@@ -1933,6 +1972,50 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private static string BuildProxyEndpointSummary(LocalProxyEndpoints endpoints)
     {
         return $"HTTP {endpoints.Http ?? "-"} / SOCKS {endpoints.Socks ?? "-"}";
+    }
+
+    private void UpdateCorePathStatus()
+    {
+        var configured = Settings.CorePath?.Trim();
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            SetCorePathStatusForPath(configured, configuredSource: true);
+            return;
+        }
+
+        var resolved = _coreLocator.Resolve(Settings);
+        if (!string.IsNullOrWhiteSpace(resolved))
+        {
+            SetCorePathStatus("Auto-detected", resolved, "#065F46", "#D1FAE5");
+            return;
+        }
+
+        SetCorePathStatus("Core missing", "Set a full path to x-tunnel.exe or place it in the expected build/output folder.", "#7F1D1D", "#FECACA");
+    }
+
+    private void SetCorePathStatusForPath(string path, bool configuredSource)
+    {
+        if (!File.Exists(path))
+        {
+            SetCorePathStatus("Path missing", path, "#7F1D1D", "#FECACA");
+            return;
+        }
+
+        if (!string.Equals(Path.GetFileName(path), "x-tunnel.exe", StringComparison.OrdinalIgnoreCase))
+        {
+            SetCorePathStatus("Check executable", path, "#92400E", "#FEF3C7");
+            return;
+        }
+
+        SetCorePathStatus(configuredSource ? "Configured" : "Auto-detected", path, "#065F46", "#D1FAE5");
+    }
+
+    private void SetCorePathStatus(string status, string detail, string background, string foreground)
+    {
+        CorePathStatus = status;
+        CorePathStatusDetail = detail;
+        CorePathStatusBackground = background;
+        CorePathStatusForeground = foreground;
     }
 
     private static string ListenerDetail(CoreStatus? status)

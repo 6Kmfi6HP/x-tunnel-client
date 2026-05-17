@@ -11,6 +11,7 @@ param(
     [string]$DiagnosticsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-diagnostics.png"),
     [string]$LogsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-logs.png"),
     [string]$LogsRegexScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-logs-regex.png"),
+    [string]$SettingsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-settings.png"),
     [int]$TimeoutSeconds = 25
 )
 
@@ -609,6 +610,18 @@ try {
     if ($settingsCorePath -notmatch "x-tunnel.exe") {
         throw "Use Detected did not populate core path: '$settingsCorePath'"
     }
+    $corePathStatusText = Get-ByAutomationId -Root $window -AutomationId "CorePathStatusText" -TimeoutSeconds $TimeoutSeconds
+    $corePathStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Core path status did not report a valid configured path." -Condition {
+        $text = Get-ElementValue $corePathStatusText
+        if ($text -match "Configured") {
+            return $text
+        }
+        return $null
+    }
+    $corePathStatusDetailText = Get-ByAutomationId -Root $window -AutomationId "CorePathStatusDetailText" -TimeoutSeconds $TimeoutSeconds
+    Write-Host "Core path status: $corePathStatus / $(Get-ElementValue $corePathStatusDetailText)"
+    Save-ElementScreenshot -Element $window -Path $SettingsScreenshotPath
+    Write-Host "Settings GUI screenshot: $SettingsScreenshotPath"
 
     $logsTab = Get-ByAutomationId -Root $window -AutomationId "LogsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $logsTab
