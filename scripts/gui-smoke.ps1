@@ -8,8 +8,10 @@ param(
     [string]$OverviewNetworkScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-overview-network.png"),
     [string]$OverviewRuntimeScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-overview-runtime.png"),
     [string]$ScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke.png"),
+    [string]$ProfileNarrowScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-profiles-narrow.png"),
     [string]$SubscriptionScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-subscriptions.png"),
     [string]$DiagnosticsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-diagnostics.png"),
+    [string]$DiagnosticsNarrowScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-diagnostics-narrow.png"),
     [string]$LogsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-logs.png"),
     [string]$LogsRegexScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-logs-regex.png"),
     [string]$LogsInvalidRegexScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-logs-invalid-regex.png"),
@@ -22,6 +24,16 @@ $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 Add-Type -AssemblyName System.Drawing
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+
+public static class NativeWindowMethods
+{
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
+}
+"@
 
 function Get-FreeTcpPort {
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
@@ -205,6 +217,44 @@ function Save-ElementScreenshot {
     finally {
         $graphics.Dispose()
         $bitmap.Dispose()
+    }
+}
+
+function Get-MainWindowHandle {
+    param(
+        [System.Diagnostics.Process]$Process,
+        [int]$TimeoutSeconds
+    )
+    return Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Timed out waiting for a main window handle." -Condition {
+        $Process.Refresh()
+        if ($Process.MainWindowHandle -ne [IntPtr]::Zero) {
+            return $Process.MainWindowHandle
+        }
+        return $null
+    }
+}
+
+function Save-WindowScreenshotAtSize {
+    param(
+        [System.Windows.Automation.AutomationElement]$Element,
+        [System.Diagnostics.Process]$Process,
+        [string]$Path,
+        [int]$Width,
+        [int]$Height,
+        [int]$TimeoutSeconds
+    )
+    $handle = Get-MainWindowHandle -Process $Process -TimeoutSeconds $TimeoutSeconds
+    $rect = $Element.Current.BoundingRectangle
+    if (-not [NativeWindowMethods]::MoveWindow($handle, [int]$rect.Left, [int]$rect.Top, $Width, $Height, $true)) {
+        throw "Failed to resize window for screenshot '$Path'."
+    }
+    Start-Sleep -Milliseconds 500
+    try {
+        Save-ElementScreenshot -Element $Element -Path $Path
+    }
+    finally {
+        [NativeWindowMethods]::MoveWindow($handle, [int]$rect.Left, [int]$rect.Top, [int]$rect.Width, [int]$rect.Height, $true) | Out-Null
+        Start-Sleep -Milliseconds 500
     }
 }
 
@@ -952,6 +1002,8 @@ try {
     Write-Host "Exported diagnostics zip: $exportedDiagnosticsPath"
     Save-ElementScreenshot -Element $window -Path $DiagnosticsScreenshotPath
     Write-Host "Diagnostics GUI screenshot: $DiagnosticsScreenshotPath"
+    Save-WindowScreenshotAtSize -Element $window -Process $process -Path $DiagnosticsNarrowScreenshotPath -Width 1440 -Height 1040 -TimeoutSeconds $TimeoutSeconds
+    Write-Host "Diagnostics narrow GUI screenshot: $DiagnosticsNarrowScreenshotPath"
 
     $clearDiagnosticsTestsButton = Get-ByAutomationId -Root $window -AutomationId "ClearDiagnosticsTestsButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $clearDiagnosticsTestsButton
@@ -1647,6 +1699,9 @@ try {
 
     Save-ElementScreenshot -Element $window -Path $ScreenshotPath
     Write-Host "GUI screenshot: $ScreenshotPath"
+    Save-WindowScreenshotAtSize -Element $window -Process $process -Path $ProfileNarrowScreenshotPath -Width 1440 -Height 1040 -TimeoutSeconds $TimeoutSeconds
+    Write-Host "Profiles narrow GUI screenshot: $ProfileNarrowScreenshotPath"
+
     $clearEndpointTestsButton = Get-ByAutomationId -Root $window -AutomationId "ClearEndpointTestsButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $clearEndpointTestsButton
     $clearedEndpointSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear endpoint tests did not reset summary counts." -Condition {
