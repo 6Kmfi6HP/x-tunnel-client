@@ -76,3 +76,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added GUI smoke coverage for Overview recent logs and runtime details after connecting through the sidecar.
 - Added a Diagnostics Clear Tests action that resets network and selected-profile forward test state from one visible control.
 - Added Overview copy actions for recent logs and runtime details, with GUI smoke clipboard checks after connecting.
+- Added a Subscriptions Copy Source action for sharing selected subscription name, URL, interval, trust policy, and last update status.

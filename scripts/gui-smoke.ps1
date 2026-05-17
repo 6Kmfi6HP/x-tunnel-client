@@ -1106,6 +1106,17 @@ try {
         return $null
     }
     Write-Host $updateAllText
+    $copySubscriptionSourceButton = Get-ByAutomationId -Root $window -AutomationId "CopySubscriptionSourceButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copySubscriptionSourceButton
+    $clipboardSubscriptionSource = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy subscription source did not place the source summary on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "Subscription: Smoke subscription" -and $text -match [Regex]::Escape($subscriptionUrl) -and $text -match "Interval:") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied subscription source: $($clipboardSubscriptionSource.Split([Environment]::NewLine)[0])"
     $copySubscriptionStatusButton = Get-ByAutomationId -Root $window -AutomationId "CopySubscriptionStatusButton" -TimeoutSeconds $TimeoutSeconds
     Set-Clipboard -Value ""
     Invoke-Element $copySubscriptionStatusButton

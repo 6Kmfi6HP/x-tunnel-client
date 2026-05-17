@@ -235,6 +235,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RefreshSubscriptionCommand = new AsyncRelayCommand(RefreshSelectedSubscriptionAsync, () => SelectedSubscription is not null);
         RefreshAllSubscriptionsCommand = new AsyncRelayCommand(RefreshAllSubscriptionsAsync, () => Subscriptions.Count > 0);
         CopySubscriptionStatusCommand = new RelayCommand(CopySubscriptionStatus, HasSubscriptionStatusResult);
+        CopySubscriptionSourceCommand = new RelayCommand(CopySubscriptionSource, () => SelectedSubscription is not null);
         ConnectCommand = new AsyncRelayCommand(ConnectAsync, CanConnect);
         DisconnectCommand = new AsyncRelayCommand(() => _supervisor.DisconnectAsync(), CanDisconnect);
         RestartCommand = new AsyncRelayCommand(RestartAsync, CanRestart);
@@ -1005,6 +1006,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand RefreshSubscriptionCommand { get; }
     public AsyncRelayCommand RefreshAllSubscriptionsCommand { get; }
     public RelayCommand CopySubscriptionStatusCommand { get; }
+    public RelayCommand CopySubscriptionSourceCommand { get; }
     public AsyncRelayCommand ConnectCommand { get; }
     public AsyncRelayCommand DisconnectCommand { get; }
     public AsyncRelayCommand RestartCommand { get; }
@@ -2159,6 +2161,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ErrorText = "Subscription result copied";
     }
 
+    private void CopySubscriptionSource()
+    {
+        if (SelectedSubscription is null)
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, BuildSubscriptionSourceSummary(SelectedSubscription));
+        ErrorText = "Subscription source copied";
+    }
+
     private void ClearProfileSearch()
     {
         ProfileSearchText = "";
@@ -2896,6 +2909,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         });
     }
 
+    private static string BuildSubscriptionSourceSummary(Subscription subscription)
+    {
+        var updated = subscription.LastUpdatedAt?.LocalDateTime.ToString("g", CultureInfo.CurrentCulture) ?? "-";
+        return string.Join(Environment.NewLine, new[]
+        {
+            $"Subscription: {subscription.DisplayName}",
+            $"URL: {subscription.Url}",
+            $"Interval: {subscription.UpdateIntervalMinutes} minute(s)",
+            $"Trust: {subscription.TrustPolicy}",
+            $"Last result: {subscription.LastResult}",
+            $"Updated: {updated}"
+        });
+    }
+
     private void UpdateFilteredSubscriptions(Guid? preferredSubscriptionId = null)
     {
         var selectedId = preferredSubscriptionId ?? SelectedSubscription?.Id;
@@ -3305,5 +3332,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RefreshSubscriptionCommand.RaiseCanExecuteChanged();
         RefreshAllSubscriptionsCommand.RaiseCanExecuteChanged();
         CopySubscriptionStatusCommand.RaiseCanExecuteChanged();
+        CopySubscriptionSourceCommand.RaiseCanExecuteChanged();
     }
 }

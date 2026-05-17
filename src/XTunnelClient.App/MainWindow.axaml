@@ -368,6 +368,7 @@
               <Button Content="Update Now" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionNowButton"/>
               <Button Content="Update All" Command="{Binding RefreshAllSubscriptionsCommand}" automation:AutomationProperties.AutomationId="UpdateAllSubscriptionsNowButton"/>
               <Button Content="Save Subscription" Command="{Binding SaveSubscriptionCommand}"/>
+              <Button Content="Copy Source" Command="{Binding CopySubscriptionSourceCommand}" automation:AutomationProperties.AutomationId="CopySubscriptionSourceButton"/>
               <Button Content="Copy Result" Command="{Binding CopySubscriptionStatusCommand}" automation:AutomationProperties.AutomationId="CopySubscriptionStatusButton"/>
             </StackPanel>
             <TextBox Grid.Row="2" Text="{Binding SubscriptionStatusText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="SubscriptionStatusTextBox"/>
