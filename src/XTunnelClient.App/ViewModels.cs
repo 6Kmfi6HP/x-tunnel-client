@@ -2130,8 +2130,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        CopyTextRequested?.Invoke(this, StatusText);
+        CopyTextRequested?.Invoke(this, BuildOverviewRuntimeDetailsShare());
         ErrorText = "Overview runtime details copied";
+    }
+
+    private string BuildOverviewRuntimeDetailsShare()
+    {
+        var summary = new StringBuilder();
+        summary.AppendLine("Status:");
+        summary.AppendLine(StatusText.Trim());
+        if (!string.IsNullOrWhiteSpace(StatsText))
+        {
+            summary.AppendLine();
+            summary.AppendLine("Stats:");
+            summary.AppendLine(StatsText.Trim());
+        }
+
+        return summary.ToString().TrimEnd();
     }
 
     private async Task CopyRuntimeMetricsAsync()

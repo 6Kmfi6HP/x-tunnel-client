@@ -910,7 +910,7 @@ try {
     Invoke-Element $copyOverviewRuntimeDetailsButton
     $clipboardOverviewRuntime = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy overview runtime details did not place status JSON on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
-        if ($text -match "version" -and $text -match "mode") {
+        if ($text -match "Status:" -and $text -match "Stats:" -and $text -match "version" -and $text -match "mode" -and $text -match "traffic") {
             return $text
         }
         return $null
