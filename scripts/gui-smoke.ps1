@@ -474,9 +474,30 @@ try {
     }
     Write-Host "Startup profile summary: $startupProfileSummary"
 
+    $profileBatchTestTextBlock = Get-ByAutomationId -Root $window -AutomationId "ProfileBatchTestTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $testSelectedProfileButton = Get-ByAutomationId -Root $window -AutomationId "TestSelectedProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $testSelectedProfileButton
+    $selectedProfileTestText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Selected profile endpoint test did not report success." -Condition {
+        $text = Get-ElementValue $profileBatchTestTextBlock
+        if ($text -match "Selected endpoint ok: Local x-tunnel") {
+            return $text
+        }
+        return $null
+    }
+    $selectedProfileEndpointState = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Selected profile endpoint test did not update the list latency badge." -Condition {
+        $items = Find-AllByAutomationId -Root $window -AutomationId "ProfileListItemEndpointState"
+        foreach ($item in $items) {
+            $text = Get-ElementValue $item
+            if ($text -match "TCP \d+ms") {
+                return $text
+            }
+        }
+        return $null
+    }
+    Write-Host "Selected profile endpoint: $selectedProfileTestText / $selectedProfileEndpointState"
+
     $testVisibleProfilesButton = Get-ByAutomationId -Root $window -AutomationId "TestVisibleProfilesButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $testVisibleProfilesButton
-    $profileBatchTestTextBlock = Get-ByAutomationId -Root $window -AutomationId "ProfileBatchTestTextBlock" -TimeoutSeconds $TimeoutSeconds
     $profileBatchTestText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Visible profile endpoint test did not report success." -Condition {
         $text = Get-ElementValue $profileBatchTestTextBlock
         if ($text -match "Endpoint tests: 1 ok, 0 failed") {

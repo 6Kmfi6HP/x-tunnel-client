@@ -262,6 +262,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
         CopyProfileEndpointTestResultCommand = new RelayCommand(CopyProfileEndpointTestResult, HasProfileEndpointTestResult);
         ClearProfileEndpointTestCommand = new RelayCommand(ClearProfileEndpointTest, HasProfileEndpointTestResult);
+        TestSelectedProfileEndpointCommand = new AsyncRelayCommand(TestSelectedProfileEndpointAsync, () => SelectedProfile is not null);
         TestVisibleProfilesCommand = new AsyncRelayCommand(TestVisibleProfilesAsync, () => FilteredProfiles.Count > 0);
         TestAndSelectFastestProfileCommand = new AsyncRelayCommand(TestAndSelectFastestProfileAsync, () => FilteredProfiles.Count > 0);
         SelectFastestProfileCommand = new RelayCommand(SelectFastestProfile, HasSuccessfulVisibleEndpointTest);
@@ -1037,6 +1038,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
     public RelayCommand CopyProfileEndpointTestResultCommand { get; }
     public RelayCommand ClearProfileEndpointTestCommand { get; }
+    public AsyncRelayCommand TestSelectedProfileEndpointCommand { get; }
     public AsyncRelayCommand TestVisibleProfilesCommand { get; }
     public AsyncRelayCommand TestAndSelectFastestProfileCommand { get; }
     public RelayCommand SelectFastestProfileCommand { get; }
@@ -1929,34 +1931,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var failed = 0;
         foreach (var profile in profiles)
         {
-            try
+            var result = await TestAndStoreProfileEndpointAsync(profile);
+            if (result.Success)
             {
-                var endpoint = _configService.GetForwardEndpoint(profile.CoreConfigJson);
-                var result = await _networkTester.TestEndpointAsync(endpoint);
-                profile.LastEndpointTestAt = DateTimeOffset.UtcNow;
-                profile.LastEndpointTestDurationMs = result.DurationMs;
-                profile.LastEndpointTestTarget = result.Target;
-                profile.LastEndpointTestError = result.Success ? null : result.Error ?? "Endpoint test failed";
-                if (result.Success)
-                {
-                    ok++;
-                }
-                else
-                {
-                    failed++;
-                }
+                ok++;
             }
-            catch (Exception ex)
+            else
             {
-                profile.LastEndpointTestAt = DateTimeOffset.UtcNow;
-                profile.LastEndpointTestDurationMs = null;
-                profile.LastEndpointTestTarget = null;
-                profile.LastEndpointTestError = ex.Message;
                 failed++;
             }
-
-            _repository.SaveProfile(profile);
-            RefreshProfileListItem(profile);
         }
 
         ProfileBatchTestText = $"Endpoint tests: {ok} ok, {failed} failed";
@@ -1964,6 +1947,67 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SelectFastestProfileCommand.RaiseCanExecuteChanged();
         ClearVisibleProfileEndpointTestsCommand.RaiseCanExecuteChanged();
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+    }
+
+    private async Task TestSelectedProfileEndpointAsync()
+    {
+        if (SelectedProfile is null)
+        {
+            ProfileBatchTestText = "No selected profile to test";
+            ErrorText = ProfileBatchTestText;
+            return;
+        }
+
+        var profile = SelectedProfile;
+        ProfileBatchTestText = $"Testing selected profile: {profile.Name}...";
+        var result = await TestAndStoreProfileEndpointAsync(profile);
+        if (result.Success)
+        {
+            ProfileBatchTestText = $"Selected endpoint ok: {profile.Name} ({result.DurationMs}ms)";
+            ErrorText = "";
+        }
+        else
+        {
+            var error = FirstNonEmpty(result.Error, "Endpoint test failed");
+            ProfileBatchTestText = $"Selected endpoint failed: {profile.Name} - {error}";
+            ErrorText = ProfileBatchTestText;
+        }
+
+        SelectFastestProfileCommand.RaiseCanExecuteChanged();
+        ClearVisibleProfileEndpointTestsCommand.RaiseCanExecuteChanged();
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+    }
+
+    private async Task<NetworkTestResult> TestAndStoreProfileEndpointAsync(Profile profile)
+    {
+        try
+        {
+            var endpoint = _configService.GetForwardEndpoint(profile.CoreConfigJson);
+            var result = await _networkTester.TestEndpointAsync(endpoint);
+            profile.LastEndpointTestAt = DateTimeOffset.UtcNow;
+            profile.LastEndpointTestDurationMs = result.DurationMs;
+            profile.LastEndpointTestTarget = result.Target;
+            profile.LastEndpointTestError = result.Success ? null : result.Error ?? "Endpoint test failed";
+            _repository.SaveProfile(profile);
+            RefreshProfileListItem(profile);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            profile.LastEndpointTestAt = DateTimeOffset.UtcNow;
+            profile.LastEndpointTestDurationMs = null;
+            profile.LastEndpointTestTarget = null;
+            profile.LastEndpointTestError = ex.Message;
+            _repository.SaveProfile(profile);
+            RefreshProfileListItem(profile);
+            return new NetworkTestResult
+            {
+                Route = "Forward TCP",
+                Target = profile.Name,
+                Success = false,
+                Error = ex.Message
+            };
+        }
     }
 
     private async Task TestAndSelectFastestProfileAsync()
@@ -3445,6 +3489,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         CopyProfileSummaryCommand.RaiseCanExecuteChanged();
         CopyProfileConfigCommand.RaiseCanExecuteChanged();
         CopyProfileIssuesCommand.RaiseCanExecuteChanged();
+        TestSelectedProfileEndpointCommand.RaiseCanExecuteChanged();
         UseSelectedProfileAtStartupCommand.RaiseCanExecuteChanged();
         ClearStartupProfileCommand.RaiseCanExecuteChanged();
         ApplyFormCommand.RaiseCanExecuteChanged();
