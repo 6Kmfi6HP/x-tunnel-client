@@ -6,6 +6,8 @@
         Height="760"
         MinWidth="960"
         MinHeight="620"
+        Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+        Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
         Title="x-tunnel Client">
   <Window.Styles>
     <Style Selector="Button">
@@ -21,7 +23,7 @@
       <Setter Property="Margin" Value="0,0,0,6"/>
     </Style>
     <Style Selector="TextBlock.caption">
-      <Setter Property="Foreground" Value="#64748B"/>
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
       <Setter Property="FontSize" Value="12"/>
     </Style>
     <Style Selector="TextBlock.metricValue">
@@ -29,8 +31,8 @@
       <Setter Property="FontWeight" Value="SemiBold"/>
     </Style>
     <Style Selector="Border.panel">
-      <Setter Property="Background" Value="#FFFFFF"/>
-      <Setter Property="BorderBrush" Value="#D8DEE8"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="12"/>
@@ -39,22 +41,22 @@
       <Setter Property="Width" Value="242"/>
       <Setter Property="Height" Value="94"/>
       <Setter Property="Margin" Value="0,0,10,10"/>
-      <Setter Property="Background" Value="#FFFFFF"/>
-      <Setter Property="BorderBrush" Value="#D8DEE8"/>
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="Padding" Value="12"/>
     </Style>
   </Window.Styles>
 
-  <DockPanel Background="#F5F7FA">
-    <Border DockPanel.Dock="Top" Background="#FFFFFF" BorderBrush="#D8DEE8" BorderThickness="0,0,0,1" Padding="16,10">
+  <DockPanel Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+    <Border DockPanel.Dock="Top" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1" Padding="16,10">
       <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" RowDefinitions="Auto">
-        <StackPanel Orientation="Horizontal" Spacing="12">
+        <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="12">
           <TextBlock Text="x-tunnel" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
-          <TextBlock Text="{Binding RuntimeState}" VerticalAlignment="Center"/>
-          <TextBlock Text="{Binding ErrorText}" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" automation:AutomationProperties.AutomationId="AppErrorTextBlock"/>
-        </StackPanel>
+          <TextBlock Grid.Column="1" Text="{Binding RuntimeState}" VerticalAlignment="Center"/>
+          <TextBlock Grid.Column="2" Text="{Binding ErrorText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" automation:AutomationProperties.AutomationId="AppErrorTextBlock"/>
+        </Grid>
         <Button Grid.Column="1" Content="Connect" Command="{Binding ConnectCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="ConnectButton"/>
         <Button Grid.Column="2" Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="DisconnectButton"/>
         <Button Grid.Column="3" Content="Restart" Command="{Binding RestartCommand}" Margin="0,0,8,0"/>
@@ -62,7 +64,7 @@
       </Grid>
     </Border>
 
-    <Border DockPanel.Dock="Bottom" Background="#FFFFFF" BorderBrush="#D8DEE8" BorderThickness="0,1,0,0" Padding="12,6">
+    <Border DockPanel.Dock="Bottom" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,1,0,0" Padding="12,6">
       <Grid ColumnDefinitions="120,*,90,180,90,260,70,*" ColumnSpacing="8">
         <TextBlock Text="{Binding ConnectionHeading}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarStateText"/>
         <TextBlock Grid.Column="1" Text="{Binding ActiveProfileSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarProfileText"/>
@@ -189,10 +191,10 @@
             <ListBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}">
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <Border Padding="8" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                  <Border Padding="8" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
                     <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="3">
                       <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="ProfileListItemName"/>
-                      <TextBlock Grid.Column="1" Text="{Binding ValidationState}" Classes="caption"/>
+                      <TextBlock Grid.Column="1" Text="{Binding ValidationState}" Classes="caption" automation:AutomationProperties.AutomationId="ProfileListItemValidationState"/>
                       <TextBlock Grid.Row="1" Text="{Binding ListSubtitle}" Classes="caption" TextTrimming="CharacterEllipsis"/>
                       <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding ValidationDetail}" Classes="caption" TextTrimming="CharacterEllipsis"/>
                     </Grid>

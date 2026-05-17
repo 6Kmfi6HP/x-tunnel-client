@@ -578,6 +578,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             : Profiles.FirstOrDefault();
     }
 
+    private void RefreshProfileListItem(Profile profile)
+    {
+        var wasSelected = SelectedProfile?.Id == profile.Id;
+        var index = Profiles.IndexOf(profile);
+        if (index >= 0)
+        {
+            Profiles[index] = profile;
+        }
+        if (wasSelected)
+        {
+            SelectedProfile = profile;
+            RaiseCommandState();
+        }
+    }
+
     private void LoadSubscriptions(Guid? preferredSubscriptionId = null)
     {
         var targetId = preferredSubscriptionId ?? SelectedSubscription?.Id;
@@ -804,6 +819,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 _repository.SaveSecret(SelectedProfile.Id, SelectedProfile.SecretRef, SecretValue);
             }
             SelectedProfile.LastValidationError = null;
+            RefreshProfileListItem(SelectedProfile);
             ProfileIssues.Clear();
             ErrorText = "Profile saved";
             RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
@@ -920,6 +936,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SelectedProfile.LastValidatedAt = DateTimeOffset.UtcNow;
             SelectedProfile.LastValidationError = issues.FirstOrDefault(x => x.Severity == "error")?.Message;
             _repository.SaveProfile(SelectedProfile);
+            RefreshProfileListItem(SelectedProfile);
             ReplaceCollection(ProfileIssues, issues.Count == 0
                 ? [new ProfileIssue { Field = "profile", Severity = "ok", Message = "Core config check and local port checks passed." }]
                 : issues);
@@ -931,6 +948,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             var issue = BuildProfileIssue(ex);
             SelectedProfile.LastValidationError = issue.Message;
+            RefreshProfileListItem(SelectedProfile);
             ReplaceCollection(ProfileIssues, [issue]);
             ErrorText = issue.Message;
         }
@@ -961,6 +979,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 ErrorText = "Core path not found; formatted locally";
             }
             SelectedProfile.LastValidationError = null;
+            RefreshProfileListItem(SelectedProfile);
             OnPropertyChanged(nameof(SelectedProfile));
             LoadStructuredFields();
             ProfileIssues.Clear();
@@ -969,6 +988,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             var issue = BuildProfileIssue(ex);
             SelectedProfile.LastValidationError = issue.Message;
+            RefreshProfileListItem(SelectedProfile);
             ReplaceCollection(ProfileIssues, [issue]);
             ErrorText = issue.Message;
         }
@@ -1530,6 +1550,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         var issue = BuildProfileIssue(ex);
         SelectedProfile.LastValidationError = issue.Message;
+        RefreshProfileListItem(SelectedProfile);
         ReplaceCollection(ProfileIssues, [issue]);
         ErrorText = issue.Message;
     }

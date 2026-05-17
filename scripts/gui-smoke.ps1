@@ -4,6 +4,7 @@ param(
     [string]$CoreExe = (Join-Path $PSScriptRoot "..\..\x-tunnel\build\x-tunnel.exe"),
     [string]$AppHome = (Join-Path $env:TEMP ("xtunnel-client-gui-" + [Guid]::NewGuid().ToString("N"))),
     [string]$InstanceName = ("Local\x-tunnel-client-gui-" + [Guid]::NewGuid().ToString("N")),
+    [string]$ScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke.png"),
     [int]$TimeoutSeconds = 25
 )
 
@@ -11,6 +12,7 @@ $ErrorActionPreference = "Stop"
 
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
+Add-Type -AssemblyName System.Drawing
 
 function Get-FreeTcpPort {
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
@@ -84,6 +86,17 @@ function Find-ByAutomationId {
     return $Root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
 }
 
+function Find-AllByAutomationId {
+    param(
+        [System.Windows.Automation.AutomationElement]$Root,
+        [string]$AutomationId
+    )
+    $condition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+        $AutomationId)
+    return $Root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
+}
+
 function Get-ByAutomationId {
     param(
         [System.Windows.Automation.AutomationElement]$Root,
@@ -97,8 +110,16 @@ function Get-ByAutomationId {
 
 function Invoke-Element {
     param([System.Windows.Automation.AutomationElement]$Element)
-    $pattern = $Element.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
-    $pattern.Invoke()
+    $id = $Element.Current.AutomationId
+    $name = $Element.Current.Name
+    Write-Host "Invoke: $id $name"
+    try {
+        $pattern = $Element.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+        $pattern.Invoke()
+    }
+    catch {
+        throw "Failed to invoke '$id' '$name': $($_.Exception.Message)"
+    }
 }
 
 function Select-Element {
@@ -124,6 +145,31 @@ function Get-ElementValue {
     }
     catch {
         return $Element.Current.Name
+    }
+}
+
+function Save-ElementScreenshot {
+    param(
+        [System.Windows.Automation.AutomationElement]$Element,
+        [string]$Path
+    )
+    $rect = $Element.Current.BoundingRectangle
+    if ($rect.Width -le 0 -or $rect.Height -le 0) {
+        throw "Cannot capture screenshot for an empty window rectangle."
+    }
+    $directory = Split-Path -Parent $Path
+    if ($directory) {
+        New-Item -ItemType Directory -Force -Path $directory | Out-Null
+    }
+    $bitmap = [System.Drawing.Bitmap]::new([int]$rect.Width, [int]$rect.Height)
+    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+    try {
+        $graphics.CopyFromScreen([int]$rect.Left, [int]$rect.Top, 0, 0, $bitmap.Size)
+        $bitmap.Save($Path, [System.Drawing.Imaging.ImageFormat]::Png)
+    }
+    finally {
+        $graphics.Dispose()
+        $bitmap.Dispose()
     }
 }
 
@@ -408,6 +454,20 @@ try {
         return $null
     }
     Write-Host $profileError
+    $profileValidationText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile list item did not show Issue after invalid save." -Condition {
+        $items = Find-AllByAutomationId -Root $window -AutomationId "ProfileListItemValidationState"
+        foreach ($item in $items) {
+            $text = Get-ElementValue $item
+            if ($text -match "Issue") {
+                return $text
+            }
+        }
+        return $null
+    }
+    Write-Host "Profile list state: $profileValidationText"
+
+    Save-ElementScreenshot -Element $window -Path $ScreenshotPath
+    Write-Host "GUI screenshot: $ScreenshotPath"
     Write-Host "GUI smoke passed"
 }
 finally {
