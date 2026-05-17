@@ -72,6 +72,7 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added GUI smoke coverage for the Overview proxy-address copy action using a stable AutomationId.
 - Added stable AutomationIds and smoke assertions for the status bar proxy mode, local proxy, core, and issue fields.
 - Extended status bar smoke coverage to assert the core field changes on connect and returns to stopped on disconnect.
+- Rebalanced the status bar columns so local proxy, core, and issue details get proportional width instead of being capped by narrow fixed columns.
 - Added a Diagnostics Clear Network action that resets raw network results, route chips, and Overview network freshness text.
 - Added a Diagnostics Clear Forward action that resets the selected-profile forward TCP result and route chip.
 - Added a Diagnostics Copy Report action for sharing the redacted JSON report without exporting a zip.

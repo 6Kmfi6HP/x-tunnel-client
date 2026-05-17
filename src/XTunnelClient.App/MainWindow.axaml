@@ -65,7 +65,7 @@
     </Border>
 
     <Border DockPanel.Dock="Bottom" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,1,0,0" Padding="12,6">
-      <Grid ColumnDefinitions="120,*,90,180,90,260,70,*" ColumnSpacing="8">
+      <Grid ColumnDefinitions="120,1*,50,1.3*,44,1.1*,50,1*" ColumnSpacing="8">
         <TextBlock Text="{Binding ConnectionHeading}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarStateText"/>
         <TextBlock Grid.Column="1" Text="{Binding ActiveProfileSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarProfileText"/>
         <TextBlock Grid.Column="2" Text="{Binding ProxySummary}" Classes="caption" automation:AutomationProperties.AutomationId="StatusBarProxyModeText"/>
