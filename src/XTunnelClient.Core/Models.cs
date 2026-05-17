@@ -38,6 +38,32 @@ public sealed class Profile
     public DateTimeOffset? LastValidatedAt { get; set; }
     public string? LastValidationError { get; set; }
 
+    public string ListSubtitle => $"{Kind} / {Source}";
+
+    public string ValidationState
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(LastValidationError))
+            {
+                return "Issue";
+            }
+            return LastValidatedAt.HasValue ? "Ready" : "Unchecked";
+        }
+    }
+
+    public string ValidationDetail
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(LastValidationError))
+            {
+                return LastValidationError;
+            }
+            return LastValidatedAt.HasValue ? $"Checked {LastValidatedAt.Value.LocalDateTime:g}" : "Not validated";
+        }
+    }
+
     public static string DefaultClientConfig =>
         """
         {

@@ -249,6 +249,12 @@ try {
     $profilesTab = Get-ByAutomationId -Root $window -AutomationId "ProfilesTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $profilesTab
 
+    $profileListName = Get-ByAutomationId -Root $window -AutomationId "ProfileListItemName" -TimeoutSeconds $TimeoutSeconds
+    $profileListText = Get-ElementValue $profileListName
+    if ($profileListText -notmatch "Local x-tunnel") {
+        throw "Unexpected profile list item text: '$profileListText'"
+    }
+
     $listenBox = Get-ByAutomationId -Root $window -AutomationId "ProfileListenTextBox" -TimeoutSeconds $TimeoutSeconds
     Set-ElementValue -Element $listenBox -Value $profileListen
 

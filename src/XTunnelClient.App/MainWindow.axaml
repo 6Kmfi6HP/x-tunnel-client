@@ -186,7 +186,20 @@
               <Button Content="Copy" Command="{Binding DuplicateProfileCommand}"/>
               <Button Content="Delete" Command="{Binding DeleteProfileCommand}"/>
             </StackPanel>
-            <ListBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberBinding="{Binding Name}"/>
+            <ListBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border Padding="8" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto" RowSpacing="3">
+                      <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="ProfileListItemName"/>
+                      <TextBlock Grid.Column="1" Text="{Binding ValidationState}" Classes="caption"/>
+                      <TextBlock Grid.Row="1" Text="{Binding ListSubtitle}" Classes="caption" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="{Binding ValidationDetail}" Classes="caption" TextTrimming="CharacterEllipsis"/>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
           </DockPanel>
 
           <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto,120,*,Auto" RowSpacing="10">
