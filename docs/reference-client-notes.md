@@ -82,3 +82,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added GUI smoke coverage for the Profiles Validate and Format actions through stable AutomationIds.
 - Added GUI smoke coverage for importing a selected profile from clipboard JSON.
 - Added a Settings Copy Folders action for sharing app-data, profile, log, runtime, and core paths.
+- Added GUI smoke coverage for the Settings save action through a stable AutomationId.

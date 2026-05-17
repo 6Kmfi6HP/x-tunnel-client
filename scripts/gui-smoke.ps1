@@ -1016,6 +1016,17 @@ try {
         return $null
     }
     Write-Host "Copied settings folders: $($clipboardSettingsFolders.Split([Environment]::NewLine)[0])"
+
+    $saveSettingsButton = Get-ByAutomationId -Root $window -AutomationId "SaveSettingsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $saveSettingsButton
+    $settingsSavedText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Save Settings did not report success." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "Settings saved") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Settings saved: $settingsSavedText"
     Save-ElementScreenshot -Element $window -Path $SettingsScreenshotPath
     Write-Host "Settings GUI screenshot: $SettingsScreenshotPath"
 

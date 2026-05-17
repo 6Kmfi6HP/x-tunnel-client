@@ -505,7 +505,7 @@
               <Button Content="Logs" Command="{Binding OpenLogsFolderCommand}"/>
               <Button Content="Runtime" Command="{Binding OpenRuntimeFolderCommand}"/>
             </StackPanel>
-            <Button Grid.Row="11" Grid.Column="1" HorizontalAlignment="Left" Content="Save Settings" Command="{Binding SaveSettingsCommand}"/>
+            <Button Grid.Row="11" Grid.Column="1" HorizontalAlignment="Left" Content="Save Settings" Command="{Binding SaveSettingsCommand}" automation:AutomationProperties.AutomationId="SaveSettingsButton"/>
           </Grid>
         </ScrollViewer>
       </TabItem>
