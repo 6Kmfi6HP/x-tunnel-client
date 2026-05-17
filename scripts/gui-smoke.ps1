@@ -1220,10 +1220,21 @@ try {
     $subscriptionUrlBox = Get-ByAutomationId -Root $window -AutomationId "SubscriptionUrlTextBox" -TimeoutSeconds $TimeoutSeconds
     Set-ElementValue -Element $subscriptionUrlBox -Value $subscriptionUrl
 
+    $subscriptionStatusBox = Get-ByAutomationId -Root $window -AutomationId "SubscriptionStatusTextBox" -TimeoutSeconds $TimeoutSeconds
+    $saveSubscriptionDetailsButton = Get-ByAutomationId -Root $window -AutomationId "SaveSubscriptionDetailsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $saveSubscriptionDetailsButton
+    $subscriptionSavedText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Save Subscription did not report success." -Condition {
+        $text = Get-ElementValue $subscriptionStatusBox
+        if ($text -match "Subscription saved") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Subscription saved: $subscriptionSavedText"
+
     $updateSubscriptionButton = Get-ByAutomationId -Root $window -AutomationId "UpdateSubscriptionNowButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $updateSubscriptionButton
 
-    $subscriptionStatusBox = Get-ByAutomationId -Root $window -AutomationId "SubscriptionStatusTextBox" -TimeoutSeconds $TimeoutSeconds
     $subscriptionText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Subscription update did not add a profile." -Condition {
         $text = Get-ElementValue $subscriptionStatusBox
         if ($text -match "added 1" -and $text -match "updated 0") {
@@ -1486,7 +1497,11 @@ try {
     Set-Clipboard -Value $importProfileJson
     Invoke-Element $importProfileClipboardButton
     $importedProfileName = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Import profile from clipboard did not select the imported profile." -Condition {
-        $text = Get-ElementValue $profileNameBox
+        $nameBox = Find-ByAutomationId -Root $window -AutomationId "ProfileNameTextBox"
+        if (!$nameBox) {
+            return $null
+        }
+        $text = Get-ElementValue $nameBox
         if ($text -match "Clipboard profile") {
             return $text
         }
@@ -1511,7 +1526,11 @@ try {
     $duplicateProfileButton = Get-ByAutomationId -Root $window -AutomationId "DuplicateProfileButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $duplicateProfileButton
     $duplicatedProfileName = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Duplicate profile did not select the copied profile." -Condition {
-        $text = Get-ElementValue $profileNameBox
+        $nameBox = Find-ByAutomationId -Root $window -AutomationId "ProfileNameTextBox"
+        if (!$nameBox) {
+            return $null
+        }
+        $text = Get-ElementValue $nameBox
         if ($text -match "Clipboard profile Copy") {
             return $text
         }
