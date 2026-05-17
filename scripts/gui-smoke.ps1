@@ -1264,6 +1264,16 @@ try {
     Write-Host "Copied filtered logs: $($clipboardLogText.Split([Environment]::NewLine)[0])"
     Save-ElementScreenshot -Element $window -Path $LogsScreenshotPath
     Write-Host "Logs GUI screenshot: $LogsScreenshotPath"
+    $logsRefreshDiagnosticsButton = Get-ByAutomationId -Root $window -AutomationId "LogsRefreshDiagnosticsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $logsRefreshDiagnosticsButton
+    $logsDiagnosticsRefreshText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Logs Refresh Diagnostics did not report a diagnostics refresh." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "Diagnostics refreshed") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Logs diagnostics refresh: $logsDiagnosticsRefreshText"
     $exportDiagnosticsButton = Get-ByAutomationId -Root $window -AutomationId "ExportDiagnosticsButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $exportDiagnosticsButton
     $logsExportedDiagnosticsText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Logs Export Diagnostics did not report an exported file path." -Condition {

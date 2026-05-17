@@ -383,7 +383,7 @@
       <TabItem Header="Logs" automation:AutomationProperties.AutomationId="LogsTab">
         <Grid Margin="16" RowDefinitions="Auto,Auto,*" RowSpacing="8">
           <Grid ColumnDefinitions="Auto,Auto,150,260,Auto,Auto,*" ColumnSpacing="8">
-            <Button Content="Refresh Diagnostics" Command="{Binding RefreshDiagnosticsCommand}"/>
+            <Button Content="Refresh Diagnostics" Command="{Binding RefreshDiagnosticsCommand}" automation:AutomationProperties.AutomationId="LogsRefreshDiagnosticsButton"/>
             <Button Grid.Column="1" Content="Export Diagnostics" Click="ExportDiagnostics_OnClick" automation:AutomationProperties.AutomationId="ExportDiagnosticsButton"/>
             <ComboBox Grid.Column="2" ItemsSource="{Binding LogLevelFilters}" SelectedItem="{Binding SelectedLogLevelFilter}" automation:AutomationProperties.AutomationId="LogLevelFilterComboBox"/>
             <TextBox Grid.Column="3" Text="{Binding LogFilterText}" PlaceholderText="Filter logs, /regex/" automation:AutomationProperties.AutomationId="LogFilterTextBox"/>
