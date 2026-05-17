@@ -150,6 +150,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _selectedNetworkTestTarget = "Google 204";
     private bool _applyingNetworkTestTarget;
     private string _networkTestText = "Not tested";
+    private string _networkTestSummary = "Not tested";
+    private string _networkTestDetail = "Run Test Network to check direct and proxy routes.";
     private string _profileEndpointTestText = "Not tested";
     private string _profileBatchTestText = "Endpoint tests not run";
     private string _profileSummaryText = "";
@@ -473,7 +475,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         get => _networkTestUrl;
         set
         {
-            if (SetProperty(ref _networkTestUrl, value) && !_applyingNetworkTestTarget)
+            if (!SetProperty(ref _networkTestUrl, value))
+            {
+                return;
+            }
+
+            NetworkTestSummary = "Ready to test";
+            NetworkTestDetail = value.Trim();
+            if (!_applyingNetworkTestTarget)
             {
                 var target = FindNetworkTestTargetForUrl(value);
                 if (!string.Equals(_selectedNetworkTestTarget, target, StringComparison.Ordinal))
@@ -508,6 +517,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 }
             }
         }
+    }
+
+    public string NetworkTestSummary
+    {
+        get => _networkTestSummary;
+        set => SetProperty(ref _networkTestSummary, value);
+    }
+
+    public string NetworkTestDetail
+    {
+        get => _networkTestDetail;
+        set => SetProperty(ref _networkTestDetail, value);
     }
 
     public string NetworkTestText
@@ -1377,6 +1398,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             || (target.Scheme != Uri.UriSchemeHttp && target.Scheme != Uri.UriSchemeHttps))
         {
             NetworkTestText = "Target URL must be an absolute http or https URL";
+            NetworkTestSummary = "Invalid target";
+            NetworkTestDetail = NetworkTestText;
             ErrorText = NetworkTestText;
             return;
         }
@@ -1384,14 +1407,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             NetworkTestText = "Testing network...";
+            NetworkTestSummary = "Testing network...";
+            NetworkTestDetail = target.ToString();
             var endpoints = TryGetSelectedLocalProxyEndpoints(out var endpointError);
             var results = await _networkTester.TestAsync(target, endpoints);
             NetworkTestText = FormatNetworkTestResults(results, endpointError);
+            UpdateNetworkTestSummary(results, endpointError);
             ErrorText = results.Any(x => x.Success) ? "" : "Network test failed";
         }
         catch (Exception ex)
         {
             NetworkTestText = $"Network test failed: {ex.Message}";
+            NetworkTestSummary = "Network failed";
+            NetworkTestDetail = ex.Message;
             ErrorText = ex.Message;
         }
     }
@@ -2052,6 +2080,55 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             lines.Add($"{result.Route}: {status}{code} time={result.DurationMs}ms target={result.Target}{proxy}{error}");
         }
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private void UpdateNetworkTestSummary(IEnumerable<NetworkTestResult> results, string? note)
+    {
+        var tested = results.ToList();
+        var direct = tested.FirstOrDefault(x => string.Equals(x.Route, "Direct", StringComparison.OrdinalIgnoreCase));
+        var proxy = tested.FirstOrDefault(x => !string.Equals(x.Route, "Direct", StringComparison.OrdinalIgnoreCase));
+
+        if (direct?.Success == true && proxy?.Success == true)
+        {
+            NetworkTestSummary = "Direct + proxy ok";
+            NetworkTestDetail = $"Direct {FormatResultDuration(direct)}, {proxy.Route} {FormatResultDuration(proxy)}";
+            return;
+        }
+
+        if (direct?.Success == true && proxy is null)
+        {
+            NetworkTestSummary = "Direct ok";
+            NetworkTestDetail = AppendNote($"Direct {FormatResultDuration(direct)}; proxy route skipped", note);
+            return;
+        }
+
+        if (direct?.Success == true)
+        {
+            NetworkTestSummary = "Direct ok, proxy failed";
+            NetworkTestDetail = AppendNote($"Direct {FormatResultDuration(direct)}; {proxy?.Route ?? "proxy"} failed", note);
+            return;
+        }
+
+        if (proxy?.Success == true)
+        {
+            NetworkTestSummary = "Proxy ok, direct failed";
+            NetworkTestDetail = $"{proxy.Route} {FormatResultDuration(proxy)}; direct failed";
+            return;
+        }
+
+        NetworkTestSummary = "Network failed";
+        NetworkTestDetail = AppendNote(FirstNonEmpty(direct?.Error, proxy?.Error, "No route succeeded"), note);
+    }
+
+    private static string FormatResultDuration(NetworkTestResult result)
+    {
+        var code = result.StatusCode.HasValue ? $" status {result.StatusCode}" : "";
+        return $"{result.DurationMs}ms{code}";
+    }
+
+    private static string AppendNote(string text, string? note)
+    {
+        return string.IsNullOrWhiteSpace(note) ? text : $"{text}; {note}";
     }
 
     private bool ValidateSubscription(Subscription subscription)

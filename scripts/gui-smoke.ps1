@@ -490,6 +490,20 @@ try {
         return $null
     }
 
+    Select-Element $overviewTab
+    $overviewNetworkSummaryText = Get-ByAutomationId -Root $window -AutomationId "OverviewNetworkSummaryText" -TimeoutSeconds $TimeoutSeconds
+    $overviewNetworkText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Overview network summary did not show the network test result." -Condition {
+        $text = Get-ElementValue $overviewNetworkSummaryText
+        if ($text -match "Direct ok") {
+            return $text
+        }
+        return $null
+    }
+    $overviewNetworkDetailText = Get-ByAutomationId -Root $window -AutomationId "OverviewNetworkDetailText" -TimeoutSeconds $TimeoutSeconds
+    Write-Host "Overview network summary: $overviewNetworkText / $(Get-ElementValue $overviewNetworkDetailText)"
+
+    $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $diagnosticsTab
     $copyNetworkResultButton = Get-ByAutomationId -Root $window -AutomationId "CopyNetworkTestResultButton" -TimeoutSeconds $TimeoutSeconds
     Set-Clipboard -Value ""
     Invoke-Element $copyNetworkResultButton
