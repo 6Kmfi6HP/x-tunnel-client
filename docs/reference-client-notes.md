@@ -84,6 +84,7 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Constrained the Settings core-path status detail in a remaining-width grid column so long paths trim instead of pushing the layout.
 - Standardized the Profiles action toolbar spacing with WrapPanel item and line spacing for cleaner wrapped rows.
 - Standardized the Profiles detail action toolbar spacing so edit, import, export, and copy commands wrap evenly.
+- Standardized the Subscriptions list action toolbar spacing so new, update, save, and delete commands wrap evenly.
 - Added a Diagnostics Run All action that refreshes the diagnostics report and reruns network plus selected-profile forward tests from one visible control.
 - Tightened HTTP connectivity tests so non-2xx HTTP responses are shown as failed instead of route-ok false positives.
 - Added selected-profile forward test freshness text so Diagnostics shows when the last TCP check ran or was cleared.

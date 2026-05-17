@@ -331,12 +331,12 @@
               <TextBlock Text="Sort" Classes="caption" VerticalAlignment="Center"/>
               <ComboBox Grid.Column="1" ItemsSource="{Binding SubscriptionSortOptions}" SelectedItem="{Binding SelectedSubscriptionSort}" MinHeight="30" automation:AutomationProperties.AutomationId="SubscriptionSortComboBox"/>
             </Grid>
-            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-              <Button Content="New" Command="{Binding NewSubscriptionCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="NewSubscriptionButton"/>
-              <Button Content="Update" Command="{Binding RefreshSubscriptionCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="UpdateSubscriptionButton"/>
-              <Button Content="Update All" Command="{Binding RefreshAllSubscriptionsCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="UpdateAllSubscriptionsButton"/>
-              <Button Content="Save" Command="{Binding SaveSubscriptionCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="SaveSubscriptionButton"/>
-              <Button Content="Delete" Command="{Binding DeleteSubscriptionCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="DeleteSubscriptionButton"/>
+            <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10" ItemSpacing="8" LineSpacing="8">
+              <Button Content="New" Command="{Binding NewSubscriptionCommand}" automation:AutomationProperties.AutomationId="NewSubscriptionButton"/>
+              <Button Content="Update" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionButton"/>
+              <Button Content="Update All" Command="{Binding RefreshAllSubscriptionsCommand}" automation:AutomationProperties.AutomationId="UpdateAllSubscriptionsButton"/>
+              <Button Content="Save" Command="{Binding SaveSubscriptionCommand}" automation:AutomationProperties.AutomationId="SaveSubscriptionButton"/>
+              <Button Content="Delete" Command="{Binding DeleteSubscriptionCommand}" automation:AutomationProperties.AutomationId="DeleteSubscriptionButton"/>
             </WrapPanel>
             <TextBlock DockPanel.Dock="Top" Text="{Binding SubscriptionSummaryText}" Classes="caption" Margin="0,0,0,10" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="SubscriptionSummaryTextBlock"/>
             <ListBox ItemsSource="{Binding FilteredSubscriptions}" SelectedItem="{Binding SelectedSubscription}">
