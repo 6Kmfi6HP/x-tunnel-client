@@ -688,16 +688,24 @@ try {
     Write-Host "Copied diagnostics ports: $($clipboardDiagnosticsPorts.Split([Environment]::NewLine)[0])"
 
     $targetCombo = Get-ByAutomationId -Root $window -AutomationId "NetworkTestTargetComboBox" -TimeoutSeconds $TimeoutSeconds
-    Select-ComboBoxItem -Element $targetCombo -Name "Cloudflare Trace" -TimeoutSeconds $TimeoutSeconds
+    Select-ComboBoxItem -Element $targetCombo -Name "Microsoft NCSI" -TimeoutSeconds $TimeoutSeconds
     $urlBox = Get-ByAutomationId -Root $window -AutomationId "NetworkTestUrlTextBox" -TimeoutSeconds $TimeoutSeconds
-    $presetUrl = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Network target preset did not update the test URL." -Condition {
+    $microsoftPresetUrl = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Microsoft network target preset did not update the test URL." -Condition {
+        $text = Get-ElementValue $urlBox
+        if ($text -match "msftconnecttest.com/connecttest.txt") {
+            return $text
+        }
+        return $null
+    }
+    Select-ComboBoxItem -Element $targetCombo -Name "Cloudflare Trace" -TimeoutSeconds $TimeoutSeconds
+    $cloudflarePresetUrl = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Cloudflare network target preset did not update the test URL." -Condition {
         $text = Get-ElementValue $urlBox
         if ($text -match "cloudflare.com/cdn-cgi/trace") {
             return $text
         }
         return $null
     }
-    Write-Host "Network target preset URL: $presetUrl"
+    Write-Host "Network target preset URLs: $microsoftPresetUrl / $cloudflarePresetUrl"
 
     Set-ElementValue -Element $urlBox -Value "not-a-url"
     $diagnosticsNetworkButton = Get-ByAutomationId -Root $window -AutomationId "TestNetworkButton" -TimeoutSeconds $TimeoutSeconds

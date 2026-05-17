@@ -315,7 +315,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public IReadOnlyList<string> LogLevelFilters { get; } = ["All", "debug", "info", "warn", "error"];
     public IReadOnlyList<string> ProfileSortOptions { get; } = ["Saved", "Name", "Endpoint"];
     public IReadOnlyList<string> SubscriptionSortOptions { get; } = ["Saved", "Name", "Updated", "Status"];
-    public IReadOnlyList<string> NetworkTestTargets { get; } = ["Google 204", "Cloudflare Trace", "Firefox Success", "Custom"];
+    public IReadOnlyList<string> NetworkTestTargets { get; } = ["Google 204", "Microsoft NCSI", "Cloudflare Trace", "Firefox Success", "Custom"];
 
     public int SelectedMainTabIndex
     {
@@ -3191,6 +3191,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         url = target switch
         {
             "Google 204" => "https://www.gstatic.com/generate_204",
+            "Microsoft NCSI" => "http://www.msftconnecttest.com/connecttest.txt",
             "Cloudflare Trace" => "https://www.cloudflare.com/cdn-cgi/trace",
             "Firefox Success" => "http://detectportal.firefox.com/success.txt",
             _ => ""
@@ -3200,7 +3201,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private static string FindNetworkTestTargetForUrl(string url)
     {
-        foreach (var target in new[] { "Google 204", "Cloudflare Trace", "Firefox Success" })
+        foreach (var target in new[] { "Google 204", "Microsoft NCSI", "Cloudflare Trace", "Firefox Success" })
         {
             if (TryGetNetworkTestTargetUrl(target, out var targetUrl)
                 && string.Equals(url.Trim(), targetUrl, StringComparison.OrdinalIgnoreCase))
