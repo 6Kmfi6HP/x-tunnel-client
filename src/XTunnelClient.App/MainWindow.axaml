@@ -113,30 +113,30 @@
                 <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberBinding="{Binding Name}" MinHeight="34"/>
                 <ComboBox ItemsSource="{Binding ProxyModes}" SelectedItem="{Binding SelectedProxyMode}" MinHeight="34"/>
                 <TextBlock Classes="caption" Text="Proxy mode"/>
-                <WrapPanel>
-                  <Button Content="Off" Command="{Binding SetProxyModeOffCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="SetProxyModeOffButton"/>
-                  <Button Content="System" Command="{Binding SetProxyModeSystemCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="SetProxyModeSystemButton"/>
+                <WrapPanel ItemSpacing="8" LineSpacing="8">
+                  <Button Content="Off" Command="{Binding SetProxyModeOffCommand}" automation:AutomationProperties.AutomationId="SetProxyModeOffButton"/>
+                  <Button Content="System" Command="{Binding SetProxyModeSystemCommand}" automation:AutomationProperties.AutomationId="SetProxyModeSystemButton"/>
                   <Button Content="PAC" Command="{Binding SetProxyModePacCommand}" automation:AutomationProperties.AutomationId="SetProxyModePacButton"/>
                 </WrapPanel>
                 <TextBox Text="{Binding CorePath}" PlaceholderText="Auto-detect or full path to x-tunnel.exe"/>
-                <WrapPanel>
-                  <Button Content="Save" Command="{Binding SaveSettingsCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="OverviewSaveSettingsButton"/>
-                  <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}" Margin="0,0,8,0"/>
-                  <Button Content="Proxy Addr" Command="{Binding CopyProxyCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="CopyProxyAddressButton"/>
-                  <Button Content="Copy Status" Command="{Binding CopyOverviewStatusCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="CopyOverviewStatusButton"/>
+                <WrapPanel ItemSpacing="8" LineSpacing="8">
+                  <Button Content="Save" Command="{Binding SaveSettingsCommand}" automation:AutomationProperties.AutomationId="OverviewSaveSettingsButton"/>
+                  <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}"/>
+                  <Button Content="Proxy Addr" Command="{Binding CopyProxyCommand}" automation:AutomationProperties.AutomationId="CopyProxyAddressButton"/>
+                  <Button Content="Copy Status" Command="{Binding CopyOverviewStatusCommand}" automation:AutomationProperties.AutomationId="CopyOverviewStatusButton"/>
                   <Button Content="Restart" Command="{Binding RestartCommand}"/>
                 </WrapPanel>
                 <TextBlock Classes="caption" Text="Network"/>
-                <WrapPanel>
-                  <Button Content="Test Network" Command="{Binding RunOverviewNetworkTestCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="OverviewTestNetworkButton"/>
+                <WrapPanel ItemSpacing="8" LineSpacing="8">
+                  <Button Content="Test Network" Command="{Binding RunOverviewNetworkTestCommand}" automation:AutomationProperties.AutomationId="OverviewTestNetworkButton"/>
                   <Button Content="Diagnostics" Command="{Binding OpenDiagnosticsCommand}" automation:AutomationProperties.AutomationId="OverviewOpenDiagnosticsButton"/>
                 </WrapPanel>
                 <TextBlock Classes="caption" Text="Open"/>
-                <WrapPanel>
-                  <Button Content="Profiles" Command="{Binding OpenProfilesCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="OpenProfilesButton"/>
-                  <Button Content="Subscriptions" Command="{Binding OpenSubscriptionsCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="OpenSubscriptionsButton"/>
-                  <Button Content="Logs" Command="{Binding OpenLogsCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="OpenLogsButton"/>
-                  <Button Content="Diagnostics" Command="{Binding OpenDiagnosticsCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="OpenDiagnosticsButton"/>
+                <WrapPanel ItemSpacing="8" LineSpacing="8">
+                  <Button Content="Profiles" Command="{Binding OpenProfilesCommand}" automation:AutomationProperties.AutomationId="OpenProfilesButton"/>
+                  <Button Content="Subscriptions" Command="{Binding OpenSubscriptionsCommand}" automation:AutomationProperties.AutomationId="OpenSubscriptionsButton"/>
+                  <Button Content="Logs" Command="{Binding OpenLogsCommand}" automation:AutomationProperties.AutomationId="OpenLogsButton"/>
+                  <Button Content="Diagnostics" Command="{Binding OpenDiagnosticsCommand}" automation:AutomationProperties.AutomationId="OpenDiagnosticsButton"/>
                   <Button Content="Settings" Command="{Binding OpenSettingsCommand}" automation:AutomationProperties.AutomationId="OpenSettingsButton"/>
                 </WrapPanel>
               </StackPanel>
