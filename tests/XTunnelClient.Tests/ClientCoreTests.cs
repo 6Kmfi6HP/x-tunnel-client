@@ -35,6 +35,17 @@ public sealed class ClientCoreTests
     }
 
     [Fact]
+    public async Task CoreConfigToolVersionRejectsMissingExecutable()
+    {
+        var tool = new CoreConfigTool();
+        var missing = Path.Combine(Path.GetTempPath(), "xtunnel-tests", Guid.NewGuid().ToString("N"), "x-tunnel.exe");
+
+        var ex = await Assert.ThrowsAsync<FileNotFoundException>(() => tool.GetVersionAsync(missing));
+
+        Assert.Equal(missing, ex.FileName);
+    }
+
+    [Fact]
     public void RedactorRemovesSecretsAndUrlUserInfo()
     {
         var input = """{"token":"abc","password":"pw","forward":"socks5://user:pass@example.com:1080"} secret:profile-token""";
