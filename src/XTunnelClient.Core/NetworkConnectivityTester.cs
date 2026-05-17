@@ -74,14 +74,17 @@ public sealed class NetworkConnectivityTester
             using var request = new HttpRequestMessage(HttpMethod.Get, target);
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             timer.Stop();
+            var statusCode = (int)response.StatusCode;
+            var success = response.IsSuccessStatusCode;
             return new NetworkTestResult
             {
                 Route = route,
                 Target = target.ToString(),
                 Proxy = proxyUri?.ToString(),
-                Success = true,
-                StatusCode = (int)response.StatusCode,
-                DurationMs = (long)timer.Elapsed.TotalMilliseconds
+                Success = success,
+                StatusCode = statusCode,
+                DurationMs = (long)timer.Elapsed.TotalMilliseconds,
+                Error = success ? null : FormatHttpStatusError(statusCode, response.ReasonPhrase)
             };
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException or WebException or InvalidOperationException)
@@ -97,6 +100,11 @@ public sealed class NetworkConnectivityTester
                 Error = ex.Message
             };
         }
+    }
+
+    private static string FormatHttpStatusError(int statusCode, string? reasonPhrase)
+    {
+        return string.IsNullOrWhiteSpace(reasonPhrase) ? $"HTTP {statusCode}" : $"HTTP {statusCode} {reasonPhrase}";
     }
 
     private static Uri? BuildProxyUri(LocalProxyEndpoints? endpoints)

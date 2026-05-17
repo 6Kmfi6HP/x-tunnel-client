@@ -321,6 +321,24 @@ public sealed class ClientCoreTests
     }
 
     [Fact]
+    public async Task NetworkConnectivityTesterTreatsHttpFailureStatusAsFailed()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var server = ServeOneHttpResponseAsync(listener, statusCode: 502, reasonPhrase: "Bad Gateway");
+
+        var tester = new NetworkConnectivityTester();
+        var results = await tester.TestAsync(new Uri($"http://127.0.0.1:{port}/generate_204"), endpoints: null);
+
+        var direct = Assert.Single(results);
+        Assert.False(direct.Success);
+        Assert.Equal(502, direct.StatusCode);
+        Assert.Contains("HTTP 502", direct.Error);
+        await server;
+    }
+
+    [Fact]
     public void RuntimeConfigParsesForwardEndpointDefaults()
     {
         var endpoint = new RuntimeConfigService().GetForwardEndpoint("""{"listen":"socks5://127.0.0.1:1","forward":"wss://example.com/tunnel"}""");
@@ -547,13 +565,14 @@ public sealed class ClientCoreTests
         return port;
     }
 
-    private static async Task ServeOneHttpResponseAsync(TcpListener listener)
+    private static async Task ServeOneHttpResponseAsync(TcpListener listener, int statusCode = 204, string reasonPhrase = "No Content")
     {
         using var client = await listener.AcceptTcpClientAsync();
         await using var stream = client.GetStream();
         var buffer = new byte[1024];
         await stream.ReadAsync(buffer);
-        var response = Encoding.ASCII.GetBytes("HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        var body = statusCode == 204 ? "" : "failure";
+        var response = Encoding.ASCII.GetBytes($"HTTP/1.1 {statusCode} {reasonPhrase}\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n{body}");
         await stream.WriteAsync(response);
         listener.Stop();
     }

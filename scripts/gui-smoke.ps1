@@ -258,7 +258,7 @@ $serverJob = Start-Job -ScriptBlock {
     finally {
         $listener.Stop()
     }
-} -ArgumentList $port, 3
+} -ArgumentList $port, 6
 
 $subscriptionJob = Start-Job -ScriptBlock {
     param([int]$Port, [int]$RequestCount)
@@ -684,6 +684,38 @@ try {
     } | Out-Null
     Write-Host "Forward result cleared"
 
+    $runAllDiagnosticsButton = Get-ByAutomationId -Root $window -AutomationId "RunAllDiagnosticsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $runAllDiagnosticsButton
+    $runAllNetworkText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Run All did not rerun the network test." -Condition {
+        $text = Get-ElementValue $resultBox
+        if ($text -match "Direct: ok" -and $text -match "status=204") {
+            return $text
+        }
+        return $null
+    }
+    $runAllForwardText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Run All did not rerun the forward endpoint test." -Condition {
+        $text = Get-ElementValue $endpointResultBox
+        if ($text -match "Forward TCP: ok" -and $text -match [Regex]::Escape($coreForwardUrl.Replace("/tunnel", ""))) {
+            return $text
+        }
+        return $null
+    }
+    $runAllDirectRouteText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Run All did not update the direct route chip." -Condition {
+        $text = Get-ElementValue $directRouteStatus
+        if ($text -match "Direct: ok") {
+            return $text
+        }
+        return $null
+    }
+    $runAllForwardRouteText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Run All did not update the forward route chip." -Condition {
+        $text = Get-ElementValue $forwardRouteStatus
+        if ($text -match "Forward TCP: ok") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Run All diagnostics: $($runAllNetworkText.Split([Environment]::NewLine)[0]) / $($runAllForwardText.Split([Environment]::NewLine)[0]) / $runAllDirectRouteText / $runAllForwardRouteText"
+
     $copyDiagnosticsSummaryButton = Get-ByAutomationId -Root $window -AutomationId "CopyDiagnosticsSummaryButton" -TimeoutSeconds $TimeoutSeconds
     Set-Clipboard -Value ""
     Invoke-Element $copyDiagnosticsSummaryButton
@@ -739,7 +771,7 @@ try {
     Invoke-Element $testButton
     $connectedNetworkText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Connected network test did not report proxy success." -Condition {
         $text = Get-ElementValue $resultBox
-        if ($text -match "Direct: ok" -and $text -match "HTTP proxy: ok" -and $text -match "status=204") {
+        if ($text -match "Direct: ok status=204" -and $text -match "HTTP proxy: ok status=204") {
             return $text
         }
         return $null

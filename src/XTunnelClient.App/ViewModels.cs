@@ -238,6 +238,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         DisconnectCommand = new AsyncRelayCommand(() => _supervisor.DisconnectAsync(), CanDisconnect);
         RestartCommand = new AsyncRelayCommand(RestartAsync, CanRestart);
         RefreshDiagnosticsCommand = new AsyncRelayCommand(RefreshDiagnosticsAsync);
+        RunAllDiagnosticsCommand = new AsyncRelayCommand(RunAllDiagnosticsAsync);
         OpenProfilesCommand = new RelayCommand(() => SelectedMainTabIndex = 1);
         OpenSubscriptionsCommand = new RelayCommand(() => SelectedMainTabIndex = 2);
         OpenLogsCommand = new RelayCommand(() => SelectedMainTabIndex = 3);
@@ -982,6 +983,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand DisconnectCommand { get; }
     public AsyncRelayCommand RestartCommand { get; }
     public AsyncRelayCommand RefreshDiagnosticsCommand { get; }
+    public AsyncRelayCommand RunAllDiagnosticsCommand { get; }
     public RelayCommand OpenProfilesCommand { get; }
     public RelayCommand OpenSubscriptionsCommand { get; }
     public RelayCommand OpenLogsCommand { get; }
@@ -1638,6 +1640,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         SelectedMainTabIndex = 4;
         await RefreshDiagnosticsAsync();
+    }
+
+    private async Task RunAllDiagnosticsAsync()
+    {
+        SelectedMainTabIndex = 4;
+        ErrorText = "Running diagnostics...";
+        await RefreshDiagnosticsAsync();
+        await TestNetworkAsync();
+        await TestProfileEndpointAsync();
+        ErrorText = "Diagnostics run complete";
     }
 
     private void CopyDiagnosticsSummary()

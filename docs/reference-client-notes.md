@@ -68,3 +68,5 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added a Diagnostics Clear Network action that resets raw network results, route chips, and Overview network freshness text.
 - Added a Diagnostics Clear Forward action that resets the selected-profile forward TCP result and route chip.
 - Added a Diagnostics Copy Report action for sharing the redacted JSON report without exporting a zip.
+- Added a Diagnostics Run All action that refreshes the diagnostics report and reruns network plus selected-profile forward tests from one visible control.
+- Tightened HTTP connectivity tests so non-2xx HTTP responses are shown as failed instead of route-ok false positives.
