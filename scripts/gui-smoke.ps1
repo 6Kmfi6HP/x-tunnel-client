@@ -5,6 +5,7 @@ param(
     [string]$AppHome = (Join-Path $env:TEMP ("xtunnel-client-gui-" + [Guid]::NewGuid().ToString("N"))),
     [string]$InstanceName = ("Local\x-tunnel-client-gui-" + [Guid]::NewGuid().ToString("N")),
     [string]$ScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke.png"),
+    [string]$SubscriptionScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-subscriptions.png"),
     [int]$TimeoutSeconds = 25
 )
 
@@ -514,7 +515,7 @@ try {
     Invoke-Element $updateAllSubscriptionsButton
     $updateAllText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Update All subscriptions did not report the aggregate result." -Condition {
         $text = Get-ElementValue $subscriptionStatusBox
-        if ($text -match "Updated all 1 subscription" -and $text -match "1 succeeded" -and $text -match "unchanged 1") {
+        if ($text -match "Updated all 1 subscription" -and $text -match "Succeeded: 1, failed: 0" -and $text -match "unchanged: 1") {
             return $text
         }
         return $null
@@ -529,6 +530,19 @@ try {
         return $null
     }
     Write-Host "Subscription summary: $subscriptionSummaryText"
+    $subscriptionListState = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Subscription list item did not show Updated state." -Condition {
+        $items = Find-AllByAutomationId -Root $window -AutomationId "SubscriptionListItemState"
+        foreach ($item in $items) {
+            $text = Get-ElementValue $item
+            if ($text -match "Updated") {
+                return $text
+            }
+        }
+        return $null
+    }
+    Write-Host "Subscription list state: $subscriptionListState"
+    Save-ElementScreenshot -Element $window -Path $SubscriptionScreenshotPath
+    Write-Host "Subscription GUI screenshot: $SubscriptionScreenshotPath"
 
     Select-Element $profilesTab
     $profileSearchBox = Get-ByAutomationId -Root $window -AutomationId "ProfileSearchTextBox" -TimeoutSeconds $TimeoutSeconds

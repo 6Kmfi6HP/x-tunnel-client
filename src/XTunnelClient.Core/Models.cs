@@ -167,6 +167,42 @@ public sealed class Subscription
     public string LastResult { get; set; } = "never";
     public string TrustPolicy { get; set; } = "confirm";
     public DateTimeOffset? LastUpdatedAt { get; set; }
+
+    public string ListSubtitle => $"Last result: {LastResult}";
+
+    public string UpdateState
+    {
+        get
+        {
+            if (LastResult.StartsWith("failed:", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Failed";
+            }
+            if (LastUpdatedAt.HasValue)
+            {
+                return "Updated";
+            }
+            return "New";
+        }
+    }
+
+    public string UpdateDetail => LastUpdatedAt.HasValue
+        ? $"Updated {LastUpdatedAt.Value.LocalDateTime:g}"
+        : "Not updated";
+
+    public string UpdateBadgeBackground => UpdateState switch
+    {
+        "Updated" => "#14532D",
+        "Failed" => "#7F1D1D",
+        _ => "#334155"
+    };
+
+    public string UpdateBadgeForeground => UpdateState switch
+    {
+        "Updated" => "#BBF7D0",
+        "Failed" => "#FECACA",
+        _ => "#CBD5E1"
+    };
 }
 
 public sealed class ReadyInfo

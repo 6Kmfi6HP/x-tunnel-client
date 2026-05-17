@@ -877,7 +877,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         LoadProfiles(SelectedProfile?.Id);
         LoadSubscriptions(selectedId);
-        SubscriptionStatusText = $"Updated all {total} subscription(s): {succeeded} succeeded, {failed} failed, added {added}, updated {updated}, unchanged {unchanged}, not modified {notModified}";
+        SubscriptionStatusText = string.Join(Environment.NewLine,
+        [
+            $"Updated all {total} subscription(s)",
+            $"Succeeded: {succeeded}, failed: {failed}",
+            $"Added: {added}, updated: {updated}, unchanged: {unchanged}, not modified: {notModified}"
+        ]);
         ErrorText = failed == 0 ? "All subscriptions updated" : "Some subscriptions failed";
     }
 
