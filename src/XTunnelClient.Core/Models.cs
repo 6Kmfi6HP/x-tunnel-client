@@ -64,6 +64,20 @@ public sealed class Profile
         }
     }
 
+    public string ValidationBadgeBackground => ValidationState switch
+    {
+        "Ready" => "#14532D",
+        "Issue" => "#7F1D1D",
+        _ => "#334155"
+    };
+
+    public string ValidationBadgeForeground => ValidationState switch
+    {
+        "Ready" => "#BBF7D0",
+        "Issue" => "#FECACA",
+        _ => "#CBD5E1"
+    };
+
     public static string DefaultClientConfig =>
         """
         {
