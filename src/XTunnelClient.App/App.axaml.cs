@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using XTunnelClient.Core;
 
 namespace XTunnelClient.App;
 
@@ -23,11 +24,23 @@ public partial class App : Application
             _viewModel = new MainViewModel();
             DataContext = _viewModel;
             var window = new MainWindow(_viewModel);
+            if (ShouldStartMinimized(desktop.Args, _viewModel.Settings))
+            {
+                window.ShowInTaskbar = false;
+                window.Opened += (_, _) => window.Hide();
+            }
             desktop.MainWindow = window;
             desktop.Exit += (_, _) => _viewModel.Dispose();
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static bool ShouldStartMinimized(string[]? args, AppSettings settings)
+    {
+        return settings.StartMinimized
+            || args?.Any(x => x.Equals("--minimized", StringComparison.OrdinalIgnoreCase)
+                || x.Equals("/minimized", StringComparison.OrdinalIgnoreCase)) == true;
     }
 
     private void ShowWindow_OnClick(object? sender, EventArgs e)
@@ -37,6 +50,7 @@ public partial class App : Application
             return;
         }
         _desktop.MainWindow.Show();
+        _desktop.MainWindow.ShowInTaskbar = true;
         _desktop.MainWindow.WindowState = WindowState.Normal;
         _desktop.MainWindow.Activate();
     }
