@@ -695,6 +695,18 @@ try {
         return $null
     }
     Write-Host "Copied diagnostics summary: $($clipboardDiagnosticsSummary.Split([Environment]::NewLine)[0])"
+
+    $copyDiagnosticsReportButton = Get-ByAutomationId -Root $window -AutomationId "CopyDiagnosticsReportButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyDiagnosticsReportButton
+    $clipboardDiagnosticsReport = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy diagnostics report did not place the JSON report on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match '"createdAt"' -and $text -match '"activeProfile"' -and $text -match '"portChecks"' -and $text -match "Local x-tunnel") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied diagnostics report: $($clipboardDiagnosticsReport.Split([Environment]::NewLine)[0])"
     Save-ElementScreenshot -Element $window -Path $DiagnosticsScreenshotPath
     Write-Host "Diagnostics GUI screenshot: $DiagnosticsScreenshotPath"
 

@@ -244,6 +244,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OpenDiagnosticsCommand = new AsyncRelayCommand(OpenDiagnosticsAsync);
         OpenSettingsCommand = new RelayCommand(() => SelectedMainTabIndex = 5);
         CopyDiagnosticsSummaryCommand = new RelayCommand(CopyDiagnosticsSummary, HasDiagnosticsSummary);
+        CopyDiagnosticsReportCommand = new RelayCommand(CopyDiagnosticsReport, HasDiagnosticsReport);
         SetProxyModeOffCommand = new RelayCommand(() => SetProxyMode(ProxyMode.Off));
         SetProxyModeSystemCommand = new RelayCommand(() => SetProxyMode(ProxyMode.System));
         SetProxyModePacCommand = new RelayCommand(() => SetProxyMode(ProxyMode.Pac));
@@ -476,7 +477,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string DiagnosticsText
     {
         get => _diagnosticsText;
-        set => SetProperty(ref _diagnosticsText, value);
+        set
+        {
+            if (SetProperty(ref _diagnosticsText, value))
+            {
+                CopyDiagnosticsReportCommand.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     public string DiagnosticsSummaryText
@@ -981,6 +988,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand OpenDiagnosticsCommand { get; }
     public RelayCommand OpenSettingsCommand { get; }
     public RelayCommand CopyDiagnosticsSummaryCommand { get; }
+    public RelayCommand CopyDiagnosticsReportCommand { get; }
     public RelayCommand SetProxyModeOffCommand { get; }
     public RelayCommand SetProxyModeSystemCommand { get; }
     public RelayCommand SetProxyModePacCommand { get; }
@@ -1641,6 +1649,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         CopyTextRequested?.Invoke(this, DiagnosticsSummaryText);
         ErrorText = "Diagnostics summary copied";
+    }
+
+    private void CopyDiagnosticsReport()
+    {
+        if (!HasDiagnosticsReport())
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, DiagnosticsText);
+        ErrorText = "Diagnostics report copied";
     }
 
     private async Task RunOverviewNetworkTestAsync()
@@ -3110,6 +3129,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool HasDiagnosticsSummary()
     {
         return !string.IsNullOrWhiteSpace(DiagnosticsSummaryText);
+    }
+
+    private bool HasDiagnosticsReport()
+    {
+        return !string.IsNullOrWhiteSpace(DiagnosticsText);
     }
 
     private bool HasCorePathToCopy()

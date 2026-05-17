@@ -67,3 +67,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Extended status bar smoke coverage to assert the core field changes on connect and returns to stopped on disconnect.
 - Added a Diagnostics Clear Network action that resets raw network results, route chips, and Overview network freshness text.
 - Added a Diagnostics Clear Forward action that resets the selected-profile forward TCP result and route chip.
+- Added a Diagnostics Copy Report action for sharing the redacted JSON report without exporting a zip.
