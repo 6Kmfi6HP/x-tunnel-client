@@ -120,6 +120,7 @@
                   <Button Content="Save" Command="{Binding SaveSettingsCommand}" Margin="0,0,8,0"/>
                   <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}" Margin="0,0,8,0"/>
                   <Button Content="Proxy Addr" Command="{Binding CopyProxyCommand}" Margin="0,0,8,0"/>
+                  <Button Content="Copy Status" Command="{Binding CopyOverviewStatusCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="CopyOverviewStatusButton"/>
                   <Button Content="Restart" Command="{Binding RestartCommand}"/>
                 </WrapPanel>
                 <TextBlock Classes="caption" Text="Network"/>

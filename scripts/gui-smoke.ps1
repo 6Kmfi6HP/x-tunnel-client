@@ -502,6 +502,17 @@ try {
     }
     $overviewNetworkDetailText = Get-ByAutomationId -Root $window -AutomationId "OverviewNetworkDetailText" -TimeoutSeconds $TimeoutSeconds
     Write-Host "Overview network summary: $overviewNetworkText / $(Get-ElementValue $overviewNetworkDetailText)"
+    $copyOverviewStatusButton = Get-ByAutomationId -Root $window -AutomationId "CopyOverviewStatusButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyOverviewStatusButton
+    $clipboardOverviewStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy overview status did not place the summary on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "Profile: Local x-tunnel" -and $text -match "Network: Direct ok" -and $text -match "Local proxy: HTTP") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied overview status: $($clipboardOverviewStatus.Split([Environment]::NewLine)[0])"
     Save-ElementScreenshot -Element $window -Path $OverviewNetworkScreenshotPath
     Write-Host "Overview network GUI screenshot: $OverviewNetworkScreenshotPath"
 

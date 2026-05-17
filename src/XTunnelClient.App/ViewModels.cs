@@ -235,6 +235,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ClearSubscriptionSearchCommand = new RelayCommand(ClearSubscriptionSearch);
         RestoreProxyCommand = new RelayCommand(() => systemProxy.Restore());
         CopyProxyCommand = new RelayCommand(CopyProxySummary);
+        CopyOverviewStatusCommand = new RelayCommand(CopyOverviewStatus);
         OpenDataFolderCommand = new RelayCommand(() => OpenFolder(_paths.Root));
         OpenProfilesFolderCommand = new RelayCommand(() => OpenFolder(_paths.Profiles));
         OpenLogsFolderCommand = new RelayCommand(() => OpenFolder(_paths.Logs));
@@ -780,6 +781,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand ClearSubscriptionSearchCommand { get; }
     public ICommand RestoreProxyCommand { get; }
     public ICommand CopyProxyCommand { get; }
+    public ICommand CopyOverviewStatusCommand { get; }
     public ICommand OpenDataFolderCommand { get; }
     public ICommand OpenProfilesFolderCommand { get; }
     public ICommand OpenLogsFolderCommand { get; }
@@ -912,6 +914,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         summary.AppendLine("Config:");
         summary.AppendLine(RuntimeConfigService.Redact(profile.CoreConfigJson));
+        return summary.ToString().TrimEnd();
+    }
+
+    public string BuildOverviewStatusSummary()
+    {
+        var summary = new StringBuilder();
+        summary.AppendLine($"Status: {ConnectionHeading}");
+        summary.AppendLine($"Detail: {ConnectionDetail}");
+        summary.AppendLine($"Profile: {ActiveProfileSummary}");
+        summary.AppendLine($"Proxy mode: {ProxySummary}");
+        summary.AppendLine($"Local proxy: {LocalProxySummary}");
+        summary.AppendLine($"Network: {NetworkTestSummary}");
+        summary.AppendLine($"Network detail: {NetworkTestDetail}");
+        summary.AppendLine($"Network target: {NetworkTestUrl}");
+        summary.AppendLine($"Core: {CoreSummary}");
+        summary.AppendLine($"Validation: {ValidationSummary}");
+        summary.AppendLine($"Issue: {RecentIssueSummary}");
         return summary.ToString().TrimEnd();
     }
 
@@ -1634,6 +1653,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             ErrorText = ex.Message;
         }
+    }
+
+    private void CopyOverviewStatus()
+    {
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+        CopyTextRequested?.Invoke(this, BuildOverviewStatusSummary());
+        ErrorText = "Overview status copied";
     }
 
     private void CopyProfileSummary()
