@@ -754,7 +754,7 @@ try {
     Invoke-Element $copyDiagnosticsSummaryButton
     $clipboardDiagnosticsSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy diagnostics summary did not place the summary on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
-        if ($text -match "OS:" -and $text -match "Profile: Local x-tunnel" -and $text -match "Proxy:" -and $text -match "Ports:") {
+        if ($text -match "OS:" -and $text -match "Profile: Local x-tunnel" -and $text -match "Proxy:" -and $text -match "Ports:" -and $text -match "Network: Direct ok" -and $text -match "Forward: Forward TCP: ok") {
             return $text
         }
         return $null

@@ -1674,8 +1674,31 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        CopyTextRequested?.Invoke(this, DiagnosticsSummaryText);
+        CopyTextRequested?.Invoke(this, BuildDiagnosticsShareSummary());
         ErrorText = "Diagnostics summary copied";
+    }
+
+    private string BuildDiagnosticsShareSummary()
+    {
+        var lines = new List<string>();
+        if (!string.IsNullOrWhiteSpace(DiagnosticsSummaryText))
+        {
+            lines.Add(DiagnosticsSummaryText.Trim());
+        }
+
+        if (HasNetworkTestResult())
+        {
+            lines.Add($"Network: {NetworkTestSummary} ({NetworkTestLastRunText})");
+            lines.Add($"Network detail: {NetworkTestDetail}");
+        }
+
+        if (HasProfileEndpointTestResult())
+        {
+            lines.Add($"Forward: {ProfileEndpointRouteStatus} ({ProfileEndpointTestLastRunText})");
+            lines.Add($"Forward detail: {ProfileEndpointRouteDetail}");
+        }
+
+        return string.Join(Environment.NewLine, lines);
     }
 
     private void CopyDiagnosticsReport()
