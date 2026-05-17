@@ -5,6 +5,8 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows.Input;
+using Avalonia;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using XTunnelClient.Core;
 
@@ -148,6 +150,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _repository = new ProfileRepository(_paths);
         _settings = _repository.GetSettings();
         _selectedProxyMode = _settings.DefaultProxyMode;
+        ApplyTheme(_settings.Theme);
 
         var systemProxy = new SystemProxyService(new RegistryProxySettingsStore());
         var proxyCoordinator = new ProxyCoordinator(systemProxy, new PacServer());
@@ -181,6 +184,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<SummaryRow> ChannelRows { get; } = [];
     public ObservableCollection<ProfileIssue> ProfileIssues { get; } = [];
     public IReadOnlyList<ProxyMode> ProxyModes { get; } = Enum.GetValues<ProxyMode>();
+    public IReadOnlyList<string> ProfileKinds { get; } = ["client", "server"];
+    public IReadOnlyList<string> ThemeOptions { get; } = ["system", "light", "dark"];
+    public IReadOnlyList<string> UpdateChannels { get; } = ["stable", "beta", "disabled"];
 
     public Profile? SelectedProfile
     {
@@ -347,6 +353,33 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _trayToolTipText;
         set => SetProperty(ref _trayToolTipText, value);
+    }
+
+    public string SelectedTheme
+    {
+        get => Settings.Theme;
+        set
+        {
+            if (!string.Equals(Settings.Theme, value, StringComparison.Ordinal))
+            {
+                Settings.Theme = value;
+                ApplyTheme(value);
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string SelectedUpdateChannel
+    {
+        get => Settings.UpdateChannel;
+        set
+        {
+            if (!string.Equals(Settings.UpdateChannel, value, StringComparison.Ordinal))
+            {
+                Settings.UpdateChannel = value;
+                OnPropertyChanged();
+            }
+        }
     }
 
     public ICommand NewProfileCommand { get; }
@@ -698,6 +731,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         Settings.DefaultProxyMode = SelectedProxyMode;
         _repository.SaveSettings(Settings);
+        ApplyTheme(Settings.Theme);
         var exe = Environment.ProcessPath ?? AppContext.BaseDirectory;
         _startupService.SetEnabled(Settings.LaunchAtLogin, exe, Settings.StartMinimized);
         ErrorText = "Settings saved";
@@ -890,6 +924,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private static string FirstNonEmpty(params string?[] values)
     {
         return values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "";
+    }
+
+    private static void ApplyTheme(string? theme)
+    {
+        if (Application.Current is null)
+        {
+            return;
+        }
+        Application.Current.RequestedThemeVariant = theme?.ToLowerInvariant() switch
+        {
+            "light" => ThemeVariant.Light,
+            "dark" => ThemeVariant.Dark,
+            _ => ThemeVariant.Default
+        };
     }
 
     private IEnumerable<ProfileIssue> CheckProfilePorts(string runtimeJson)

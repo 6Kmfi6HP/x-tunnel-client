@@ -178,10 +178,7 @@
           <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto,120,*,Auto" RowSpacing="10">
             <Grid ColumnDefinitions="*,160,160" ColumnSpacing="8">
               <TextBox Text="{Binding SelectedProfile.Name}" PlaceholderText="Profile name"/>
-              <ComboBox Grid.Column="1" SelectedItem="{Binding SelectedProfile.Kind}">
-                <ComboBoxItem Content="client"/>
-                <ComboBoxItem Content="server"/>
-              </ComboBox>
+              <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileKinds}" SelectedItem="{Binding SelectedProfile.Kind}"/>
               <TextBox Grid.Column="2" Text="{Binding SelectedProfile.Source}" PlaceholderText="source"/>
             </Grid>
             <Grid Grid.Row="1" ColumnDefinitions="2*,2*,120,120,160" ColumnSpacing="8">
@@ -257,11 +254,7 @@
             <TextBlock Grid.Row="1" Text="Start minimized" VerticalAlignment="Center"/>
             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.StartMinimized}"/>
             <TextBlock Grid.Row="2" Text="Theme" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="2" Grid.Column="1" SelectedItem="{Binding Settings.Theme}">
-              <ComboBoxItem Content="system"/>
-              <ComboBoxItem Content="light"/>
-              <ComboBoxItem Content="dark"/>
-            </ComboBox>
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding SelectedTheme}"/>
             <TextBlock Grid.Row="3" Text="Language" VerticalAlignment="Center"/>
             <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Settings.Language}"/>
             <TextBlock Grid.Row="4" Text="PAC bypass rules" VerticalAlignment="Center"/>
@@ -269,11 +262,7 @@
             <TextBlock Grid.Row="5" Text="Log retention days" VerticalAlignment="Center"/>
             <NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding Settings.LogRetentionDays}" Minimum="1" Maximum="365"/>
             <TextBlock Grid.Row="6" Text="Update channel" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="6" Grid.Column="1" SelectedItem="{Binding Settings.UpdateChannel}">
-              <ComboBoxItem Content="stable"/>
-              <ComboBoxItem Content="beta"/>
-              <ComboBoxItem Content="disabled"/>
-            </ComboBox>
+            <ComboBox Grid.Row="6" Grid.Column="1" ItemsSource="{Binding UpdateChannels}" SelectedItem="{Binding SelectedUpdateChannel}"/>
             <Button Grid.Row="7" Grid.Column="1" HorizontalAlignment="Left" Content="Save Settings" Command="{Binding SaveSettingsCommand}"/>
           </Grid>
         </ScrollViewer>
