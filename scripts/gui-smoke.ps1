@@ -424,6 +424,21 @@ try {
     }
     Write-Host "Copied profile summary: $($profileSummaryClipboardText.Split([Environment]::NewLine)[0])"
 
+    $copyProfileConfigButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileConfigButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyProfileConfigButton
+    $profileConfigClipboardText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy profile config did not place the core JSON on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match '"listen"' -and
+            $text -match '"forward"' -and
+            $text -match [Regex]::Escape($coreForwardUrl) -and
+            $text -notmatch "smoke-token") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied profile config: $($profileConfigClipboardText.Split([Environment]::NewLine)[0])"
+
     $startupProfileButton = Get-ByAutomationId -Root $window -AutomationId "UseStartupProfileButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $startupProfileButton
     $startupProfileSummaryBlock = Get-ByAutomationId -Root $window -AutomationId "StartupProfileSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds

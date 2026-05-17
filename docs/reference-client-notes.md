@@ -77,3 +77,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added a Diagnostics Clear Tests action that resets network and selected-profile forward test state from one visible control.
 - Added Overview copy actions for recent logs and runtime details, with GUI smoke clipboard checks after connecting.
 - Added a Subscriptions Copy Source action for sharing selected subscription name, URL, interval, trust policy, and last update status.
+- Added a Profiles Copy Config action for copying the selected profile core JSON without exposing the DPAPI secret value.

@@ -227,6 +227,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ValidateProfileCommand = new AsyncRelayCommand(ValidateProfileAsync, () => SelectedProfile is not null);
         FormatProfileCommand = new AsyncRelayCommand(FormatProfileAsync, () => SelectedProfile is not null);
         CopyProfileSummaryCommand = new RelayCommand(CopyProfileSummary, () => SelectedProfile is not null);
+        CopyProfileConfigCommand = new RelayCommand(CopyProfileConfig, () => SelectedProfile is not null);
         UseSelectedProfileAtStartupCommand = new RelayCommand(UseSelectedProfileAtStartup, () => SelectedProfile is not null);
         ClearStartupProfileCommand = new RelayCommand(ClearStartupProfile, () => Settings.AutoConnectProfileId is not null);
         NewSubscriptionCommand = new RelayCommand(NewSubscription);
@@ -998,6 +999,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand ValidateProfileCommand { get; }
     public AsyncRelayCommand FormatProfileCommand { get; }
     public RelayCommand CopyProfileSummaryCommand { get; }
+    public RelayCommand CopyProfileConfigCommand { get; }
     public RelayCommand UseSelectedProfileAtStartupCommand { get; }
     public RelayCommand ClearStartupProfileCommand { get; }
     public ICommand NewSubscriptionCommand { get; }
@@ -2084,6 +2086,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         CopyTextRequested?.Invoke(this, BuildSelectedProfileSummary());
         ErrorText = "Profile summary copied";
+    }
+
+    private void CopyProfileConfig()
+    {
+        if (!HasSelectedProfileConfig() || SelectedProfile is null)
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, SelectedProfile.CoreConfigJson);
+        ErrorText = "Profile config copied";
     }
 
     private void UseSelectedProfileAtStartup()
@@ -3294,6 +3307,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             && !string.Equals(StatusText, "Stopped", StringComparison.OrdinalIgnoreCase);
     }
 
+    private bool HasSelectedProfileConfig()
+    {
+        return !string.IsNullOrWhiteSpace(SelectedProfile?.CoreConfigJson);
+    }
+
     private bool HasCorePathToCopy()
     {
         return !string.IsNullOrWhiteSpace(FirstNonEmpty(CorePath, DetectedCorePath));
@@ -3316,6 +3334,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ValidateProfileCommand.RaiseCanExecuteChanged();
         FormatProfileCommand.RaiseCanExecuteChanged();
         CopyProfileSummaryCommand.RaiseCanExecuteChanged();
+        CopyProfileConfigCommand.RaiseCanExecuteChanged();
         UseSelectedProfileAtStartupCommand.RaiseCanExecuteChanged();
         ClearStartupProfileCommand.RaiseCanExecuteChanged();
         ApplyFormCommand.RaiseCanExecuteChanged();
