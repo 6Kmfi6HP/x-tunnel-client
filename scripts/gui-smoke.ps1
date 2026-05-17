@@ -330,11 +330,23 @@ try {
 
     $statusState = Get-ByAutomationId -Root $window -AutomationId "StatusBarStateText" -TimeoutSeconds $TimeoutSeconds
     $statusProfile = Get-ByAutomationId -Root $window -AutomationId "StatusBarProfileText" -TimeoutSeconds $TimeoutSeconds
+    $statusProxyMode = Get-ByAutomationId -Root $window -AutomationId "StatusBarProxyModeText" -TimeoutSeconds $TimeoutSeconds
+    $statusLocalProxy = Get-ByAutomationId -Root $window -AutomationId "StatusBarLocalProxyText" -TimeoutSeconds $TimeoutSeconds
+    $statusCore = Get-ByAutomationId -Root $window -AutomationId "StatusBarCoreText" -TimeoutSeconds $TimeoutSeconds
+    $statusIssue = Get-ByAutomationId -Root $window -AutomationId "StatusBarIssueText" -TimeoutSeconds $TimeoutSeconds
     $stateText = Get-ElementValue $statusState
     $profileText = Get-ElementValue $statusProfile
     if ($stateText -notmatch "Disconnected" -or $profileText -notmatch "Local x-tunnel") {
         throw "Unexpected status bar text: state='$stateText' profile='$profileText'"
     }
+    $statusProxyModeText = Get-ElementValue $statusProxyMode
+    $statusLocalProxyText = Get-ElementValue $statusLocalProxy
+    $statusCoreText = Get-ElementValue $statusCore
+    $statusIssueText = Get-ElementValue $statusIssue
+    if ($statusProxyModeText -notmatch "Off" -or $statusLocalProxyText -notmatch "HTTP 127.0.0.1:" -or $statusCoreText -notmatch "Core not running") {
+        throw "Unexpected status bar details: proxy='$statusProxyModeText' local='$statusLocalProxyText' core='$statusCoreText' issue='$statusIssueText'"
+    }
+    Write-Host "Status bar details: $statusProxyModeText / $statusLocalProxyText / $statusCoreText / $statusIssueText"
 
     $overviewProxyText = Get-ByAutomationId -Root $window -AutomationId "OverviewProxySummaryText" -TimeoutSeconds $TimeoutSeconds
     $setSystemProxyModeButton = Get-ByAutomationId -Root $window -AutomationId "SetProxyModeSystemButton" -TimeoutSeconds $TimeoutSeconds

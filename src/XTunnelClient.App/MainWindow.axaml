@@ -68,12 +68,12 @@
       <Grid ColumnDefinitions="120,*,90,180,90,260,70,*" ColumnSpacing="8">
         <TextBlock Text="{Binding ConnectionHeading}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarStateText"/>
         <TextBlock Grid.Column="1" Text="{Binding ActiveProfileSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarProfileText"/>
-        <TextBlock Grid.Column="2" Text="{Binding ProxySummary}" Classes="caption"/>
-        <TextBlock Grid.Column="3" Text="{Binding LocalProxySummary}" TextTrimming="CharacterEllipsis"/>
+        <TextBlock Grid.Column="2" Text="{Binding ProxySummary}" Classes="caption" automation:AutomationProperties.AutomationId="StatusBarProxyModeText"/>
+        <TextBlock Grid.Column="3" Text="{Binding LocalProxySummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarLocalProxyText"/>
         <TextBlock Grid.Column="4" Text="Core" Classes="caption"/>
-        <TextBlock Grid.Column="5" Text="{Binding CoreSummary}" TextTrimming="CharacterEllipsis"/>
+        <TextBlock Grid.Column="5" Text="{Binding CoreSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarCoreText"/>
         <TextBlock Grid.Column="6" Text="Issue" Classes="caption"/>
-        <TextBlock Grid.Column="7" Text="{Binding RecentIssueSummary}" TextTrimming="CharacterEllipsis"/>
+        <TextBlock Grid.Column="7" Text="{Binding RecentIssueSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarIssueText"/>
       </Grid>
     </Border>
 
