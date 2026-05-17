@@ -43,6 +43,7 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Preserved raw status/log text for debugging while making common state scannable for daily use.
 - Added a copyable, redacted profile summary so the profile list/detail workflow supports quick diagnostics without exposing tokens or secret references.
 - Added a profile-page startup shortcut so the selected node can be saved for auto-connect from the same workflow where it is tested and edited.
+- Added GUI smoke coverage that confirms the Settings auto-connect checkbox reflects the profile-page startup shortcut.
 - Added a selected-profile endpoint test action so one profile can be retested without running the full visible-profile batch.
 - Added GUI smoke coverage for clearing and restoring the profile-page startup shortcut.
 - Added copyable filtered logs to keep troubleshooting output available after narrowing the runtime log view.

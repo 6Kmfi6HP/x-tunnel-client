@@ -195,6 +195,12 @@ function Get-ElementValue {
     }
 }
 
+function Get-ToggleState {
+    param([System.Windows.Automation.AutomationElement]$Element)
+    $pattern = $Element.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
+    return $pattern.Current.ToggleState.ToString()
+}
+
 function Save-ElementScreenshot {
     param(
         [System.Windows.Automation.AutomationElement]$Element,
@@ -1221,6 +1227,12 @@ try {
 
     $settingsTab = Get-ByAutomationId -Root $window -AutomationId "SettingsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $settingsTab
+    $settingsAutoConnectCheckBox = Get-ByAutomationId -Root $window -AutomationId "SettingsAutoConnectCheckBox" -TimeoutSeconds $TimeoutSeconds
+    $settingsAutoConnectState = Get-ToggleState $settingsAutoConnectCheckBox
+    if ($settingsAutoConnectState -ne "On") {
+        throw "Settings auto-connect checkbox did not reflect the startup profile shortcut: '$settingsAutoConnectState'"
+    }
+    Write-Host "Settings auto-connect checkbox: $settingsAutoConnectState"
     $detectedCorePathText = Get-ByAutomationId -Root $window -AutomationId "DetectedCorePathTextBlock" -TimeoutSeconds $TimeoutSeconds
     $detectedCorePath = Get-ElementValue $detectedCorePathText
     if ($detectedCorePath -notmatch "x-tunnel.exe") {

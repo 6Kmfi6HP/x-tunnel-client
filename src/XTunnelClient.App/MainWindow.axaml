@@ -478,7 +478,7 @@
             <TextBlock Grid.Row="1" Text="Start minimized" VerticalAlignment="Center"/>
             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.StartMinimized}"/>
             <TextBlock Grid.Row="2" Text="Auto-connect selected profile" VerticalAlignment="Center"/>
-            <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding AutoConnectSelectedProfile}"/>
+            <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding AutoConnectSelectedProfile}" automation:AutomationProperties.AutomationId="SettingsAutoConnectCheckBox"/>
             <TextBlock Grid.Row="3" Text="Startup delay seconds" VerticalAlignment="Center"/>
             <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.StartupDelaySeconds}" Minimum="0" Maximum="120"/>
             <TextBlock Grid.Row="4" Text="Theme" VerticalAlignment="Center"/>
