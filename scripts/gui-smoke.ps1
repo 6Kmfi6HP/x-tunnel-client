@@ -1340,7 +1340,13 @@ try {
         }
         return $null
     }
+    $savedCoreVersionStatus = Get-ElementValue $corePathStatusText
+    $savedCoreVersionDetail = Get-ElementValue $corePathStatusDetailText
+    if ($savedCoreVersionStatus -notmatch "Version OK" -or $savedCoreVersionDetail -notmatch "x-tunnel version=") {
+        throw "Save Settings cleared the checked core version status: '$savedCoreVersionStatus' / '$savedCoreVersionDetail'"
+    }
     Write-Host "Settings saved: $settingsSavedText"
+    Start-Sleep -Milliseconds 250
     Save-ElementScreenshot -Element $window -Path $SettingsScreenshotPath
     Write-Host "Settings GUI screenshot: $SettingsScreenshotPath"
 

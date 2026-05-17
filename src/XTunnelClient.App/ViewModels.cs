@@ -2119,7 +2119,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ApplyTheme(Settings.Theme);
         var exe = Environment.ProcessPath ?? AppContext.BaseDirectory;
         _startupService.SetEnabled(Settings.LaunchAtLogin, exe, Settings.StartMinimized);
-        UpdateCorePathStatus();
         ErrorText = "Settings saved";
     }
 

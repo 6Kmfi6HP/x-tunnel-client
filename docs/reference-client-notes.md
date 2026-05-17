@@ -114,6 +114,7 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added GUI smoke coverage for importing a selected profile from clipboard JSON.
 - Added a Settings Copy Folders action for sharing app-data, profile, log, runtime, and core paths.
 - Added a Settings Check Version action that runs the selected `x-tunnel.exe --version` and surfaces the result beside the core path status.
+- Kept the checked core version visible after saving settings, while core-path edits still refresh the path status.
 - Added GUI smoke coverage for the Settings save action through a stable AutomationId.
 - Added GUI smoke coverage for the Subscriptions detail Save Subscription action through a stable AutomationId.
 - Added GUI smoke coverage for the runtime Restart control before the connected proxy-route test.
