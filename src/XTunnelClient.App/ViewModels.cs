@@ -138,6 +138,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _filteredLogText = "";
     private string _logFilterText = "";
     private string _logFilterSummary = "Showing all logs";
+    private string _logFilterBadgeText = "All logs";
+    private string _logFilterBadgeBackground = "#374151";
+    private string _logFilterBadgeForeground = "#E5E7EB";
     private string _selectedLogLevelFilter = "All";
     private string _profileSearchText = "";
     private string _selectedProfileSort = "Saved";
@@ -406,6 +409,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _logFilterSummary;
         set => SetProperty(ref _logFilterSummary, value);
+    }
+
+    public string LogFilterBadgeText
+    {
+        get => _logFilterBadgeText;
+        private set => SetProperty(ref _logFilterBadgeText, value);
+    }
+
+    public string LogFilterBadgeBackground
+    {
+        get => _logFilterBadgeBackground;
+        private set => SetProperty(ref _logFilterBadgeBackground, value);
+    }
+
+    public string LogFilterBadgeForeground
+    {
+        get => _logFilterBadgeForeground;
+        private set => SetProperty(ref _logFilterBadgeForeground, value);
     }
 
     public string SelectedLogLevelFilter
@@ -2161,6 +2182,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             FilteredLogText = "";
             LogFilterSummary = $"Invalid regex: {regexError}";
+            SetLogFilterBadge("Invalid regex", "#7F1D1D", "#FECACA");
             return;
         }
 
@@ -2240,11 +2262,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (string.IsNullOrWhiteSpace(filter) && string.Equals(SelectedLogLevelFilter, "All", StringComparison.OrdinalIgnoreCase))
         {
             LogFilterSummary = $"Showing {shown} log line(s)";
+            SetLogFilterBadge("All logs", "#374151", "#E5E7EB");
             return;
         }
 
         var mode = regex is null ? "text" : "regex";
         LogFilterSummary = $"Showing {shown}/{total} log line(s), {mode} filter";
+        if (shown == 0 && total > 0)
+        {
+            SetLogFilterBadge("No matches", "#92400E", "#FEF3C7");
+            return;
+        }
+
+        SetLogFilterBadge(regex is null ? "Text filter" : "Regex filter", "#1E3A8A", "#BFDBFE");
+    }
+
+    private void SetLogFilterBadge(string text, string background, string foreground)
+    {
+        LogFilterBadgeText = text;
+        LogFilterBadgeBackground = background;
+        LogFilterBadgeForeground = foreground;
     }
 
     private static int CountLogLines(string text)

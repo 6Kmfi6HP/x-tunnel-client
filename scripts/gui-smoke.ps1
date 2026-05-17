@@ -11,6 +11,7 @@ param(
     [string]$DiagnosticsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-diagnostics.png"),
     [string]$LogsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-logs.png"),
     [string]$LogsRegexScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-logs-regex.png"),
+    [string]$LogsInvalidRegexScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-logs-invalid-regex.png"),
     [string]$SettingsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-settings.png"),
     [int]$TimeoutSeconds = 25
 )
@@ -686,6 +687,7 @@ try {
     Write-Host "Logs populated: $($logText.Split([Environment]::NewLine)[0])"
     $logFilterBox = Get-ByAutomationId -Root $window -AutomationId "LogFilterTextBox" -TimeoutSeconds $TimeoutSeconds
     $logFilterSummaryText = Get-ByAutomationId -Root $window -AutomationId "LogFilterSummaryText" -TimeoutSeconds $TimeoutSeconds
+    $logFilterBadgeText = Get-ByAutomationId -Root $window -AutomationId "LogFilterBadgeText" -TimeoutSeconds $TimeoutSeconds
     Set-ElementValue -Element $logFilterBox -Value "/protocol=v2-only/"
     $regexFilteredLogText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Regex log filter did not narrow the output." -Condition {
         $text = Get-ElementValue $filteredLogBox
@@ -701,9 +703,34 @@ try {
         }
         return $null
     }
-    Write-Host "Regex log filter: $($regexFilteredLogText.Split([Environment]::NewLine)[0]) / $regexFilterSummary"
+    $regexFilterBadge = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Regex log filter badge did not show regex mode." -Condition {
+        $text = Get-ElementValue $logFilterBadgeText
+        if ($text -match "Regex filter") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Regex log filter: $($regexFilteredLogText.Split([Environment]::NewLine)[0]) / $regexFilterSummary / $regexFilterBadge"
     Save-ElementScreenshot -Element $window -Path $LogsRegexScreenshotPath
     Write-Host "Regex logs GUI screenshot: $LogsRegexScreenshotPath"
+    Set-ElementValue -Element $logFilterBox -Value "/[/"
+    $invalidRegexSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Invalid regex summary did not show the parse error." -Condition {
+        $text = Get-ElementValue $logFilterSummaryText
+        if ($text -match "Invalid regex") {
+            return $text
+        }
+        return $null
+    }
+    $invalidRegexBadge = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Invalid regex badge did not show an error state." -Condition {
+        $text = Get-ElementValue $logFilterBadgeText
+        if ($text -match "Invalid regex") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Invalid regex filter: $invalidRegexSummary / $invalidRegexBadge"
+    Save-ElementScreenshot -Element $window -Path $LogsInvalidRegexScreenshotPath
+    Write-Host "Invalid regex logs GUI screenshot: $LogsInvalidRegexScreenshotPath"
     Set-ElementValue -Element $logFilterBox -Value "unlikely-smoke-filter"
     Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Log text filter did not narrow the output." -Condition {
         $text = Get-ElementValue $filteredLogBox
@@ -712,6 +739,14 @@ try {
         }
         return $null
     } | Out-Null
+    $noMatchesBadge = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "No-match log filter badge did not show no matches." -Condition {
+        $text = Get-ElementValue $logFilterBadgeText
+        if ($text -match "No matches") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "No-match log filter badge: $noMatchesBadge"
     $clearLogFiltersButton = Get-ByAutomationId -Root $window -AutomationId "ClearLogFiltersButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $clearLogFiltersButton
     $restoredLogText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear log filters did not restore log output." -Condition {
@@ -721,6 +756,13 @@ try {
         }
         return $null
     }
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear log filters did not reset the filter badge." -Condition {
+        $text = Get-ElementValue $logFilterBadgeText
+        if ($text -match "All logs") {
+            return $text
+        }
+        return $null
+    } | Out-Null
     $copyFilteredLogsButton = Get-ByAutomationId -Root $window -AutomationId "CopyFilteredLogsButton" -TimeoutSeconds $TimeoutSeconds
     $restoredFirstLogLine = $restoredLogText.Split([Environment]::NewLine)[0]
     Set-Clipboard -Value ""
