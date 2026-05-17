@@ -213,6 +213,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OpenLogsCommand = new RelayCommand(() => SelectedMainTabIndex = 3);
         OpenDiagnosticsCommand = new AsyncRelayCommand(OpenDiagnosticsAsync);
         OpenSettingsCommand = new RelayCommand(() => SelectedMainTabIndex = 5);
+        SetProxyModeOffCommand = new RelayCommand(() => SetProxyMode(ProxyMode.Off));
+        SetProxyModeSystemCommand = new RelayCommand(() => SetProxyMode(ProxyMode.System));
+        SetProxyModePacCommand = new RelayCommand(() => SetProxyMode(ProxyMode.Pac));
+        RunOverviewNetworkTestCommand = new AsyncRelayCommand(RunOverviewNetworkTestAsync);
         TestNetworkCommand = new AsyncRelayCommand(TestNetworkAsync);
         CopyNetworkTestResultCommand = new RelayCommand(CopyNetworkTestResult, HasNetworkTestResult);
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
@@ -735,6 +739,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand OpenLogsCommand { get; }
     public AsyncRelayCommand OpenDiagnosticsCommand { get; }
     public RelayCommand OpenSettingsCommand { get; }
+    public RelayCommand SetProxyModeOffCommand { get; }
+    public RelayCommand SetProxyModeSystemCommand { get; }
+    public RelayCommand SetProxyModePacCommand { get; }
+    public AsyncRelayCommand RunOverviewNetworkTestCommand { get; }
     public AsyncRelayCommand TestNetworkCommand { get; }
     public RelayCommand CopyNetworkTestResultCommand { get; }
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
@@ -1357,6 +1365,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         await RefreshDiagnosticsAsync();
     }
 
+    private async Task RunOverviewNetworkTestAsync()
+    {
+        SelectedMainTabIndex = 4;
+        await TestNetworkAsync();
+    }
+
     private async Task TestNetworkAsync()
     {
         if (!Uri.TryCreate(NetworkTestUrl.Trim(), UriKind.Absolute, out var target)
@@ -1533,6 +1547,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var exe = Environment.ProcessPath ?? AppContext.BaseDirectory;
         _startupService.SetEnabled(Settings.LaunchAtLogin, exe, Settings.StartMinimized);
         ErrorText = "Settings saved";
+    }
+
+    private void SetProxyMode(ProxyMode mode)
+    {
+        SelectedProxyMode = mode;
+        SaveSettings();
+        ErrorText = $"Proxy mode: {mode}";
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
     private void UseDetectedCorePath()

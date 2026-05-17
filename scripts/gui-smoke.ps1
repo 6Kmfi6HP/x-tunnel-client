@@ -332,6 +332,36 @@ try {
         throw "Unexpected status bar text: state='$stateText' profile='$profileText'"
     }
 
+    $overviewProxyText = Get-ByAutomationId -Root $window -AutomationId "OverviewProxySummaryText" -TimeoutSeconds $TimeoutSeconds
+    $setSystemProxyModeButton = Get-ByAutomationId -Root $window -AutomationId "SetProxyModeSystemButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $setSystemProxyModeButton
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Proxy mode quick action did not switch to System." -Condition {
+        $text = Get-ElementValue $overviewProxyText
+        if ($text -match "System") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    $setPacProxyModeButton = Get-ByAutomationId -Root $window -AutomationId "SetProxyModePacButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $setPacProxyModeButton
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Proxy mode quick action did not switch to PAC." -Condition {
+        $text = Get-ElementValue $overviewProxyText
+        if ($text -match "Pac") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    $setOffProxyModeButton = Get-ByAutomationId -Root $window -AutomationId "SetProxyModeOffButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $setOffProxyModeButton
+    $proxyModeText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Proxy mode quick action did not return to Off." -Condition {
+        $text = Get-ElementValue $overviewProxyText
+        if ($text -match "Off") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Proxy mode quick actions: $proxyModeText"
+
     Save-ElementScreenshot -Element $window -Path $OverviewScreenshotPath
     Write-Host "Overview GUI screenshot: $OverviewScreenshotPath"
 
@@ -446,8 +476,10 @@ try {
     Write-Host "Network target preset URL: $presetUrl"
     Set-ElementValue -Element $urlBox -Value $testUrl
 
-    $testButton = Get-ByAutomationId -Root $window -AutomationId "TestNetworkButton" -TimeoutSeconds $TimeoutSeconds
-    Invoke-Element $testButton
+    $overviewTab = Get-ByAutomationId -Root $window -AutomationId "OverviewTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $overviewTab
+    $overviewTestNetworkButton = Get-ByAutomationId -Root $window -AutomationId "OverviewTestNetworkButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $overviewTestNetworkButton
 
     $resultBox = Get-ByAutomationId -Root $window -AutomationId "NetworkTestResultTextBox" -TimeoutSeconds $TimeoutSeconds
     $resultText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Network test did not report success." -Condition {

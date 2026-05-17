@@ -92,7 +92,7 @@
                   <TextBlock Grid.Row="1" Text="Core" Classes="caption"/>
                   <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CoreSummary}" TextTrimming="CharacterEllipsis"/>
                   <TextBlock Grid.Row="2" Text="Proxy" Classes="caption"/>
-                  <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ProxySummary}"/>
+                  <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ProxySummary}" automation:AutomationProperties.AutomationId="OverviewProxySummaryText"/>
                   <TextBlock Grid.Row="3" Text="Local" Classes="caption"/>
                   <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LocalProxySummary}" TextTrimming="CharacterEllipsis"/>
                   <TextBlock Grid.Row="4" Text="Validation" Classes="caption"/>
@@ -104,12 +104,23 @@
                 <TextBlock Classes="section" Text="Control"/>
                 <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberBinding="{Binding Name}" MinHeight="34"/>
                 <ComboBox ItemsSource="{Binding ProxyModes}" SelectedItem="{Binding SelectedProxyMode}" MinHeight="34"/>
+                <TextBlock Classes="caption" Text="Proxy mode"/>
+                <WrapPanel>
+                  <Button Content="Off" Command="{Binding SetProxyModeOffCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="SetProxyModeOffButton"/>
+                  <Button Content="System" Command="{Binding SetProxyModeSystemCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="SetProxyModeSystemButton"/>
+                  <Button Content="PAC" Command="{Binding SetProxyModePacCommand}" automation:AutomationProperties.AutomationId="SetProxyModePacButton"/>
+                </WrapPanel>
                 <TextBox Text="{Binding CorePath}" PlaceholderText="Auto-detect or full path to x-tunnel.exe"/>
                 <WrapPanel>
                   <Button Content="Save" Command="{Binding SaveSettingsCommand}" Margin="0,0,8,0"/>
                   <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}" Margin="0,0,8,0"/>
                   <Button Content="Proxy Addr" Command="{Binding CopyProxyCommand}" Margin="0,0,8,0"/>
                   <Button Content="Restart" Command="{Binding RestartCommand}"/>
+                </WrapPanel>
+                <TextBlock Classes="caption" Text="Network"/>
+                <WrapPanel>
+                  <Button Content="Test Network" Command="{Binding RunOverviewNetworkTestCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="OverviewTestNetworkButton"/>
+                  <Button Content="Diagnostics" Command="{Binding OpenDiagnosticsCommand}" automation:AutomationProperties.AutomationId="OverviewOpenDiagnosticsButton"/>
                 </WrapPanel>
                 <TextBlock Classes="caption" Text="Open"/>
                 <WrapPanel>
