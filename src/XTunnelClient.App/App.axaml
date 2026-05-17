@@ -1,0 +1,27 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="XTunnelClient.App.App"
+             RequestedThemeVariant="Default">
+  <Application.Styles>
+    <FluentTheme />
+  </Application.Styles>
+
+  <TrayIcon.Icons>
+    <TrayIcons>
+      <TrayIcon Icon="/Assets/app-icon.ico" ToolTipText="x-tunnel Client">
+        <TrayIcon.Menu>
+          <NativeMenu>
+            <NativeMenuItem Header="Open Dashboard" Click="ShowWindow_OnClick" />
+            <NativeMenuItem Header="Connect" Click="Connect_OnClick" />
+            <NativeMenuItem Header="Disconnect" Click="Disconnect_OnClick" />
+            <NativeMenuItemSeparator />
+            <NativeMenuItem Header="Diagnostics" Click="Diagnostics_OnClick" />
+            <NativeMenuItem Header="Restore Proxy" Click="RestoreProxy_OnClick" />
+            <NativeMenuItemSeparator />
+            <NativeMenuItem Header="Quit" Click="Quit_OnClick" />
+          </NativeMenu>
+        </TrayIcon.Menu>
+      </TrayIcon>
+    </TrayIcons>
+  </TrayIcon.Icons>
+</Application>

@@ -1,0 +1,174 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="XTunnelClient.App.MainWindow"
+        Width="1180"
+        Height="760"
+        MinWidth="960"
+        MinHeight="620"
+        Title="x-tunnel Client">
+  <Window.Styles>
+    <Style Selector="Button">
+      <Setter Property="MinHeight" Value="32"/>
+      <Setter Property="Padding" Value="12,4"/>
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="MinHeight" Value="30"/>
+    </Style>
+    <Style Selector="TextBlock.section">
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Margin" Value="0,0,0,6"/>
+    </Style>
+  </Window.Styles>
+
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="16,10">
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto">
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <TextBlock Text="x-tunnel" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
+          <TextBlock Text="{Binding RuntimeState}" VerticalAlignment="Center"/>
+          <TextBlock Text="{Binding ErrorText}" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"/>
+        </StackPanel>
+        <Button Grid.Column="1" Content="Connect" Command="{Binding ConnectCommand}" Margin="0,0,8,0"/>
+        <Button Grid.Column="2" Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,8,0"/>
+        <Button Grid.Column="3" Content="Diagnostics" Command="{Binding RefreshDiagnosticsCommand}"/>
+      </Grid>
+    </Border>
+
+    <TabControl>
+      <TabItem Header="Overview">
+        <Grid Margin="16" ColumnDefinitions="360,*" RowDefinitions="*,210" ColumnSpacing="16" RowSpacing="12">
+          <Border Padding="12" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" CornerRadius="6">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="section" Text="Active Profile"/>
+              <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberBinding="{Binding Name}" MinHeight="34"/>
+              <TextBlock Text="Proxy mode"/>
+              <ComboBox ItemsSource="{Binding ProxyModes}" SelectedItem="{Binding SelectedProxyMode}" MinHeight="34"/>
+              <TextBlock Text="Core path"/>
+              <TextBox Text="{Binding Settings.CorePath}" PlaceholderText="Auto-detect or full path to x-tunnel.exe"/>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Save" Command="{Binding SaveSettingsCommand}"/>
+                <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}"/>
+                <Button Content="Proxy Addr" Command="{Binding CopyProxyCommand}"/>
+              </StackPanel>
+              <TextBlock Text="Local listeners are read from the selected profile." TextWrapping="Wrap" Opacity="0.75"/>
+            </StackPanel>
+          </Border>
+
+          <Grid Grid.Column="1" RowDefinitions="Auto,*">
+            <TextBlock Classes="section" Text="Runtime Status"/>
+            <TextBox Grid.Row="1" Text="{Binding StatusText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+          </Grid>
+
+          <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="*,*" ColumnSpacing="16">
+            <Grid RowDefinitions="Auto,*">
+              <TextBlock Classes="section" Text="Stats"/>
+              <TextBox Grid.Row="1" Text="{Binding StatsText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+            </Grid>
+            <Grid Grid.Column="1" RowDefinitions="Auto,*">
+              <TextBlock Classes="section" Text="Recent Logs"/>
+              <TextBox Grid.Row="1" Text="{Binding LogText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+            </Grid>
+          </Grid>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Profiles">
+        <Grid Margin="16" ColumnDefinitions="320,*" ColumnSpacing="16">
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
+              <Button Content="New" Command="{Binding NewProfileCommand}"/>
+              <Button Content="Copy" Command="{Binding DuplicateProfileCommand}"/>
+              <Button Content="Delete" Command="{Binding DeleteProfileCommand}"/>
+            </StackPanel>
+            <ListBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberBinding="{Binding Name}"/>
+          </DockPanel>
+
+          <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowSpacing="10">
+            <Grid ColumnDefinitions="*,160,160" ColumnSpacing="8">
+              <TextBox Text="{Binding SelectedProfile.Name}" PlaceholderText="Profile name"/>
+              <ComboBox Grid.Column="1" SelectedItem="{Binding SelectedProfile.Kind}">
+                <ComboBoxItem Content="client"/>
+                <ComboBoxItem Content="server"/>
+              </ComboBox>
+              <TextBox Grid.Column="2" Text="{Binding SelectedProfile.Source}" PlaceholderText="source"/>
+            </Grid>
+            <Grid Grid.Row="1" ColumnDefinitions="2*,2*,120,120,160" ColumnSpacing="8">
+              <TextBox Text="{Binding ProfileListen}" PlaceholderText="listen"/>
+              <TextBox Grid.Column="1" Text="{Binding ProfileForward}" PlaceholderText="forward"/>
+              <NumericUpDown Grid.Column="2" Value="{Binding ProfileConnections}" Minimum="1" Maximum="32"/>
+              <CheckBox Grid.Column="3" IsChecked="{Binding ProfileFallback}" Content="fallback" VerticalAlignment="Center"/>
+              <TextBox Grid.Column="4" Text="{Binding ProfileMetrics}" PlaceholderText="metrics"/>
+            </Grid>
+            <Grid Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="8">
+              <TextBox Text="{Binding SelectedProfile.SecretRef}" PlaceholderText="secret ref, e.g. profile-token"/>
+              <TextBox Grid.Column="1" Text="{Binding SecretValue}" PasswordChar="*" PlaceholderText="profile secret saved with DPAPI"/>
+            </Grid>
+            <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+              <Button Content="Apply Form" Command="{Binding ApplyFormCommand}"/>
+              <Button Content="Save" Command="{Binding SaveProfileCommand}"/>
+              <Button Content="Validate" Command="{Binding ValidateProfileCommand}"/>
+              <Button Content="Format" Command="{Binding FormatProfileCommand}"/>
+              <Button Content="Import File" Click="ImportFile_OnClick"/>
+              <Button Content="Import Clipboard" Click="ImportClipboard_OnClick"/>
+              <Button Content="Export" Click="ExportProfile_OnClick"/>
+            </StackPanel>
+            <TextBox Grid.Row="4" Text="{Binding SelectedProfile.CoreConfigJson}" AcceptsReturn="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+            <TextBlock Grid.Row="5" Text="{Binding SelectedProfile.LastValidationError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"/>
+          </Grid>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Logs">
+        <Grid Margin="16" RowDefinitions="Auto,*">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Refresh Diagnostics" Command="{Binding RefreshDiagnosticsCommand}"/>
+            <Button Content="Export Diagnostics" Click="ExportDiagnostics_OnClick"/>
+          </StackPanel>
+          <TextBox Grid.Row="1" Margin="0,10,0,0" Text="{Binding LogText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Diagnostics">
+        <Grid Margin="16" RowDefinitions="Auto,*">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Run Checks" Command="{Binding RefreshDiagnosticsCommand}"/>
+            <Button Content="Export Zip" Click="ExportDiagnostics_OnClick"/>
+            <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}"/>
+          </StackPanel>
+          <TextBox Grid.Row="1" Margin="0,10,0,0" Text="{Binding DiagnosticsText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Settings">
+        <ScrollViewer>
+          <Grid Margin="16" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="12">
+            <TextBlock Text="Launch at login" VerticalAlignment="Center"/>
+            <CheckBox Grid.Column="1" IsChecked="{Binding Settings.LaunchAtLogin}"/>
+            <TextBlock Grid.Row="1" Text="Start minimized" VerticalAlignment="Center"/>
+            <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.StartMinimized}"/>
+            <TextBlock Grid.Row="2" Text="Theme" VerticalAlignment="Center"/>
+            <ComboBox Grid.Row="2" Grid.Column="1" SelectedItem="{Binding Settings.Theme}">
+              <ComboBoxItem Content="system"/>
+              <ComboBoxItem Content="light"/>
+              <ComboBoxItem Content="dark"/>
+            </ComboBox>
+            <TextBlock Grid.Row="3" Text="Language" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Settings.Language}"/>
+            <TextBlock Grid.Row="4" Text="PAC bypass rules" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Settings.PacBypassRules}"/>
+            <TextBlock Grid.Row="5" Text="Log retention days" VerticalAlignment="Center"/>
+            <NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding Settings.LogRetentionDays}" Minimum="1" Maximum="365"/>
+            <TextBlock Grid.Row="6" Text="Update channel" VerticalAlignment="Center"/>
+            <ComboBox Grid.Row="6" Grid.Column="1" SelectedItem="{Binding Settings.UpdateChannel}">
+              <ComboBoxItem Content="stable"/>
+              <ComboBoxItem Content="beta"/>
+              <ComboBoxItem Content="disabled"/>
+            </ComboBox>
+            <Button Grid.Row="7" Grid.Column="1" HorizontalAlignment="Left" Content="Save Settings" Command="{Binding SaveSettingsCommand}"/>
+          </Grid>
+        </ScrollViewer>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>
