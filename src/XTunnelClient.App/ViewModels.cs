@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows.Input;
@@ -193,6 +194,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ApplyFormCommand = new RelayCommand(ApplyStructuredForm, () => SelectedProfile is not null);
         ValidateProfileCommand = new AsyncRelayCommand(ValidateProfileAsync, () => SelectedProfile is not null);
         FormatProfileCommand = new AsyncRelayCommand(FormatProfileAsync, () => SelectedProfile is not null);
+        CopyProfileSummaryCommand = new RelayCommand(CopyProfileSummary, () => SelectedProfile is not null);
         NewSubscriptionCommand = new RelayCommand(NewSubscription);
         SaveSubscriptionCommand = new RelayCommand(SaveSelectedSubscription, () => SelectedSubscription is not null);
         DeleteSubscriptionCommand = new RelayCommand(DeleteSelectedSubscription, () => SelectedSubscription is not null);
@@ -669,6 +671,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand ApplyFormCommand { get; }
     public AsyncRelayCommand ValidateProfileCommand { get; }
     public AsyncRelayCommand FormatProfileCommand { get; }
+    public RelayCommand CopyProfileSummaryCommand { get; }
     public ICommand NewSubscriptionCommand { get; }
     public RelayCommand SaveSubscriptionCommand { get; }
     public RelayCommand DeleteSubscriptionCommand { get; }
@@ -784,6 +787,46 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             core_config = JsonSerializer.Deserialize<JsonElement>(RuntimeConfigService.Redact(SelectedProfile.CoreConfigJson), JsonDefaults.Web)
         };
         return JsonSerializer.Serialize(export, JsonDefaults.Pretty);
+    }
+
+    public string BuildSelectedProfileSummary()
+    {
+        if (SelectedProfile is null)
+        {
+            return "";
+        }
+
+        var profile = SelectedProfile;
+        var summary = new StringBuilder();
+        summary.AppendLine($"Profile: {profile.Name}");
+        summary.AppendLine($"Kind: {profile.Kind}");
+        summary.AppendLine($"Source: {profile.Source}");
+        summary.AppendLine($"Validation: {profile.ValidationState} - {profile.ValidationDetail}");
+        summary.AppendLine($"Endpoint test: {profile.EndpointTestState} - {profile.EndpointTestDetail}");
+
+        try
+        {
+            var endpoints = _configService.GetLocalProxyEndpoints(profile.CoreConfigJson);
+            summary.AppendLine($"Local proxy: {BuildProxyEndpointSummary(endpoints)}");
+        }
+        catch (Exception ex)
+        {
+            summary.AppendLine($"Local proxy: {ex.Message}");
+        }
+
+        try
+        {
+            var endpoint = _configService.GetForwardEndpoint(profile.CoreConfigJson);
+            summary.AppendLine($"Forward: {endpoint.Display}");
+        }
+        catch (Exception ex)
+        {
+            summary.AppendLine($"Forward: {ex.Message}");
+        }
+
+        summary.AppendLine("Config:");
+        summary.AppendLine(RuntimeConfigService.Redact(profile.CoreConfigJson));
+        return summary.ToString().TrimEnd();
     }
 
     public async Task<string> ExportDiagnosticsAsync()
@@ -1472,6 +1515,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             ErrorText = ex.Message;
         }
+    }
+
+    private void CopyProfileSummary()
+    {
+        if (SelectedProfile is null)
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, BuildSelectedProfileSummary());
+        ErrorText = "Profile summary copied";
     }
 
     private void OpenFolder(string path)
@@ -2191,6 +2245,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SaveProfileCommand.RaiseCanExecuteChanged();
         ValidateProfileCommand.RaiseCanExecuteChanged();
         FormatProfileCommand.RaiseCanExecuteChanged();
+        CopyProfileSummaryCommand.RaiseCanExecuteChanged();
         ApplyFormCommand.RaiseCanExecuteChanged();
         ConnectCommand.RaiseCanExecuteChanged();
         DisconnectCommand.RaiseCanExecuteChanged();

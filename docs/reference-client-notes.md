@@ -41,3 +41,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Replaced the raw-JSON-only Overview with a dashboard header, profile/core/proxy summaries, fixed-size metric tiles, listener rows, channel rows, recent logs, and a compact runtime details pane.
 - Kept profile and diagnostics tabs intact so the existing workflows remain reachable.
 - Preserved raw status/log text for debugging while making common state scannable for daily use.
+- Added a copyable, redacted profile summary so the profile list/detail workflow supports quick diagnostics without exposing tokens or secret references.

@@ -250,6 +250,7 @@
               <Button Content="Import File" Click="ImportFile_OnClick"/>
               <Button Content="Import Clipboard" Click="ImportClipboard_OnClick"/>
               <Button Content="Export" Click="ExportProfile_OnClick"/>
+              <Button Content="Copy Summary" Command="{Binding CopyProfileSummaryCommand}" automation:AutomationProperties.AutomationId="CopyProfileSummaryButton"/>
             </StackPanel>
             <Border Grid.Row="4" Classes="panel">
               <Grid RowDefinitions="Auto,*">

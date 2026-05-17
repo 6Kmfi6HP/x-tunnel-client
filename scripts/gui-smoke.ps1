@@ -354,6 +354,24 @@ try {
     $saveProfileButton = Get-ByAutomationId -Root $window -AutomationId "SaveProfileButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $saveProfileButton
 
+    $copyProfileSummaryButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileSummaryButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyProfileSummaryButton
+    $profileSummaryClipboardText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy profile summary did not place a redacted summary on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        $expectedLocalProxy = "Local proxy: HTTP 127.0.0.1:$httpPort / SOCKS 127.0.0.1:$socksPort"
+        $expectedForward = $coreForwardUrl.Replace("/tunnel", "")
+        if ($text -match "Profile: Local x-tunnel" -and
+            $text -match [Regex]::Escape($expectedLocalProxy) -and
+            $text -match [Regex]::Escape("Forward: $expectedForward") -and
+            $text -match "Config:" -and
+            $text -notmatch "smoke-token|profile-token") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied profile summary: $($profileSummaryClipboardText.Split([Environment]::NewLine)[0])"
+
     $testVisibleProfilesButton = Get-ByAutomationId -Root $window -AutomationId "TestVisibleProfilesButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $testVisibleProfilesButton
     $profileBatchTestTextBlock = Get-ByAutomationId -Root $window -AutomationId "ProfileBatchTestTextBlock" -TimeoutSeconds $TimeoutSeconds
