@@ -18,6 +18,7 @@
             <NativeMenuItem Header="Copy Proxy Address" Command="{Binding CopyProxyCommand}" />
             <NativeMenuItemSeparator />
             <NativeMenuItem Header="Diagnostics" Click="Diagnostics_OnClick" />
+            <NativeMenuItem Header="Open Logs Folder" Command="{Binding OpenLogsFolderCommand}" />
             <NativeMenuItem Header="Restore Proxy" Command="{Binding RestoreProxyCommand}" />
             <NativeMenuItemSeparator />
             <NativeMenuItem Header="Quit" Click="Quit_OnClick" />

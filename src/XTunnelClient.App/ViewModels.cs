@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -177,6 +178,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         RestoreProxyCommand = new RelayCommand(() => systemProxy.Restore());
         CopyProxyCommand = new RelayCommand(CopyProxySummary);
+        OpenDataFolderCommand = new RelayCommand(() => OpenFolder(_paths.Root));
+        OpenProfilesFolderCommand = new RelayCommand(() => OpenFolder(_paths.Profiles));
+        OpenLogsFolderCommand = new RelayCommand(() => OpenFolder(_paths.Logs));
+        OpenRuntimeFolderCommand = new RelayCommand(() => OpenFolder(_paths.Runtime));
 
         Load();
         _ = AutoConnectOnStartupAsync();
@@ -443,6 +448,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand SaveSettingsCommand { get; }
     public ICommand RestoreProxyCommand { get; }
     public ICommand CopyProxyCommand { get; }
+    public ICommand OpenDataFolderCommand { get; }
+    public ICommand OpenProfilesFolderCommand { get; }
+    public ICommand OpenLogsFolderCommand { get; }
+    public ICommand OpenRuntimeFolderCommand { get; }
 
     public void Load()
     {
@@ -825,6 +834,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             ErrorText = ex.Message;
+        }
+    }
+
+    private void OpenFolder(string path)
+    {
+        try
+        {
+            Directory.CreateDirectory(path);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true
+            });
+            ErrorText = "";
+        }
+        catch (Exception ex)
+        {
+            ErrorText = $"Open folder failed: {ex.Message}";
         }
     }
 
