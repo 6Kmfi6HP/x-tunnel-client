@@ -249,22 +249,26 @@
 
       <TabItem Header="Settings">
         <ScrollViewer>
-          <Grid Margin="16" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="12">
+          <Grid Margin="16" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="12">
             <TextBlock Text="Launch at login" VerticalAlignment="Center"/>
             <CheckBox Grid.Column="1" IsChecked="{Binding Settings.LaunchAtLogin}"/>
             <TextBlock Grid.Row="1" Text="Start minimized" VerticalAlignment="Center"/>
             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.StartMinimized}"/>
-            <TextBlock Grid.Row="2" Text="Theme" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding SelectedTheme}"/>
-            <TextBlock Grid.Row="3" Text="Language" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Settings.Language}"/>
-            <TextBlock Grid.Row="4" Text="PAC bypass rules" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Settings.PacBypassRules}"/>
-            <TextBlock Grid.Row="5" Text="Log retention days" VerticalAlignment="Center"/>
-            <NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding Settings.LogRetentionDays}" Minimum="1" Maximum="365"/>
-            <TextBlock Grid.Row="6" Text="Update channel" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="6" Grid.Column="1" ItemsSource="{Binding UpdateChannels}" SelectedItem="{Binding SelectedUpdateChannel}"/>
-            <Button Grid.Row="7" Grid.Column="1" HorizontalAlignment="Left" Content="Save Settings" Command="{Binding SaveSettingsCommand}"/>
+            <TextBlock Grid.Row="2" Text="Auto-connect selected profile" VerticalAlignment="Center"/>
+            <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding AutoConnectSelectedProfile}"/>
+            <TextBlock Grid.Row="3" Text="Startup delay seconds" VerticalAlignment="Center"/>
+            <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.StartupDelaySeconds}" Minimum="0" Maximum="120"/>
+            <TextBlock Grid.Row="4" Text="Theme" VerticalAlignment="Center"/>
+            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding SelectedTheme}"/>
+            <TextBlock Grid.Row="5" Text="Language" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Settings.Language}"/>
+            <TextBlock Grid.Row="6" Text="PAC bypass rules" VerticalAlignment="Center"/>
+            <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Settings.PacBypassRules}"/>
+            <TextBlock Grid.Row="7" Text="Log retention days" VerticalAlignment="Center"/>
+            <NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding Settings.LogRetentionDays}" Minimum="1" Maximum="365"/>
+            <TextBlock Grid.Row="8" Text="Update channel" VerticalAlignment="Center"/>
+            <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding UpdateChannels}" SelectedItem="{Binding SelectedUpdateChannel}"/>
+            <Button Grid.Row="9" Grid.Column="1" HorizontalAlignment="Left" Content="Save Settings" Command="{Binding SaveSettingsCommand}"/>
           </Grid>
         </ScrollViewer>
       </TabItem>

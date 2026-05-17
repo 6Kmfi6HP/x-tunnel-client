@@ -178,6 +178,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         CopyProxyCommand = new RelayCommand(CopyProxySummary);
 
         Load();
+        _ = AutoConnectOnStartupAsync();
     }
 
     public event EventHandler<string>? CopyTextRequested;
@@ -202,6 +203,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 SecretValue = value?.SecretRef is null ? "" : _repository.GetSecret(value.Id, value.SecretRef) ?? "";
                 LoadStructuredFields();
                 ProfileIssues.Clear();
+                OnPropertyChanged(nameof(AutoConnectSelectedProfile));
                 RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
                 RaiseCommandState();
             }
@@ -410,6 +412,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    public bool AutoConnectSelectedProfile
+    {
+        get => SelectedProfile is not null && Settings.AutoConnectProfileId == SelectedProfile.Id;
+        set
+        {
+            Settings.AutoConnectProfileId = value ? SelectedProfile?.Id : null;
+            OnPropertyChanged();
+        }
+    }
+
     public ICommand NewProfileCommand { get; }
     public RelayCommand DuplicateProfileCommand { get; }
     public RelayCommand DeleteProfileCommand { get; }
@@ -439,7 +451,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _repository.SaveSecret(profile.Id, profile.SecretRef!, "local-test-token");
             Profiles.Add(profile);
         }
-        SelectedProfile ??= Profiles.FirstOrDefault();
+        SelectedProfile = Profiles.FirstOrDefault(x => Settings.AutoConnectProfileId == x.Id) ?? SelectedProfile ?? Profiles.FirstOrDefault();
         StatusText = "Stopped";
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
@@ -757,12 +769,34 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void SaveSettings()
     {
+        if (AutoConnectSelectedProfile && SelectedProfile is not null)
+        {
+            Settings.AutoConnectProfileId = SelectedProfile.Id;
+        }
         Settings.DefaultProxyMode = SelectedProxyMode;
         _repository.SaveSettings(Settings);
         ApplyTheme(Settings.Theme);
         var exe = Environment.ProcessPath ?? AppContext.BaseDirectory;
         _startupService.SetEnabled(Settings.LaunchAtLogin, exe, Settings.StartMinimized);
         ErrorText = "Settings saved";
+    }
+
+    private async Task AutoConnectOnStartupAsync()
+    {
+        if (Settings.AutoConnectProfileId is null)
+        {
+            return;
+        }
+        var delay = Math.Clamp(Settings.StartupDelaySeconds, 0, 120);
+        if (delay > 0)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(delay));
+        }
+        if (SelectedProfile?.Id != Settings.AutoConnectProfileId || RuntimeState != RuntimeState.Stopped)
+        {
+            return;
+        }
+        await ConnectAsync();
     }
 
     private void CopyProxySummary()
