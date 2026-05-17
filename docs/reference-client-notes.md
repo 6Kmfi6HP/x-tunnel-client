@@ -103,6 +103,7 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added a Diagnostics Copy Ports action for quickly sharing the current listen-port status and local endpoint details.
 - Extended the copied Diagnostics summary with the current network and forward-test results after checks have run.
 - Added GUI smoke coverage for Overview recent logs and runtime details after connecting through the sidecar.
+- Added traffic and channel health summaries to the bottom status bar, following the reference-client pattern of keeping runtime health visible without opening details.
 - Added a Diagnostics Clear Tests action that resets network and selected-profile forward test state from one visible control.
 - Added Overview copy actions for recent logs and runtime details, with GUI smoke clipboard checks after connecting.
 - Added a Subscriptions Copy Source action for sharing selected subscription name, URL, interval, trust policy, and last update status.

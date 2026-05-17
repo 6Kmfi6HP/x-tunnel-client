@@ -389,6 +389,8 @@ try {
     $statusProfile = Get-ByAutomationId -Root $window -AutomationId "StatusBarProfileText" -TimeoutSeconds $TimeoutSeconds
     $statusProxyMode = Get-ByAutomationId -Root $window -AutomationId "StatusBarProxyModeText" -TimeoutSeconds $TimeoutSeconds
     $statusLocalProxy = Get-ByAutomationId -Root $window -AutomationId "StatusBarLocalProxyText" -TimeoutSeconds $TimeoutSeconds
+    $statusTraffic = Get-ByAutomationId -Root $window -AutomationId "StatusBarTrafficText" -TimeoutSeconds $TimeoutSeconds
+    $statusChannels = Get-ByAutomationId -Root $window -AutomationId "StatusBarChannelsText" -TimeoutSeconds $TimeoutSeconds
     $statusCore = Get-ByAutomationId -Root $window -AutomationId "StatusBarCoreText" -TimeoutSeconds $TimeoutSeconds
     $statusIssue = Get-ByAutomationId -Root $window -AutomationId "StatusBarIssueText" -TimeoutSeconds $TimeoutSeconds
     $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
@@ -399,12 +401,17 @@ try {
     }
     $statusProxyModeText = Get-ElementValue $statusProxyMode
     $statusLocalProxyText = Get-ElementValue $statusLocalProxy
+    $statusTrafficText = Get-ElementValue $statusTraffic
+    $statusChannelsText = Get-ElementValue $statusChannels
     $statusCoreText = Get-ElementValue $statusCore
     $statusIssueText = Get-ElementValue $statusIssue
     if ($statusProxyModeText -notmatch "Off" -or $statusLocalProxyText -notmatch "HTTP 127.0.0.1:" -or $statusCoreText -notmatch "Core not running") {
         throw "Unexpected status bar details: proxy='$statusProxyModeText' local='$statusLocalProxyText' core='$statusCoreText' issue='$statusIssueText'"
     }
-    Write-Host "Status bar details: $statusProxyModeText / $statusLocalProxyText / $statusCoreText / $statusIssueText"
+    if ($statusTrafficText -notmatch "0 B up / 0 B down" -or $statusChannelsText -notmatch "0/0 up") {
+        throw "Unexpected status bar runtime summaries: traffic='$statusTrafficText' channels='$statusChannelsText'"
+    }
+    Write-Host "Status bar details: $statusProxyModeText / $statusLocalProxyText / $statusTrafficText / $statusChannelsText / $statusCoreText / $statusIssueText"
 
     $overviewProxyText = Get-ByAutomationId -Root $window -AutomationId "OverviewProxySummaryText" -TimeoutSeconds $TimeoutSeconds
     $setSystemProxyModeButton = Get-ByAutomationId -Root $window -AutomationId "SetProxyModeSystemButton" -TimeoutSeconds $TimeoutSeconds
@@ -804,7 +811,7 @@ try {
     Invoke-Element $copyOverviewStatusButton
     $clipboardOverviewStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy overview status did not place the summary on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
-        if ($text -match "Profile: Local x-tunnel" -and $text -match "Network: Direct ok" -and $text -match "Network updated: Last tested" -and $text -match "Local proxy: HTTP") {
+        if ($text -match "Profile: Local x-tunnel" -and $text -match "Traffic: 0 B up / 0 B down" -and $text -match "Channels: 0/0 up" -and $text -match "Network: Direct ok" -and $text -match "Network updated: Last tested" -and $text -match "Local proxy: HTTP") {
             return $text
         }
         return $null
@@ -1114,7 +1121,17 @@ try {
     if ($connectedLocalProxy -notmatch "HTTP 127.0.0.1:" -or $connectedLocalProxy -notmatch "SOCKS 127.0.0.1:") {
         throw "Status bar local proxy changed unexpectedly after connect: '$connectedLocalProxy'"
     }
-    Write-Host "Connected status bar: $connectedCoreStatus / $connectedLocalProxy"
+    $connectedTrafficStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Status bar traffic summary did not stay readable while connected." -Condition {
+        $text = Get-ElementValue $statusTraffic
+        if ($text -match "up / .* down") { return $text }
+        return $null
+    }
+    $connectedChannelsStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Status bar channels summary did not show connected channels." -Condition {
+        $text = Get-ElementValue $statusChannels
+        if ($text -match "1/1 up") { return $text }
+        return $null
+    }
+    Write-Host "Connected status bar: $connectedCoreStatus / $connectedLocalProxy / $connectedTrafficStatus / $connectedChannelsStatus"
 
     Select-Element $overviewTab
     $overviewRecentLogsBox = Get-ByAutomationId -Root $window -AutomationId "OverviewRecentLogsTextBox" -TimeoutSeconds $TimeoutSeconds

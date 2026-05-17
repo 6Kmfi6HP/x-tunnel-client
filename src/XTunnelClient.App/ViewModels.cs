@@ -200,6 +200,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _proxySummary = "Off";
     private string _localProxySummary = "-";
     private string _coreSummary = "Core not running";
+    private string _statusBarTrafficSummary = "0 B up / 0 B down";
+    private string _statusBarChannelSummary = "0/0 up, RTT waiting";
     private string _validationSummary = "Not validated";
     private string _recentIssueSummary = "-";
     private string _trayToolTipText = "x-tunnel Client\nDisconnected";
@@ -928,6 +930,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set => SetProperty(ref _coreSummary, value);
     }
 
+    public string StatusBarTrafficSummary
+    {
+        get => _statusBarTrafficSummary;
+        set => SetProperty(ref _statusBarTrafficSummary, value);
+    }
+
+    public string StatusBarChannelSummary
+    {
+        get => _statusBarChannelSummary;
+        set => SetProperty(ref _statusBarChannelSummary, value);
+    }
+
     public string ValidationSummary
     {
         get => _validationSummary;
@@ -1254,6 +1268,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         summary.AppendLine($"Profile: {ActiveProfileSummary}");
         summary.AppendLine($"Proxy mode: {ProxySummary}");
         summary.AppendLine($"Local proxy: {LocalProxySummary}");
+        summary.AppendLine($"Traffic: {StatusBarTrafficSummary}");
+        summary.AppendLine($"Channels: {StatusBarChannelSummary}");
         summary.AppendLine($"Network: {NetworkTestSummary}");
         summary.AppendLine($"Network detail: {NetworkTestDetail}");
         summary.AppendLine($"Network updated: {NetworkTestLastRunText}");
@@ -2426,6 +2442,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var totalListeners = status?.Listeners.Count ?? 0;
         var reconnects = GetJsonUInt64(stats?.Counters, "client_reconnects_total");
         var activeStreams = stats?.Server?.ActiveStreams ?? status?.Server?.ActiveStreams ?? 0;
+        StatusBarTrafficSummary = $"{FormatBytes(sent)} up / {FormatBytes(received)} down";
+        StatusBarChannelSummary = avgRtt > 0
+            ? $"{upChannels}/{totalChannels} up, {avgRtt * 1000:0} ms RTT"
+            : $"{upChannels}/{totalChannels} up, RTT waiting";
 
         ReplaceCollection(OverviewMetrics,
         [

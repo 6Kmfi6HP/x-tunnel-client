@@ -65,15 +65,19 @@
     </Border>
 
     <Border DockPanel.Dock="Bottom" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,1,0,0" Padding="12,6">
-      <Grid ColumnDefinitions="120,1*,50,1.3*,44,1.1*,50,1*" ColumnSpacing="8">
+      <Grid ColumnDefinitions="112,1*,50,1.35*,58,1*,70,1*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="2">
         <TextBlock Text="{Binding ConnectionHeading}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarStateText"/>
         <TextBlock Grid.Column="1" Text="{Binding ActiveProfileSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarProfileText"/>
         <TextBlock Grid.Column="2" Text="{Binding ProxySummary}" Classes="caption" automation:AutomationProperties.AutomationId="StatusBarProxyModeText"/>
         <TextBlock Grid.Column="3" Text="{Binding LocalProxySummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarLocalProxyText"/>
-        <TextBlock Grid.Column="4" Text="Core" Classes="caption"/>
-        <TextBlock Grid.Column="5" Text="{Binding CoreSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarCoreText"/>
-        <TextBlock Grid.Column="6" Text="Issue" Classes="caption"/>
-        <TextBlock Grid.Column="7" Text="{Binding RecentIssueSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarIssueText"/>
+        <TextBlock Grid.Column="4" Text="Traffic" Classes="caption"/>
+        <TextBlock Grid.Column="5" Text="{Binding StatusBarTrafficSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarTrafficText"/>
+        <TextBlock Grid.Column="6" Text="Channels" Classes="caption"/>
+        <TextBlock Grid.Column="7" Text="{Binding StatusBarChannelSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarChannelsText"/>
+        <TextBlock Grid.Row="1" Text="Core" Classes="caption"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding CoreSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarCoreText"/>
+        <TextBlock Grid.Row="1" Grid.Column="4" Text="Issue" Classes="caption"/>
+        <TextBlock Grid.Row="1" Grid.Column="5" Grid.ColumnSpan="3" Text="{Binding RecentIssueSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarIssueText"/>
       </Grid>
     </Border>
 
