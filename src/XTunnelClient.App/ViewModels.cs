@@ -248,6 +248,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         CopyDiagnosticsSummaryCommand = new RelayCommand(CopyDiagnosticsSummary, HasDiagnosticsSummary);
         CopyDiagnosticsReportCommand = new RelayCommand(CopyDiagnosticsReport, HasDiagnosticsReport);
         CopyDiagnosticsPortsCommand = new RelayCommand(CopyDiagnosticsPorts, HasDiagnosticsPortDetail);
+        ClearDiagnosticsTestsCommand = new RelayCommand(ClearDiagnosticsTests, HasDiagnosticsTestResults);
         SetProxyModeOffCommand = new RelayCommand(() => SetProxyMode(ProxyMode.Off));
         SetProxyModeSystemCommand = new RelayCommand(() => SetProxyMode(ProxyMode.System));
         SetProxyModePacCommand = new RelayCommand(() => SetProxyMode(ProxyMode.Pac));
@@ -741,6 +742,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 CopyNetworkTestResultCommand.RaiseCanExecuteChanged();
                 ClearNetworkTestCommand.RaiseCanExecuteChanged();
+                ClearDiagnosticsTestsCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -754,6 +756,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 CopyProfileEndpointTestResultCommand.RaiseCanExecuteChanged();
                 ClearProfileEndpointTestCommand.RaiseCanExecuteChanged();
+                ClearDiagnosticsTestsCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -1006,6 +1009,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand CopyDiagnosticsSummaryCommand { get; }
     public RelayCommand CopyDiagnosticsReportCommand { get; }
     public RelayCommand CopyDiagnosticsPortsCommand { get; }
+    public RelayCommand ClearDiagnosticsTestsCommand { get; }
     public RelayCommand SetProxyModeOffCommand { get; }
     public RelayCommand SetProxyModeSystemCommand { get; }
     public RelayCommand SetProxyModePacCommand { get; }
@@ -1787,6 +1791,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         NetworkTestLastRunText = "Network test not run";
         SetNetworkRouteNotTested();
         ErrorText = "Network test result cleared";
+    }
+
+    private void ClearDiagnosticsTests()
+    {
+        ClearNetworkTest();
+        ClearProfileEndpointTest();
+        ErrorText = "Diagnostics test results cleared";
     }
 
     private void CopyProfileEndpointTestResult()
@@ -3205,6 +3216,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool HasDiagnosticsPortDetail()
     {
         return !string.IsNullOrWhiteSpace(DiagnosticsPortDetail);
+    }
+
+    private bool HasDiagnosticsTestResults()
+    {
+        return HasNetworkTestResult() || HasProfileEndpointTestResult();
     }
 
     private bool HasCorePathToCopy()

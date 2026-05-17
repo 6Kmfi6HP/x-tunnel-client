@@ -775,6 +775,45 @@ try {
     Save-ElementScreenshot -Element $window -Path $DiagnosticsScreenshotPath
     Write-Host "Diagnostics GUI screenshot: $DiagnosticsScreenshotPath"
 
+    $clearDiagnosticsTestsButton = Get-ByAutomationId -Root $window -AutomationId "ClearDiagnosticsTestsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $clearDiagnosticsTestsButton
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear diagnostics tests did not reset the network result text." -Condition {
+        $text = Get-ElementValue $resultBox
+        if ($text -match "Not tested") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear diagnostics tests did not reset the direct route chip." -Condition {
+        $text = Get-ElementValue $directRouteStatus
+        if ($text -match "Direct: not tested") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear diagnostics tests did not reset the forward result text." -Condition {
+        $text = Get-ElementValue $endpointResultBox
+        if ($text -match "Not tested") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear diagnostics tests did not reset the forward route chip." -Condition {
+        $text = Get-ElementValue $forwardRouteStatus
+        if ($text -match "Forward TCP: not tested") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear diagnostics tests did not reset the forward last-run text." -Condition {
+        $text = Get-ElementValue $forwardLastRunText
+        if ($text -match "Forward test not run") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Write-Host "Diagnostics tests cleared"
+
     $connectButton = Get-ByAutomationId -Root $window -AutomationId "ConnectButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $connectButton
 
