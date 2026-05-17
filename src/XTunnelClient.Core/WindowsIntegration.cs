@@ -340,10 +340,12 @@ public sealed class PortChecker
     {
         try
         {
-            var parts = address.Split(':');
-            var host = parts[0];
-            var port = int.Parse(parts[^1]);
-            var listener = new TcpListener(IPAddress.Parse(host), port);
+            if (!Uri.TryCreate("tcp://" + address, UriKind.Absolute, out var uri) || uri.Port <= 0)
+            {
+                throw new FormatException("地址必须是 host:port");
+            }
+            var ip = ResolveListenAddress(uri.Host);
+            var listener = new TcpListener(ip, uri.Port);
             listener.Start();
             listener.Stop();
             return new PortCheckResult { Address = address, Available = true };
@@ -352,6 +354,19 @@ public sealed class PortChecker
         {
             return new PortCheckResult { Address = address, Available = false, Error = ex.Message };
         }
+    }
+
+    private static IPAddress ResolveListenAddress(string host)
+    {
+        if (string.IsNullOrWhiteSpace(host) || host == "*" || host == "+")
+        {
+            return IPAddress.Any;
+        }
+        if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+        {
+            return IPAddress.Loopback;
+        }
+        return IPAddress.Parse(host);
     }
 }
 

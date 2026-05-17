@@ -102,6 +102,21 @@ public sealed class ClientCoreTests
     }
 
     [Fact]
+    public void PortCheckerAcceptsLocalhostAndRuntimeConfigFormatsIpv6()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+
+        var localhost = new PortChecker().Check($"localhost:{port}");
+        Assert.True(localhost.Available, localhost.Error);
+
+        var endpoints = new RuntimeConfigService().GetLocalProxyEndpoints("""{"listen":"http://[::1]:10809"}""");
+        Assert.Equal("[::1]:10809", endpoints.Http);
+    }
+
+    [Fact]
     public void SubscriptionDiffSeparatesAddedAndUpdatedProfiles()
     {
         var service = new SubscriptionService(new RuntimeConfigService(), new HttpClient(new StaticHandler("[]")));

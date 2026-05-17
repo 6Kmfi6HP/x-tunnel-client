@@ -160,7 +160,8 @@ public sealed class RuntimeConfigService
             {
                 continue;
             }
-            var address = $"{uri.Host}:{uri.Port}";
+            var host = uri.Host.Contains(':') && !uri.Host.StartsWith("[", StringComparison.Ordinal) ? $"[{uri.Host}]" : uri.Host;
+            var address = $"{host}:{uri.Port}";
             if (uri.Scheme.Equals("http", StringComparison.OrdinalIgnoreCase))
             {
                 endpoints.Http = address;
