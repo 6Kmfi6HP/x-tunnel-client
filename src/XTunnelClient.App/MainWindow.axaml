@@ -188,6 +188,10 @@
                 <TextBox Text="{Binding ProfileSearchText}" PlaceholderText="Search profiles" automation:AutomationProperties.AutomationId="ProfileSearchTextBox"/>
                 <Button Grid.Column="1" Content="Clear" Command="{Binding ClearProfileSearchCommand}" automation:AutomationProperties.AutomationId="ClearProfileSearchButton"/>
               </Grid>
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                <TextBlock Text="Sort" Classes="caption" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileSortOptions}" SelectedItem="{Binding SelectedProfileSort}" MinHeight="30" automation:AutomationProperties.AutomationId="ProfileSortComboBox"/>
+              </Grid>
               <WrapPanel>
                 <Button Content="New" Command="{Binding NewProfileCommand}"/>
                 <Button Content="Copy" Command="{Binding DuplicateProfileCommand}" Margin="8,0,0,0"/>

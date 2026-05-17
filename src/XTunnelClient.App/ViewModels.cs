@@ -135,6 +135,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _logFilterText = "";
     private string _selectedLogLevelFilter = "All";
     private string _profileSearchText = "";
+    private string _selectedProfileSort = "Saved";
     private string _diagnosticsText = "";
     private string _diagnosticsSummaryText = "";
     private string _subscriptionStatusText = "";
@@ -226,6 +227,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public IReadOnlyList<string> UpdateChannels { get; } = ["stable", "beta", "disabled"];
     public IReadOnlyList<string> SubscriptionTrustPolicies { get; } = ["confirm", "auto"];
     public IReadOnlyList<string> LogLevelFilters { get; } = ["All", "debug", "info", "warn", "error"];
+    public IReadOnlyList<string> ProfileSortOptions { get; } = ["Saved", "Name", "Endpoint"];
 
     public Profile? SelectedProfile
     {
@@ -348,6 +350,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set
         {
             if (SetProperty(ref _profileSearchText, value))
+            {
+                UpdateFilteredProfiles();
+            }
+        }
+    }
+
+    public string SelectedProfileSort
+    {
+        get => _selectedProfileSort;
+        set
+        {
+            if (SetProperty(ref _selectedProfileSort, value))
             {
                 UpdateFilteredProfiles();
             }
@@ -1506,7 +1520,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private void UpdateFilteredProfiles(Guid? preferredProfileId = null)
     {
         var selectedId = preferredProfileId ?? SelectedProfile?.Id;
-        var matches = Profiles.Where(MatchesProfileSearch).ToList();
+        var matches = ApplyProfileSort(Profiles.Where(MatchesProfileSearch)).ToList();
         ReplaceCollection(FilteredProfiles, matches);
         TestVisibleProfilesCommand.RaiseCanExecuteChanged();
         SelectFastestProfileCommand.RaiseCanExecuteChanged();
@@ -1556,6 +1570,28 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return profile.LastEndpointTestAt.HasValue
             && string.IsNullOrWhiteSpace(profile.LastEndpointTestError)
             && profile.LastEndpointTestDurationMs.HasValue;
+    }
+
+    private IEnumerable<Profile> ApplyProfileSort(IEnumerable<Profile> profiles)
+    {
+        return SelectedProfileSort switch
+        {
+            "Name" => profiles.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
+            "Endpoint" => profiles
+                .OrderBy(EndpointSortGroup)
+                .ThenBy(x => x.LastEndpointTestDurationMs ?? long.MaxValue)
+                .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
+            _ => profiles
+        };
+    }
+
+    private static int EndpointSortGroup(Profile profile)
+    {
+        if (HasSuccessfulEndpointTest(profile))
+        {
+            return 0;
+        }
+        return profile.LastEndpointTestAt.HasValue ? 2 : 1;
     }
 
     private LocalProxyEndpoints? TryGetSelectedLocalProxyEndpoints(out string? error)

@@ -128,6 +128,32 @@ function Select-Element {
     $pattern.Select()
 }
 
+function Select-ComboBoxItem {
+    param(
+        [System.Windows.Automation.AutomationElement]$Element,
+        [string]$Name,
+        [int]$TimeoutSeconds
+    )
+    $expand = $Element.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+    $expand.Expand()
+    try {
+        $item = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Timed out waiting for combo box item '$Name'." -Condition {
+            $condition = [System.Windows.Automation.PropertyCondition]::new(
+                [System.Windows.Automation.AutomationElement]::NameProperty,
+                $Name)
+            [System.Windows.Automation.AutomationElement]::RootElement.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+        }
+        Select-Element $item
+    }
+    finally {
+        try {
+            $expand.Collapse()
+        }
+        catch {
+        }
+    }
+}
+
 function Set-ElementValue {
     param(
         [System.Windows.Automation.AutomationElement]$Element,
@@ -512,6 +538,21 @@ try {
         return $null
     }
     Write-Host "Profile search cleared: $clearedProfileText"
+
+    $profileSortCombo = Get-ByAutomationId -Root $window -AutomationId "ProfileSortComboBox" -TimeoutSeconds $TimeoutSeconds
+    Select-ComboBoxItem -Element $profileSortCombo -Name "Endpoint" -TimeoutSeconds $TimeoutSeconds
+    $endpointSortedProfile = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Endpoint sort did not put the tested local profile first." -Condition {
+        $item = Find-ByAutomationId -Root $window -AutomationId "ProfileListItemName"
+        if (!$item) {
+            return $null
+        }
+        $text = Get-ElementValue $item
+        if ($text -match "Local x-tunnel") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Endpoint sort first profile: $endpointSortedProfile"
 
     $selectFastestButton = Get-ByAutomationId -Root $window -AutomationId "SelectFastestProfileButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $selectFastestButton
