@@ -426,12 +426,14 @@
             <TextBlock Text="Target" VerticalAlignment="Center"/>
             <ComboBox Grid.Column="1" ItemsSource="{Binding NetworkTestTargets}" SelectedItem="{Binding SelectedNetworkTestTarget}" MinHeight="30" automation:AutomationProperties.AutomationId="NetworkTestTargetComboBox"/>
           </Grid>
-          <Grid Grid.Row="2" ColumnDefinitions="90,*,Auto,Auto,Auto" ColumnSpacing="8">
+          <Grid Grid.Row="2" ColumnDefinitions="90,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
             <TextBlock Text="Test URL" VerticalAlignment="Center"/>
             <TextBox Grid.Column="1" Text="{Binding NetworkTestUrl}" automation:AutomationProperties.AutomationId="NetworkTestUrlTextBox"/>
-            <Button Grid.Column="2" Content="Test Network" Command="{Binding TestNetworkCommand}" automation:AutomationProperties.AutomationId="TestNetworkButton"/>
-            <Button Grid.Column="3" Content="Copy Result" Command="{Binding CopyNetworkTestResultCommand}" automation:AutomationProperties.AutomationId="CopyNetworkTestResultButton"/>
-            <Button Grid.Column="4" Content="Clear" Command="{Binding ClearNetworkTestCommand}" automation:AutomationProperties.AutomationId="ClearNetworkTestButton"/>
+            <WrapPanel Grid.Row="1" Grid.Column="1" ItemSpacing="8" LineSpacing="8">
+              <Button Content="Test Network" Command="{Binding TestNetworkCommand}" automation:AutomationProperties.AutomationId="TestNetworkButton"/>
+              <Button Content="Copy Result" Command="{Binding CopyNetworkTestResultCommand}" automation:AutomationProperties.AutomationId="CopyNetworkTestResultButton"/>
+              <Button Content="Clear" Command="{Binding ClearNetworkTestCommand}" automation:AutomationProperties.AutomationId="ClearNetworkTestButton"/>
+            </WrapPanel>
           </Grid>
           <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
             <Border Background="{Binding NetworkDirectRouteBackground}" CornerRadius="4" Padding="8,5">
