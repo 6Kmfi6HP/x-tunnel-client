@@ -81,3 +81,4 @@ Run the desktop GUI smoke after a debug build:
 ```
 
 The GUI smoke launches the app with an isolated `XTUNNEL_CLIENT_HOME`, starts a local x-tunnel server, controls the Profiles, Subscriptions, and Diagnostics tabs through Windows UI Automation, runs the network test against a local HTTP 204 endpoint, checks the selected profile's forward endpoint, connects and disconnects through the GUI, updates from a local subscription feed, and verifies the result text.
+If `..\x-tunnel\build\x-tunnel.exe` is missing, the script builds it from the sibling core repository first.

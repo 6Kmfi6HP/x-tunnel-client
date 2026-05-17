@@ -1,5 +1,6 @@
 param(
     [string]$AppExe = (Join-Path $PSScriptRoot "..\src\XTunnelClient.App\bin\Debug\net8.0-windows\XTunnelClient.App.exe"),
+    [string]$CoreRepo = (Join-Path $PSScriptRoot "..\..\x-tunnel"),
     [string]$CoreExe = (Join-Path $PSScriptRoot "..\..\x-tunnel\build\x-tunnel.exe"),
     [string]$AppHome = (Join-Path $env:TEMP ("xtunnel-client-gui-" + [Guid]::NewGuid().ToString("N"))),
     [string]$InstanceName = ("Local\x-tunnel-client-gui-" + [Guid]::NewGuid().ToString("N")),
@@ -130,7 +131,20 @@ if (!(Test-Path $AppExe)) {
     throw "App executable not found: $AppExe"
 }
 if (!(Test-Path $CoreExe)) {
-    throw "Core executable not found: $CoreExe"
+    if (!(Test-Path $CoreRepo)) {
+        throw "Core executable not found and core repo is unavailable: $CoreExe"
+    }
+    Write-Host "Core executable not found; building $CoreExe"
+    Push-Location $CoreRepo
+    try {
+        go build -o $CoreExe .\cmd\x-tunnel
+    }
+    finally {
+        Pop-Location
+    }
+    if (!(Test-Path $CoreExe)) {
+        throw "Core executable was not created: $CoreExe"
+    }
 }
 
 $port = Get-FreeTcpPort
