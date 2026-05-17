@@ -101,6 +101,7 @@
                       <TextBlock Text="{Binding NetworkTestSummary}" Foreground="{Binding NetworkTestBadgeForeground}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="OverviewNetworkSummaryText"/>
                     </Border>
                     <TextBlock Text="{Binding NetworkTestDetail}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="OverviewNetworkDetailText"/>
+                    <TextBlock Text="{Binding NetworkTestLastRunText}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="OverviewNetworkLastRunText"/>
                   </StackPanel>
                   <TextBlock Grid.Row="5" Text="Validation" Classes="caption"/>
                   <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding ValidationSummary}" TextTrimming="CharacterEllipsis"/>

@@ -161,6 +161,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _networkTestText = "Not tested";
     private string _networkTestSummary = "Not tested";
     private string _networkTestDetail = "Run Test Network to check direct and proxy routes.";
+    private string _networkTestLastRunText = "Network test not run";
     private string _networkTestBadgeBackground = "#374151";
     private string _networkTestBadgeForeground = "#E5E7EB";
     private string _networkDirectRouteStatus = "Direct: not tested";
@@ -565,6 +566,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             NetworkTestSummary = "Ready to test";
             NetworkTestDetail = value.Trim();
+            NetworkTestLastRunText = "Target changed; run test";
             SetNetworkRouteReady(value.Trim());
             if (!_applyingNetworkTestTarget)
             {
@@ -619,6 +621,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _networkTestDetail;
         set => SetProperty(ref _networkTestDetail, value);
+    }
+
+    public string NetworkTestLastRunText
+    {
+        get => _networkTestLastRunText;
+        private set => SetProperty(ref _networkTestLastRunText, value);
     }
 
     public string NetworkTestBadgeBackground
@@ -1133,6 +1141,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         summary.AppendLine($"Local proxy: {LocalProxySummary}");
         summary.AppendLine($"Network: {NetworkTestSummary}");
         summary.AppendLine($"Network detail: {NetworkTestDetail}");
+        summary.AppendLine($"Network updated: {NetworkTestLastRunText}");
         summary.AppendLine($"Network target: {NetworkTestUrl}");
         summary.AppendLine($"Core: {CoreSummary}");
         summary.AppendLine($"Validation: {ValidationSummary}");
@@ -1638,6 +1647,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             NetworkTestText = "Target URL must be an absolute http or https URL";
             NetworkTestSummary = "Invalid target";
             NetworkTestDetail = NetworkTestText;
+            NetworkTestLastRunText = $"Last attempted {DateTimeOffset.Now.LocalDateTime:T}";
             SetNetworkRouteInvalid(NetworkTestText);
             ErrorText = NetworkTestText;
             return;
@@ -1649,11 +1659,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             NetworkTestText = "Testing network...";
             NetworkTestSummary = "Testing network...";
             NetworkTestDetail = target.ToString();
+            NetworkTestLastRunText = $"Testing started {DateTimeOffset.Now.LocalDateTime:T}";
             SetNetworkRouteTesting(target, endpoints, endpointError);
             var results = await _networkTester.TestAsync(target, endpoints);
             NetworkTestText = FormatNetworkTestResults(results, endpointError);
             UpdateNetworkRouteStatus(results, endpointError);
             UpdateNetworkTestSummary(results, endpointError);
+            NetworkTestLastRunText = $"Last tested {DateTimeOffset.Now.LocalDateTime:T}";
             ErrorText = results.Any(x => x.Success) ? "" : "Network test failed";
         }
         catch (Exception ex)
@@ -1661,6 +1673,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             NetworkTestText = $"Network test failed: {ex.Message}";
             NetworkTestSummary = "Network failed";
             NetworkTestDetail = ex.Message;
+            NetworkTestLastRunText = $"Last failed {DateTimeOffset.Now.LocalDateTime:T}";
             SetNetworkRouteFailed(ex.Message);
             ErrorText = ex.Message;
         }

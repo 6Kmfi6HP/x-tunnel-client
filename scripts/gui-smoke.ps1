@@ -536,13 +536,21 @@ try {
         return $null
     }
     $overviewNetworkDetailText = Get-ByAutomationId -Root $window -AutomationId "OverviewNetworkDetailText" -TimeoutSeconds $TimeoutSeconds
-    Write-Host "Overview network summary: $overviewNetworkText / $(Get-ElementValue $overviewNetworkDetailText)"
+    $overviewNetworkLastRunText = Get-ByAutomationId -Root $window -AutomationId "OverviewNetworkLastRunText" -TimeoutSeconds $TimeoutSeconds
+    $overviewNetworkLastRun = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Overview network summary did not show when the test was last run." -Condition {
+        $text = Get-ElementValue $overviewNetworkLastRunText
+        if ($text -match "Last tested") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Overview network summary: $overviewNetworkText / $(Get-ElementValue $overviewNetworkDetailText) / $overviewNetworkLastRun"
     $copyOverviewStatusButton = Get-ByAutomationId -Root $window -AutomationId "CopyOverviewStatusButton" -TimeoutSeconds $TimeoutSeconds
     Set-Clipboard -Value ""
     Invoke-Element $copyOverviewStatusButton
     $clipboardOverviewStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy overview status did not place the summary on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
-        if ($text -match "Profile: Local x-tunnel" -and $text -match "Network: Direct ok" -and $text -match "Local proxy: HTTP") {
+        if ($text -match "Profile: Local x-tunnel" -and $text -match "Network: Direct ok" -and $text -match "Network updated: Last tested" -and $text -match "Local proxy: HTTP") {
             return $text
         }
         return $null
