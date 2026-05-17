@@ -372,6 +372,18 @@ try {
     }
     Write-Host "Copied profile summary: $($profileSummaryClipboardText.Split([Environment]::NewLine)[0])"
 
+    $startupProfileButton = Get-ByAutomationId -Root $window -AutomationId "UseStartupProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $startupProfileButton
+    $startupProfileSummaryBlock = Get-ByAutomationId -Root $window -AutomationId "StartupProfileSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $startupProfileSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Startup profile shortcut did not update the profile summary." -Condition {
+        $text = Get-ElementValue $startupProfileSummaryBlock
+        if ($text -match "Startup: Local x-tunnel") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Startup profile summary: $startupProfileSummary"
+
     $testVisibleProfilesButton = Get-ByAutomationId -Root $window -AutomationId "TestVisibleProfilesButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $testVisibleProfilesButton
     $profileBatchTestTextBlock = Get-ByAutomationId -Root $window -AutomationId "ProfileBatchTestTextBlock" -TimeoutSeconds $TimeoutSeconds

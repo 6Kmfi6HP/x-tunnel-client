@@ -195,6 +195,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ValidateProfileCommand = new AsyncRelayCommand(ValidateProfileAsync, () => SelectedProfile is not null);
         FormatProfileCommand = new AsyncRelayCommand(FormatProfileAsync, () => SelectedProfile is not null);
         CopyProfileSummaryCommand = new RelayCommand(CopyProfileSummary, () => SelectedProfile is not null);
+        UseSelectedProfileAtStartupCommand = new RelayCommand(UseSelectedProfileAtStartup, () => SelectedProfile is not null);
+        ClearStartupProfileCommand = new RelayCommand(ClearStartupProfile, () => Settings.AutoConnectProfileId is not null);
         NewSubscriptionCommand = new RelayCommand(NewSubscription);
         SaveSubscriptionCommand = new RelayCommand(SaveSelectedSubscription, () => SelectedSubscription is not null);
         DeleteSubscriptionCommand = new RelayCommand(DeleteSelectedSubscription, () => SelectedSubscription is not null);
@@ -258,6 +260,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 LoadStructuredFields();
                 ProfileIssues.Clear();
                 OnPropertyChanged(nameof(AutoConnectSelectedProfile));
+                OnPropertyChanged(nameof(StartupProfileSummary));
                 RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
                 RaiseCommandState();
             }
@@ -661,6 +664,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             Settings.AutoConnectProfileId = value ? SelectedProfile?.Id : null;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(StartupProfileSummary));
+            ClearStartupProfileCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public string StartupProfileSummary
+    {
+        get
+        {
+            if (Settings.AutoConnectProfileId is null)
+            {
+                return "Startup: not set";
+            }
+
+            var profile = Profiles.FirstOrDefault(x => x.Id == Settings.AutoConnectProfileId.Value);
+            return profile is null ? "Startup: saved profile missing" : $"Startup: {profile.Name}";
         }
     }
 
@@ -672,6 +691,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand ValidateProfileCommand { get; }
     public AsyncRelayCommand FormatProfileCommand { get; }
     public RelayCommand CopyProfileSummaryCommand { get; }
+    public RelayCommand UseSelectedProfileAtStartupCommand { get; }
+    public RelayCommand ClearStartupProfileCommand { get; }
     public ICommand NewSubscriptionCommand { get; }
     public RelayCommand SaveSubscriptionCommand { get; }
     public RelayCommand DeleteSubscriptionCommand { get; }
@@ -725,6 +746,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         var targetId = preferredProfileId ?? Settings.AutoConnectProfileId;
         UpdateFilteredProfiles(targetId);
+        OnPropertyChanged(nameof(StartupProfileSummary));
     }
 
     private void RefreshProfileListItem(Profile profile)
@@ -1528,6 +1550,34 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ErrorText = "Profile summary copied";
     }
 
+    private void UseSelectedProfileAtStartup()
+    {
+        if (SelectedProfile is null)
+        {
+            return;
+        }
+
+        Settings.AutoConnectProfileId = SelectedProfile.Id;
+        SaveSettings();
+        NotifyStartupProfileChanged();
+        ErrorText = $"Startup profile: {SelectedProfile.Name}";
+    }
+
+    private void ClearStartupProfile()
+    {
+        Settings.AutoConnectProfileId = null;
+        SaveSettings();
+        NotifyStartupProfileChanged();
+        ErrorText = "Startup profile cleared";
+    }
+
+    private void NotifyStartupProfileChanged()
+    {
+        OnPropertyChanged(nameof(AutoConnectSelectedProfile));
+        OnPropertyChanged(nameof(StartupProfileSummary));
+        ClearStartupProfileCommand.RaiseCanExecuteChanged();
+    }
+
     private void OpenFolder(string path)
     {
         try
@@ -2246,6 +2296,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ValidateProfileCommand.RaiseCanExecuteChanged();
         FormatProfileCommand.RaiseCanExecuteChanged();
         CopyProfileSummaryCommand.RaiseCanExecuteChanged();
+        UseSelectedProfileAtStartupCommand.RaiseCanExecuteChanged();
+        ClearStartupProfileCommand.RaiseCanExecuteChanged();
         ApplyFormCommand.RaiseCanExecuteChanged();
         ConnectCommand.RaiseCanExecuteChanged();
         DisconnectCommand.RaiseCanExecuteChanged();

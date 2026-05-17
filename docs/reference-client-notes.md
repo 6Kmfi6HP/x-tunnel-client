@@ -42,3 +42,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Kept profile and diagnostics tabs intact so the existing workflows remain reachable.
 - Preserved raw status/log text for debugging while making common state scannable for daily use.
 - Added a copyable, redacted profile summary so the profile list/detail workflow supports quick diagnostics without exposing tokens or secret references.
+- Added a profile-page startup shortcut so the selected node can be saved for auto-connect from the same workflow where it is tested and edited.
