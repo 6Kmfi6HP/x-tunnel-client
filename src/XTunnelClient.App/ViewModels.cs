@@ -187,6 +187,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _corePathStatusBackground = "#374151";
     private string _corePathStatusForeground = "#E5E7EB";
     private string _errorText = "";
+    private string _appMessageForeground = "#E5E7EB";
     private string _secretValue = "";
     private string _profileListen = "";
     private string _profileForward = "";
@@ -855,7 +856,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string ErrorText
     {
         get => _errorText;
-        set => SetProperty(ref _errorText, value);
+        set
+        {
+            if (SetProperty(ref _errorText, value))
+            {
+                AppMessageForeground = ClassifyAppMessageForeground(value);
+            }
+        }
+    }
+
+    public string AppMessageForeground
+    {
+        get => _appMessageForeground;
+        private set => SetProperty(ref _appMessageForeground, value);
     }
 
     public string SecretValue
@@ -2599,6 +2612,28 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private static string FirstNonEmpty(params string?[] values)
     {
         return values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "";
+    }
+
+    private static string ClassifyAppMessageForeground(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return "#E5E7EB";
+        }
+        if (ContainsAny(message, "failed", "failure", "invalid", "error", "missing", "not found", "blocked", "无效", "失败", "错误"))
+        {
+            return "#FCA5A5";
+        }
+        if (ContainsAny(message, "copied", "saved", "exported", "cleared", "refreshed", "complete", "updated", "imported", "deleted", "restored", "set from", "formatted", "applied"))
+        {
+            return "#86EFAC";
+        }
+        return "#FDE68A";
+    }
+
+    private static bool ContainsAny(string value, params string[] terms)
+    {
+        return terms.Any(term => value.Contains(term, StringComparison.OrdinalIgnoreCase));
     }
 
     private void UpdateFilteredLogText()
