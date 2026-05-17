@@ -369,16 +369,17 @@
       </TabItem>
 
       <TabItem Header="Logs" automation:AutomationProperties.AutomationId="LogsTab">
-        <Grid Margin="16" RowDefinitions="Auto,*" RowSpacing="10">
+        <Grid Margin="16" RowDefinitions="Auto,Auto,*" RowSpacing="8">
           <Grid ColumnDefinitions="Auto,Auto,150,260,Auto,Auto,*" ColumnSpacing="8">
             <Button Content="Refresh Diagnostics" Command="{Binding RefreshDiagnosticsCommand}"/>
             <Button Grid.Column="1" Content="Export Diagnostics" Click="ExportDiagnostics_OnClick"/>
             <ComboBox Grid.Column="2" ItemsSource="{Binding LogLevelFilters}" SelectedItem="{Binding SelectedLogLevelFilter}" automation:AutomationProperties.AutomationId="LogLevelFilterComboBox"/>
-            <TextBox Grid.Column="3" Text="{Binding LogFilterText}" PlaceholderText="Filter logs" automation:AutomationProperties.AutomationId="LogFilterTextBox"/>
+            <TextBox Grid.Column="3" Text="{Binding LogFilterText}" PlaceholderText="Filter logs, /regex/" automation:AutomationProperties.AutomationId="LogFilterTextBox"/>
             <Button Grid.Column="4" Content="Clear Filters" Command="{Binding ClearLogFiltersCommand}" automation:AutomationProperties.AutomationId="ClearLogFiltersButton"/>
             <Button Grid.Column="5" Content="Copy Logs" Command="{Binding CopyFilteredLogsCommand}" automation:AutomationProperties.AutomationId="CopyFilteredLogsButton"/>
           </Grid>
-          <TextBox Grid.Row="1" Text="{Binding FilteredLogText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" automation:AutomationProperties.AutomationId="FilteredLogTextBox"/>
+          <TextBlock Grid.Row="1" Text="{Binding LogFilterSummary}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="LogFilterSummaryText"/>
+          <TextBox Grid.Row="2" Text="{Binding FilteredLogText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" automation:AutomationProperties.AutomationId="FilteredLogTextBox"/>
         </Grid>
       </TabItem>
 

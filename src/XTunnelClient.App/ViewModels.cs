@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Styling;
@@ -136,6 +137,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private List<ControlLogEntry> _logEntries = [];
     private string _filteredLogText = "";
     private string _logFilterText = "";
+    private string _logFilterSummary = "Showing all logs";
     private string _selectedLogLevelFilter = "All";
     private string _profileSearchText = "";
     private string _selectedProfileSort = "Saved";
@@ -381,6 +383,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 UpdateFilteredLogText();
             }
         }
+    }
+
+    public string LogFilterSummary
+    {
+        get => _logFilterSummary;
+        set => SetProperty(ref _logFilterSummary, value);
     }
 
     public string SelectedLogLevelFilter
@@ -1954,6 +1962,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         var filter = LogFilterText.Trim();
         var level = SelectedLogLevelFilter;
+        if (!TryBuildLogRegex(filter, out var regex, out var regexError))
+        {
+            FilteredLogText = "";
+            LogFilterSummary = $"Invalid regex: {regexError}";
+            return;
+        }
+
         if (_logEntries.Count > 0)
         {
             IEnumerable<ControlLogEntry> entries = _logEntries;
@@ -1963,27 +1978,83 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
             if (!string.IsNullOrWhiteSpace(filter))
             {
-                entries = entries.Where(x => FormatLogEntry(x).Contains(filter, StringComparison.OrdinalIgnoreCase));
+                entries = entries.Where(x => MatchesLogFilter(FormatLogEntry(x), filter, regex));
             }
-            FilteredLogText = FormatLogs(entries);
+            var filtered = entries.ToList();
+            FilteredLogText = FormatLogs(filtered);
+            UpdateLogFilterSummary(filtered.Count, _logEntries.Count, filter, regex);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(filter) && string.Equals(level, "All", StringComparison.OrdinalIgnoreCase))
         {
             FilteredLogText = LogText;
+            var allCount = CountLogLines(LogText);
+            UpdateLogFilterSummary(allCount, allCount, filter, regex);
             return;
         }
         var lines = LogText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        var total = lines.Length;
         if (!string.Equals(level, "All", StringComparison.OrdinalIgnoreCase))
         {
             lines = lines.Where(x => x.Contains($"[{level}", StringComparison.OrdinalIgnoreCase)).ToArray();
         }
         if (!string.IsNullOrWhiteSpace(filter))
         {
-            lines = lines.Where(x => x.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToArray();
+            lines = lines.Where(x => MatchesLogFilter(x, filter, regex)).ToArray();
         }
         FilteredLogText = string.Join(Environment.NewLine, lines);
+        UpdateLogFilterSummary(lines.Length, total, filter, regex);
+    }
+
+    private static bool TryBuildLogRegex(string filter, out Regex? regex, out string? error)
+    {
+        regex = null;
+        error = null;
+        if (!IsRegexFilter(filter))
+        {
+            return true;
+        }
+
+        try
+        {
+            regex = new Regex(filter[1..^1], RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
+            return true;
+        }
+        catch (ArgumentException ex)
+        {
+            error = ex.Message;
+            return false;
+        }
+    }
+
+    private static bool IsRegexFilter(string filter)
+    {
+        return filter.Length >= 2 && filter[0] == '/' && filter[^1] == '/';
+    }
+
+    private static bool MatchesLogFilter(string line, string filter, Regex? regex)
+    {
+        return regex is null
+            ? line.Contains(filter, StringComparison.OrdinalIgnoreCase)
+            : regex.IsMatch(line);
+    }
+
+    private void UpdateLogFilterSummary(int shown, int total, string filter, Regex? regex)
+    {
+        if (string.IsNullOrWhiteSpace(filter) && string.Equals(SelectedLogLevelFilter, "All", StringComparison.OrdinalIgnoreCase))
+        {
+            LogFilterSummary = $"Showing {shown} log line(s)";
+            return;
+        }
+
+        var mode = regex is null ? "text" : "regex";
+        LogFilterSummary = $"Showing {shown}/{total} log line(s), {mode} filter";
+    }
+
+    private static int CountLogLines(string text)
+    {
+        return text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Length;
     }
 
     private static string FormatLogs(IEnumerable<ControlLogEntry> logs)

@@ -53,3 +53,5 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added a dedicated GUI smoke screenshot for the Overview network-test summary state.
 - Added a copyable Overview status snapshot for troubleshooting current profile, proxy, network-test, core, validation, and issue state.
 - Made the Overview network-test summary a color-coded badge so ok, partial, pending, and failed states are faster to scan.
+- Added `/regex/` runtime log filtering with a visible filter summary, matching v2rayN-style advanced log search while keeping plain text filtering.
+- Added a dedicated GUI smoke screenshot for the active regex log-filter state.

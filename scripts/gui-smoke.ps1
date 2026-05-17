@@ -10,6 +10,7 @@ param(
     [string]$SubscriptionScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-subscriptions.png"),
     [string]$DiagnosticsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-diagnostics.png"),
     [string]$LogsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-logs.png"),
+    [string]$LogsRegexScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-logs-regex.png"),
     [int]$TimeoutSeconds = 25
 )
 
@@ -625,6 +626,25 @@ try {
     }
     Write-Host "Logs populated: $($logText.Split([Environment]::NewLine)[0])"
     $logFilterBox = Get-ByAutomationId -Root $window -AutomationId "LogFilterTextBox" -TimeoutSeconds $TimeoutSeconds
+    $logFilterSummaryText = Get-ByAutomationId -Root $window -AutomationId "LogFilterSummaryText" -TimeoutSeconds $TimeoutSeconds
+    Set-ElementValue -Element $logFilterBox -Value "/protocol=v2-only/"
+    $regexFilteredLogText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Regex log filter did not narrow the output." -Condition {
+        $text = Get-ElementValue $filteredLogBox
+        if ($text -match "protocol=v2-only" -and $text -notmatch "\[metrics\]") {
+            return $text
+        }
+        return $null
+    }
+    $regexFilterSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Regex log filter summary did not show regex mode." -Condition {
+        $text = Get-ElementValue $logFilterSummaryText
+        if ($text -match "regex filter") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Regex log filter: $($regexFilteredLogText.Split([Environment]::NewLine)[0]) / $regexFilterSummary"
+    Save-ElementScreenshot -Element $window -Path $LogsRegexScreenshotPath
+    Write-Host "Regex logs GUI screenshot: $LogsRegexScreenshotPath"
     Set-ElementValue -Element $logFilterBox -Value "unlikely-smoke-filter"
     Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Log text filter did not narrow the output." -Condition {
         $text = Get-ElementValue $filteredLogBox
