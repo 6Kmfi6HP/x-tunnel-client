@@ -382,14 +382,14 @@
 
       <TabItem Header="Logs" automation:AutomationProperties.AutomationId="LogsTab">
         <Grid Margin="16" RowDefinitions="Auto,Auto,*" RowSpacing="8">
-          <Grid ColumnDefinitions="Auto,Auto,150,260,Auto,Auto,*" ColumnSpacing="8">
+          <WrapPanel ItemSpacing="8" LineSpacing="8">
             <Button Content="Refresh Diagnostics" Command="{Binding RefreshDiagnosticsCommand}" automation:AutomationProperties.AutomationId="LogsRefreshDiagnosticsButton"/>
-            <Button Grid.Column="1" Content="Export Diagnostics" Click="ExportDiagnostics_OnClick" automation:AutomationProperties.AutomationId="ExportDiagnosticsButton"/>
-            <ComboBox Grid.Column="2" ItemsSource="{Binding LogLevelFilters}" SelectedItem="{Binding SelectedLogLevelFilter}" automation:AutomationProperties.AutomationId="LogLevelFilterComboBox"/>
-            <TextBox Grid.Column="3" Text="{Binding LogFilterText}" PlaceholderText="Filter logs, /regex/" automation:AutomationProperties.AutomationId="LogFilterTextBox"/>
-            <Button Grid.Column="4" Content="Clear Filters" Command="{Binding ClearLogFiltersCommand}" automation:AutomationProperties.AutomationId="ClearLogFiltersButton"/>
-            <Button Grid.Column="5" Content="Copy Logs" Command="{Binding CopyFilteredLogsCommand}" automation:AutomationProperties.AutomationId="CopyFilteredLogsButton"/>
-          </Grid>
+            <Button Content="Export Diagnostics" Click="ExportDiagnostics_OnClick" automation:AutomationProperties.AutomationId="ExportDiagnosticsButton"/>
+            <ComboBox Width="150" ItemsSource="{Binding LogLevelFilters}" SelectedItem="{Binding SelectedLogLevelFilter}" automation:AutomationProperties.AutomationId="LogLevelFilterComboBox"/>
+            <TextBox Width="390" Text="{Binding LogFilterText}" PlaceholderText="Filter logs, /regex/" automation:AutomationProperties.AutomationId="LogFilterTextBox"/>
+            <Button Content="Clear Filters" Command="{Binding ClearLogFiltersCommand}" automation:AutomationProperties.AutomationId="ClearLogFiltersButton"/>
+            <Button Content="Copy Logs" Command="{Binding CopyFilteredLogsCommand}" automation:AutomationProperties.AutomationId="CopyFilteredLogsButton"/>
+          </WrapPanel>
           <Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="8">
             <Border Background="{Binding LogFilterBadgeBackground}" CornerRadius="4" Padding="7,2">
               <TextBlock Text="{Binding LogFilterBadgeText}" Foreground="{Binding LogFilterBadgeForeground}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="LogFilterBadgeText"/>
