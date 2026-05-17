@@ -13,7 +13,7 @@ Windows desktop client for `x-tunnel`, implemented as a separate C# / Avalonia r
 
 - Single-instance Windows desktop app with tray menu.
 - Global status bar for runtime state, active profile, proxy endpoints, core version, and current issue.
-- Overview dashboard with runtime, traffic, channel, listener, reconnect, proxy, network-test summary, copyable status snapshot, quick proxy-mode actions, one-click network test, recent-log, raw-detail panels, and quick navigation to operational pages.
+- Overview dashboard with runtime, traffic, channel, listener, reconnect, proxy, color-coded network-test summary, copyable status snapshot, quick proxy-mode actions, one-click network test, recent-log, raw-detail panels, and quick navigation to operational pages.
 - Profiles page with search/filter, saved/name/endpoint sorting, profile summary counts, startup-profile shortcut, copyable redacted profile summaries, one-click test-and-select-fastest, fastest-profile selection, clearable forward-endpoint latency badges, structured form editing, advanced JSON editing, core-backed format/check, field issue list, secret validation, and local port checks.
 - Subscriptions page with search/filter, saved/name/updated/status sorting, saving sources, updating selected or all subscriptions, copyable update results, updating profiles by name, and tracking aggregate/list-item fetch/cache status.
 - Logs page with runtime log level and text filtering plus copyable filtered output.

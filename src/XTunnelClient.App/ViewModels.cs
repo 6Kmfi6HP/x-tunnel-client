@@ -152,6 +152,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _networkTestText = "Not tested";
     private string _networkTestSummary = "Not tested";
     private string _networkTestDetail = "Run Test Network to check direct and proxy routes.";
+    private string _networkTestBadgeBackground = "#374151";
+    private string _networkTestBadgeForeground = "#E5E7EB";
     private string _profileEndpointTestText = "Not tested";
     private string _profileBatchTestText = "Endpoint tests not run";
     private string _profileSummaryText = "";
@@ -523,13 +525,31 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string NetworkTestSummary
     {
         get => _networkTestSummary;
-        set => SetProperty(ref _networkTestSummary, value);
+        set
+        {
+            if (SetProperty(ref _networkTestSummary, value))
+            {
+                UpdateNetworkTestBadge();
+            }
+        }
     }
 
     public string NetworkTestDetail
     {
         get => _networkTestDetail;
         set => SetProperty(ref _networkTestDetail, value);
+    }
+
+    public string NetworkTestBadgeBackground
+    {
+        get => _networkTestBadgeBackground;
+        private set => SetProperty(ref _networkTestBadgeBackground, value);
+    }
+
+    public string NetworkTestBadgeForeground
+    {
+        get => _networkTestBadgeForeground;
+        private set => SetProperty(ref _networkTestBadgeForeground, value);
     }
 
     public string NetworkTestText
@@ -2144,6 +2164,43 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         NetworkTestSummary = "Network failed";
         NetworkTestDetail = AppendNote(FirstNonEmpty(direct?.Error, proxy?.Error, "No route succeeded"), note);
+    }
+
+    private void UpdateNetworkTestBadge()
+    {
+        if (NetworkTestSummary.Contains("failed", StringComparison.OrdinalIgnoreCase)
+            && NetworkTestSummary.Contains("ok", StringComparison.OrdinalIgnoreCase))
+        {
+            NetworkTestBadgeBackground = "#92400E";
+            NetworkTestBadgeForeground = "#FEF3C7";
+            return;
+        }
+
+        if (NetworkTestSummary.Contains("ok", StringComparison.OrdinalIgnoreCase))
+        {
+            NetworkTestBadgeBackground = "#065F46";
+            NetworkTestBadgeForeground = "#D1FAE5";
+            return;
+        }
+
+        if (NetworkTestSummary.Contains("failed", StringComparison.OrdinalIgnoreCase)
+            || NetworkTestSummary.Contains("invalid", StringComparison.OrdinalIgnoreCase))
+        {
+            NetworkTestBadgeBackground = "#7F1D1D";
+            NetworkTestBadgeForeground = "#FECACA";
+            return;
+        }
+
+        if (NetworkTestSummary.Contains("testing", StringComparison.OrdinalIgnoreCase)
+            || NetworkTestSummary.Contains("ready", StringComparison.OrdinalIgnoreCase))
+        {
+            NetworkTestBadgeBackground = "#1E3A8A";
+            NetworkTestBadgeForeground = "#BFDBFE";
+            return;
+        }
+
+        NetworkTestBadgeBackground = "#374151";
+        NetworkTestBadgeForeground = "#E5E7EB";
     }
 
     private static string FormatResultDuration(NetworkTestResult result)

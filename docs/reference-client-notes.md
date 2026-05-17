@@ -52,3 +52,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added an Overview network-test summary so the latest direct/proxy connectivity result is visible without reading the Diagnostics log block.
 - Added a dedicated GUI smoke screenshot for the Overview network-test summary state.
 - Added a copyable Overview status snapshot for troubleshooting current profile, proxy, network-test, core, validation, and issue state.
+- Made the Overview network-test summary a color-coded badge so ok, partial, pending, and failed states are faster to scan.
