@@ -130,8 +130,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _statusText = "未连接";
     private string _statsText = "";
     private string _logText = "";
+    private List<ControlLogEntry> _logEntries = [];
     private string _filteredLogText = "";
     private string _logFilterText = "";
+    private string _selectedLogLevelFilter = "All";
     private string _diagnosticsText = "";
     private string _diagnosticsSummaryText = "";
     private string _subscriptionStatusText = "";
@@ -214,6 +216,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public IReadOnlyList<string> ThemeOptions { get; } = ["system", "light", "dark"];
     public IReadOnlyList<string> UpdateChannels { get; } = ["stable", "beta", "disabled"];
     public IReadOnlyList<string> SubscriptionTrustPolicies { get; } = ["confirm", "auto"];
+    public IReadOnlyList<string> LogLevelFilters { get; } = ["All", "debug", "info", "warn", "error"];
 
     public Profile? SelectedProfile
     {
@@ -312,6 +315,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set
         {
             if (SetProperty(ref _logFilterText, value))
+            {
+                UpdateFilteredLogText();
+            }
+        }
+    }
+
+    public string SelectedLogLevelFilter
+    {
+        get => _selectedLogLevelFilter;
+        set
+        {
+            if (SetProperty(ref _selectedLogLevelFilter, value))
             {
                 UpdateFilteredLogText();
             }
@@ -1117,6 +1132,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ErrorText = e.Error ?? "";
             StatusText = e.Status is null ? e.State.ToString() : e.Status.ToPrettyJson();
             StatsText = e.Stats?.ToPrettyJson() ?? "";
+            _logEntries = _supervisor.Logs.ToList();
             LogText = FormatLogs(_supervisor.Logs);
             RefreshOverview(e.Status, e.Stats);
         });
@@ -1283,18 +1299,48 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private void UpdateFilteredLogText()
     {
         var filter = LogFilterText.Trim();
-        if (string.IsNullOrWhiteSpace(filter))
+        var level = SelectedLogLevelFilter;
+        if (_logEntries.Count > 0)
+        {
+            IEnumerable<ControlLogEntry> entries = _logEntries;
+            if (!string.Equals(level, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                entries = entries.Where(x => string.Equals(x.Level, level, StringComparison.OrdinalIgnoreCase));
+            }
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                entries = entries.Where(x => FormatLogEntry(x).Contains(filter, StringComparison.OrdinalIgnoreCase));
+            }
+            FilteredLogText = FormatLogs(entries);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(filter) && string.Equals(level, "All", StringComparison.OrdinalIgnoreCase))
         {
             FilteredLogText = LogText;
             return;
         }
         var lines = LogText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-        FilteredLogText = string.Join(Environment.NewLine, lines.Where(x => x.Contains(filter, StringComparison.OrdinalIgnoreCase)));
+        if (!string.Equals(level, "All", StringComparison.OrdinalIgnoreCase))
+        {
+            lines = lines.Where(x => x.Contains($"[{level}", StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        if (!string.IsNullOrWhiteSpace(filter))
+        {
+            lines = lines.Where(x => x.Contains(filter, StringComparison.OrdinalIgnoreCase)).ToArray();
+        }
+        FilteredLogText = string.Join(Environment.NewLine, lines);
     }
 
     private static string FormatLogs(IEnumerable<ControlLogEntry> logs)
     {
-        return string.Join(Environment.NewLine, logs.Select(x => $"{x.Time:HH:mm:ss} [{x.Component ?? x.Level}] {x.Message}"));
+        return string.Join(Environment.NewLine, logs.Select(FormatLogEntry));
+    }
+
+    private static string FormatLogEntry(ControlLogEntry log)
+    {
+        var source = string.IsNullOrWhiteSpace(log.Component) ? log.Level : $"{log.Level}/{log.Component}";
+        return $"{log.Time:HH:mm:ss} [{source}] {log.Message}";
     }
 
     private LocalProxyEndpoints? TryGetSelectedLocalProxyEndpoints(out string? error)

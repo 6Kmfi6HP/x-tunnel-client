@@ -321,6 +321,31 @@ try {
     }
     Write-Host "Connection state: $disconnectedText"
 
+    $logsTab = Get-ByAutomationId -Root $window -AutomationId "LogsTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $logsTab
+    $logLevelCombo = Get-ByAutomationId -Root $window -AutomationId "LogLevelFilterComboBox" -TimeoutSeconds $TimeoutSeconds
+    if (!$logLevelCombo) {
+        throw "Log level filter combo was not found."
+    }
+    $filteredLogBox = Get-ByAutomationId -Root $window -AutomationId "FilteredLogTextBox" -TimeoutSeconds $TimeoutSeconds
+    $logText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Runtime logs did not populate after GUI connect." -Condition {
+        $text = Get-ElementValue $filteredLogBox
+        if (![string]::IsNullOrWhiteSpace($text)) {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Logs populated: $($logText.Split([Environment]::NewLine)[0])"
+    $logFilterBox = Get-ByAutomationId -Root $window -AutomationId "LogFilterTextBox" -TimeoutSeconds $TimeoutSeconds
+    Set-ElementValue -Element $logFilterBox -Value "unlikely-smoke-filter"
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Log text filter did not narrow the output." -Condition {
+        $text = Get-ElementValue $filteredLogBox
+        if ([string]::IsNullOrWhiteSpace($text)) {
+            return "filtered"
+        }
+        return $null
+    } | Out-Null
+
     $subscriptionsTab = Get-ByAutomationId -Root $window -AutomationId "SubscriptionsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $subscriptionsTab
 
