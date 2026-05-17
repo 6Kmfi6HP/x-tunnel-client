@@ -137,6 +137,101 @@ public sealed class ClientCoreTests
     }
 
     [Fact]
+    public void SubscriptionDiffPreservesLocalProfileMetadata()
+    {
+        var service = new SubscriptionService(new RuntimeConfigService(), new HttpClient(new StaticHandler("[]")));
+        var createdAt = DateTimeOffset.Parse("2026-01-01T00:00:00Z");
+        var current = new[]
+        {
+            new Profile
+            {
+                Id = Guid.NewGuid(),
+                Name = "A",
+                CreatedAt = createdAt,
+                Enabled = false,
+                SecretRef = "profile-token",
+                Color = "green",
+                SortOrder = 42,
+                CoreConfigJson = """{"listen":"socks5://127.0.0.1:1","forward":"ws://old/tunnel"}"""
+            }
+        };
+        var incoming = new[]
+        {
+            new Profile { Name = "A", CoreConfigJson = """{"listen":"socks5://127.0.0.1:1","forward":"ws://new/tunnel"}""" }
+        };
+
+        var updated = service.Diff(current, incoming).Updated.Single();
+
+        Assert.Equal(current[0].Id, updated.Id);
+        Assert.Equal(createdAt, updated.CreatedAt);
+        Assert.False(updated.Enabled);
+        Assert.Equal("profile-token", updated.SecretRef);
+        Assert.Equal("green", updated.Color);
+        Assert.Equal(42, updated.SortOrder);
+    }
+
+    [Fact]
+    public void RepositorySavesAndDeletesSubscriptions()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "xtunnel-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            var repository = new ProfileRepository(new AppPaths(root));
+            var subscription = new Subscription
+            {
+                DisplayName = "Test subscription",
+                Url = "https://example.invalid/sub.json",
+                LastResult = "saved"
+            };
+
+            repository.SaveSubscription(subscription);
+            Assert.Single(repository.GetSubscriptions());
+
+            repository.DeleteSubscription(subscription.Id);
+            Assert.Empty(repository.GetSubscriptions());
+        }
+        finally
+        {
+            DeleteDirectoryWithRetry(root);
+        }
+    }
+
+    [Fact]
+    public void AppPathsCanUseEnvironmentHomeOverride()
+    {
+        var previous = Environment.GetEnvironmentVariable("XTUNNEL_CLIENT_HOME");
+        var root = Path.Combine(Path.GetTempPath(), "xtunnel-env", Guid.NewGuid().ToString("N"));
+        try
+        {
+            Environment.SetEnvironmentVariable("XTUNNEL_CLIENT_HOME", root);
+            var paths = new AppPaths();
+
+            Assert.Equal(root, paths.Root);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("XTUNNEL_CLIENT_HOME", previous);
+        }
+    }
+
+    [Fact]
+    public async Task NetworkConnectivityTesterReportsDirectHttpSuccess()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var server = ServeOneHttpResponseAsync(listener);
+
+        var tester = new NetworkConnectivityTester();
+        var results = await tester.TestAsync(new Uri($"http://127.0.0.1:{port}/generate_204"), endpoints: null);
+
+        var direct = Assert.Single(results);
+        Assert.True(direct.Success, direct.Error);
+        Assert.Equal(204, direct.StatusCode);
+        await server;
+    }
+
+    [Fact]
     public void UpdateManifestRequiresChecksums()
     {
         Assert.Throws<InvalidOperationException>(() => UpdateService.ValidateManifest(new UpdateManifest { Version = "1.0.0" }));
@@ -330,6 +425,39 @@ public sealed class ClientCoreTests
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
         listener.Stop();
         return port;
+    }
+
+    private static async Task ServeOneHttpResponseAsync(TcpListener listener)
+    {
+        using var client = await listener.AcceptTcpClientAsync();
+        await using var stream = client.GetStream();
+        var buffer = new byte[1024];
+        await stream.ReadAsync(buffer);
+        var response = Encoding.ASCII.GetBytes("HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        await stream.WriteAsync(response);
+        listener.Stop();
+    }
+
+    private static void DeleteDirectoryWithRetry(string path)
+    {
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            try
+            {
+                if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, recursive: true);
+                }
+                return;
+            }
+            catch (IOException) when (attempt < 4)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                Thread.Sleep(100);
+            }
+        }
     }
 
     private static async Task WaitTcpAsync(string host, int port, TimeSpan timeout)

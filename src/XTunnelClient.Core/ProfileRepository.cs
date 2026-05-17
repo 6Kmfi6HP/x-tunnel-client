@@ -255,6 +255,15 @@ public sealed class ProfileRepository : ISecretStore
         command.ExecuteNonQuery();
     }
 
+    public void DeleteSubscription(Guid subscriptionId)
+    {
+        using var connection = Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "delete from subscriptions where id = $id";
+        Add(command, "$id", subscriptionId.ToString());
+        command.ExecuteNonQuery();
+    }
+
     public void SaveSecret(Guid profileId, string secretRef, string value)
     {
         var protectedValue = Convert.ToBase64String(Protect(Encoding.UTF8.GetBytes(value)));

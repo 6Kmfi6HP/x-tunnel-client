@@ -12,7 +12,8 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        s_singleInstance = new SingleInstanceGuard(@"Local\x-tunnel-client");
+        var instanceName = Environment.GetEnvironmentVariable("XTUNNEL_CLIENT_INSTANCE");
+        s_singleInstance = new SingleInstanceGuard(string.IsNullOrWhiteSpace(instanceName) ? @"Local\x-tunnel-client" : instanceName);
         if (!s_singleInstance.IsPrimary)
         {
             return;

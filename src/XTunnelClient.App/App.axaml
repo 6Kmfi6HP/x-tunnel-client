@@ -16,6 +16,7 @@
             <NativeMenuItem Header="Disconnect" Command="{Binding DisconnectCommand}" />
             <NativeMenuItem Header="Restart" Command="{Binding RestartCommand}" />
             <NativeMenuItem Header="Copy Proxy Address" Command="{Binding CopyProxyCommand}" />
+            <NativeMenuItem Header="Update Subscription" Command="{Binding RefreshSubscriptionCommand}" />
             <NativeMenuItemSeparator />
             <NativeMenuItem Header="Diagnostics" Click="Diagnostics_OnClick" />
             <NativeMenuItem Header="Open Logs Folder" Command="{Binding OpenLogsFolderCommand}" />

@@ -4,7 +4,11 @@ public sealed class AppPaths
 {
     public AppPaths(string? root = null)
     {
-        Root = root ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "x-tunnel-client");
+        var envRoot = Environment.GetEnvironmentVariable("XTUNNEL_CLIENT_HOME");
+        Root = root
+            ?? (!string.IsNullOrWhiteSpace(envRoot)
+                ? envRoot
+                : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "x-tunnel-client"));
         Profiles = Path.Combine(Root, "profiles");
         Subscriptions = Path.Combine(Root, "subscriptions");
         Runtime = Path.Combine(Root, "runtime");

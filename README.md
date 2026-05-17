@@ -14,9 +14,11 @@ Windows desktop client for `x-tunnel`, implemented as a separate C# / Avalonia r
 - Single-instance Windows desktop app with tray menu.
 - Overview dashboard with runtime, traffic, channel, listener, reconnect, proxy, recent-log, and raw-detail panels.
 - Profiles page with structured form editing, advanced JSON editing, core-backed format/check, field issue list, secret validation, and local port checks.
+- Subscriptions page for saving sources, updating profiles by name, and tracking fetch/cache status.
 - Logs page with runtime log filtering.
-- Diagnostics and Settings pages with app-data, profile, log, and runtime folder shortcuts.
-- Tray menu for connect, disconnect, restart, copy proxy address, diagnostics, log folder access, restore proxy, and quit.
+- Diagnostics page with direct/local-proxy network tests, redacted export, and log access.
+- Settings page with app-data, profile, log, and runtime folder shortcuts.
+- Tray menu for connect, disconnect, restart, copy proxy address, subscription update, diagnostics, log folder access, restore proxy, and quit.
 - SQLite profile/settings/subscription storage.
 - DPAPI-protected profile secrets.
 - Runtime config generation with `token_ref` replacement.
@@ -70,3 +72,11 @@ $dotnet = "$env:USERPROFILE\.dotnet-sdk\dotnet.exe"
 ```
 
 The real-core smoke test starts a local Go server, launches a GUI-managed sidecar, waits for a live channel through the control API, and stops it.
+
+Run the desktop GUI smoke after a debug build:
+
+```powershell
+.\scripts\gui-smoke.ps1
+```
+
+The GUI smoke launches the app with an isolated `XTUNNEL_CLIENT_HOME`, controls the Diagnostics tab through Windows UI Automation, runs the network test against a local HTTP 204 endpoint, and verifies the result text.

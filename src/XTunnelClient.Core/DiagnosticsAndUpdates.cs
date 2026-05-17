@@ -218,6 +218,11 @@ public sealed class SubscriptionService
             else if (!string.Equals(Normalize(current.CoreConfigJson), Normalize(profile.CoreConfigJson), StringComparison.Ordinal))
             {
                 profile.Id = current.Id;
+                profile.CreatedAt = current.CreatedAt;
+                profile.SecretRef = current.SecretRef;
+                profile.Color = current.Color;
+                profile.SortOrder = current.SortOrder;
+                profile.Enabled = current.Enabled;
                 updated.Add(profile);
             }
         }

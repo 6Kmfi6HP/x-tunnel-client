@@ -117,11 +117,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly ProfileRepository _repository;
     private readonly SidecarSupervisor _supervisor;
     private readonly DiagnosticsService _diagnostics;
+    private readonly SubscriptionService _subscriptionService;
+    private readonly NetworkConnectivityTester _networkTester = new();
     private readonly StartupService _startupService = new();
     private readonly CoreLocator _coreLocator;
     private readonly PortChecker _portChecker;
 
     private Profile? _selectedProfile;
+    private Subscription? _selectedSubscription;
     private AppSettings _settings;
     private RuntimeState _runtimeState = RuntimeState.Stopped;
     private string _statusText = "未连接";
@@ -131,6 +134,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _logFilterText = "";
     private string _diagnosticsText = "";
     private string _diagnosticsSummaryText = "";
+    private string _subscriptionStatusText = "";
+    private string _networkTestUrl = "https://www.gstatic.com/generate_204";
+    private string _networkTestText = "Not tested";
     private string _errorText = "";
     private string _secretValue = "";
     private string _profileListen = "";
@@ -162,6 +168,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _coreLocator = new CoreLocator(_paths);
         _supervisor = new SidecarSupervisor(_paths, _repository, _configService, _coreLocator, proxyCoordinator, _portChecker);
         _diagnostics = new DiagnosticsService(_paths, _configService, systemProxy, _portChecker);
+        _subscriptionService = new SubscriptionService(_configService);
         _supervisor.RuntimeChanged += OnRuntimeChanged;
 
         NewProfileCommand = new RelayCommand(NewProfile);
@@ -171,10 +178,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ApplyFormCommand = new RelayCommand(ApplyStructuredForm, () => SelectedProfile is not null);
         ValidateProfileCommand = new AsyncRelayCommand(ValidateProfileAsync, () => SelectedProfile is not null);
         FormatProfileCommand = new AsyncRelayCommand(FormatProfileAsync, () => SelectedProfile is not null);
+        NewSubscriptionCommand = new RelayCommand(NewSubscription);
+        SaveSubscriptionCommand = new RelayCommand(SaveSelectedSubscription, () => SelectedSubscription is not null);
+        DeleteSubscriptionCommand = new RelayCommand(DeleteSelectedSubscription, () => SelectedSubscription is not null);
+        RefreshSubscriptionCommand = new AsyncRelayCommand(RefreshSelectedSubscriptionAsync, () => SelectedSubscription is not null);
         ConnectCommand = new AsyncRelayCommand(ConnectAsync, CanConnect);
         DisconnectCommand = new AsyncRelayCommand(() => _supervisor.DisconnectAsync(), CanDisconnect);
         RestartCommand = new AsyncRelayCommand(RestartAsync, CanRestart);
         RefreshDiagnosticsCommand = new AsyncRelayCommand(RefreshDiagnosticsAsync);
+        TestNetworkCommand = new AsyncRelayCommand(TestNetworkAsync);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         RestoreProxyCommand = new RelayCommand(() => systemProxy.Restore());
         CopyProxyCommand = new RelayCommand(CopyProxySummary);
@@ -194,10 +206,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<SummaryRow> ListenerRows { get; } = [];
     public ObservableCollection<SummaryRow> ChannelRows { get; } = [];
     public ObservableCollection<ProfileIssue> ProfileIssues { get; } = [];
+    public ObservableCollection<Subscription> Subscriptions { get; } = [];
     public IReadOnlyList<ProxyMode> ProxyModes { get; } = Enum.GetValues<ProxyMode>();
     public IReadOnlyList<string> ProfileKinds { get; } = ["client", "server"];
     public IReadOnlyList<string> ThemeOptions { get; } = ["system", "light", "dark"];
     public IReadOnlyList<string> UpdateChannels { get; } = ["stable", "beta", "disabled"];
+    public IReadOnlyList<string> SubscriptionTrustPolicies { get; } = ["confirm", "auto"];
 
     public Profile? SelectedProfile
     {
@@ -220,6 +234,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _settings;
         set => SetProperty(ref _settings, value);
+    }
+
+    public Subscription? SelectedSubscription
+    {
+        get => _selectedSubscription;
+        set
+        {
+            if (SetProperty(ref _selectedSubscription, value))
+            {
+                SubscriptionStatusText = value is null ? "No subscription selected" : BuildSubscriptionStatus(value);
+                RaiseSubscriptionCommandState();
+            }
+        }
     }
 
     public ProxyMode SelectedProxyMode
@@ -299,6 +326,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _diagnosticsSummaryText;
         set => SetProperty(ref _diagnosticsSummaryText, value);
+    }
+
+    public string SubscriptionStatusText
+    {
+        get => _subscriptionStatusText;
+        set => SetProperty(ref _subscriptionStatusText, value);
+    }
+
+    public string NetworkTestUrl
+    {
+        get => _networkTestUrl;
+        set => SetProperty(ref _networkTestUrl, value);
+    }
+
+    public string NetworkTestText
+    {
+        get => _networkTestText;
+        set => SetProperty(ref _networkTestText, value);
     }
 
     public string ErrorText
@@ -441,10 +486,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand ApplyFormCommand { get; }
     public AsyncRelayCommand ValidateProfileCommand { get; }
     public AsyncRelayCommand FormatProfileCommand { get; }
+    public ICommand NewSubscriptionCommand { get; }
+    public RelayCommand SaveSubscriptionCommand { get; }
+    public RelayCommand DeleteSubscriptionCommand { get; }
+    public AsyncRelayCommand RefreshSubscriptionCommand { get; }
     public AsyncRelayCommand ConnectCommand { get; }
     public AsyncRelayCommand DisconnectCommand { get; }
     public AsyncRelayCommand RestartCommand { get; }
     public AsyncRelayCommand RefreshDiagnosticsCommand { get; }
+    public AsyncRelayCommand TestNetworkCommand { get; }
     public ICommand SaveSettingsCommand { get; }
     public ICommand RestoreProxyCommand { get; }
     public ICommand CopyProxyCommand { get; }
@@ -454,6 +504,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand OpenRuntimeFolderCommand { get; }
 
     public void Load()
+    {
+        LoadProfiles(Settings.AutoConnectProfileId);
+        LoadSubscriptions();
+        StatusText = "Stopped";
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+    }
+
+    private void LoadProfiles(Guid? preferredProfileId = null)
     {
         Profiles.Clear();
         foreach (var profile in _repository.GetProfiles())
@@ -467,9 +525,30 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _repository.SaveSecret(profile.Id, profile.SecretRef!, "local-test-token");
             Profiles.Add(profile);
         }
-        SelectedProfile = Profiles.FirstOrDefault(x => Settings.AutoConnectProfileId == x.Id) ?? SelectedProfile ?? Profiles.FirstOrDefault();
-        StatusText = "Stopped";
-        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+        var targetId = preferredProfileId ?? Settings.AutoConnectProfileId;
+        SelectedProfile = targetId.HasValue
+            ? Profiles.FirstOrDefault(x => x.Id == targetId.Value) ?? Profiles.FirstOrDefault()
+            : Profiles.FirstOrDefault();
+    }
+
+    private void LoadSubscriptions(Guid? preferredSubscriptionId = null)
+    {
+        var targetId = preferredSubscriptionId ?? SelectedSubscription?.Id;
+        Subscriptions.Clear();
+        foreach (var subscription in _repository.GetSubscriptions())
+        {
+            Subscriptions.Add(subscription);
+        }
+        if (Subscriptions.Count == 0)
+        {
+            SelectedSubscription = null;
+            SubscriptionStatusText = "No subscriptions configured";
+            RaiseSubscriptionCommandState();
+            return;
+        }
+        SelectedSubscription = targetId.HasValue
+            ? Subscriptions.FirstOrDefault(x => x.Id == targetId.Value) ?? Subscriptions.FirstOrDefault()
+            : Subscriptions.FirstOrDefault();
     }
 
     public async Task ImportProfileJsonAsync(string json, string name)
@@ -570,6 +649,92 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _repository.DeleteProfile(profile.Id);
         Profiles.Remove(profile);
         SelectedProfile = Profiles.FirstOrDefault();
+    }
+
+    private void NewSubscription()
+    {
+        var subscription = new Subscription
+        {
+            DisplayName = "Subscription " + (Subscriptions.Count + 1),
+            Url = "https://",
+            LastResult = "not saved"
+        };
+        Subscriptions.Add(subscription);
+        SelectedSubscription = subscription;
+    }
+
+    private void SaveSelectedSubscription()
+    {
+        if (SelectedSubscription is null || !ValidateSubscription(SelectedSubscription))
+        {
+            return;
+        }
+        _repository.SaveSubscription(SelectedSubscription);
+        var id = SelectedSubscription.Id;
+        LoadSubscriptions(id);
+        SubscriptionStatusText = "Subscription saved";
+        ErrorText = "Subscription saved";
+    }
+
+    private void DeleteSelectedSubscription()
+    {
+        if (SelectedSubscription is null)
+        {
+            return;
+        }
+        var subscription = SelectedSubscription;
+        _repository.DeleteSubscription(subscription.Id);
+        Subscriptions.Remove(subscription);
+        SelectedSubscription = Subscriptions.FirstOrDefault();
+        SubscriptionStatusText = "Subscription deleted";
+    }
+
+    private async Task RefreshSelectedSubscriptionAsync()
+    {
+        if (SelectedSubscription is null || !ValidateSubscription(SelectedSubscription))
+        {
+            return;
+        }
+
+        var subscription = SelectedSubscription;
+        try
+        {
+            SubscriptionStatusText = "Fetching subscription...";
+            _repository.SaveSubscription(subscription);
+            var result = await _subscriptionService.FetchAsync(subscription);
+            if (result.NotModified)
+            {
+                subscription.LastResult = "not modified";
+                subscription.LastUpdatedAt = DateTimeOffset.UtcNow;
+                _repository.SaveSubscription(subscription);
+                LoadSubscriptions(subscription.Id);
+                SubscriptionStatusText = "Subscription not modified";
+                ErrorText = "";
+                return;
+            }
+
+            var diff = _subscriptionService.Diff(Profiles, result.Profiles);
+            foreach (var profile in diff.Added.Concat(diff.Updated))
+            {
+                _repository.SaveProfile(profile);
+            }
+
+            var unchanged = Math.Max(0, result.Profiles.Count - diff.Added.Count - diff.Updated.Count);
+            subscription.LastResult = $"added {diff.Added.Count}, updated {diff.Updated.Count}, unchanged {unchanged}";
+            _repository.SaveSubscription(subscription);
+            LoadProfiles(SelectedProfile?.Id);
+            LoadSubscriptions(subscription.Id);
+            SubscriptionStatusText = BuildSubscriptionStatus(SelectedSubscription ?? subscription);
+            ErrorText = "Subscription updated";
+        }
+        catch (Exception ex)
+        {
+            subscription.LastResult = $"failed: {ex.Message}";
+            _repository.SaveSubscription(subscription);
+            LoadSubscriptions(subscription.Id);
+            SubscriptionStatusText = subscription.LastResult;
+            ErrorText = ex.Message;
+        }
     }
 
     private void SaveSelectedProfile()
@@ -783,6 +948,31 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var report = await _diagnostics.CreateReportAsync(SelectedProfile, _supervisor.Control);
         DiagnosticsSummaryText = BuildDiagnosticsSummary(report);
         DiagnosticsText = JsonSerializer.Serialize(report, JsonDefaults.Pretty);
+    }
+
+    private async Task TestNetworkAsync()
+    {
+        if (!Uri.TryCreate(NetworkTestUrl.Trim(), UriKind.Absolute, out var target)
+            || (target.Scheme != Uri.UriSchemeHttp && target.Scheme != Uri.UriSchemeHttps))
+        {
+            NetworkTestText = "Target URL must be an absolute http or https URL";
+            ErrorText = NetworkTestText;
+            return;
+        }
+
+        try
+        {
+            NetworkTestText = "Testing network...";
+            var endpoints = TryGetSelectedLocalProxyEndpoints(out var endpointError);
+            var results = await _networkTester.TestAsync(target, endpoints);
+            NetworkTestText = FormatNetworkTestResults(results, endpointError);
+            ErrorText = results.Any(x => x.Success) ? "" : "Network test failed";
+        }
+        catch (Exception ex)
+        {
+            NetworkTestText = $"Network test failed: {ex.Message}";
+            ErrorText = ex.Message;
+        }
     }
 
     private void SaveSettings()
@@ -1043,6 +1233,81 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return string.Join(Environment.NewLine, logs.Select(x => $"{x.Time:HH:mm:ss} [{x.Component ?? x.Level}] {x.Message}"));
     }
 
+    private LocalProxyEndpoints? TryGetSelectedLocalProxyEndpoints(out string? error)
+    {
+        error = null;
+        if (SelectedProfile is null)
+        {
+            error = "No selected profile; proxy route skipped";
+            return null;
+        }
+
+        try
+        {
+            return _configService.GetLocalProxyEndpoints(SelectedProfile.CoreConfigJson);
+        }
+        catch (Exception ex)
+        {
+            error = $"Profile proxy endpoint parse failed: {ex.Message}";
+            return null;
+        }
+    }
+
+    private static string FormatNetworkTestResults(IEnumerable<NetworkTestResult> results, string? note)
+    {
+        var lines = new List<string>();
+        if (!string.IsNullOrWhiteSpace(note))
+        {
+            lines.Add(note);
+        }
+        foreach (var result in results)
+        {
+            var status = result.Success ? "ok" : "failed";
+            var code = result.StatusCode.HasValue ? $" status={result.StatusCode}" : "";
+            var proxy = string.IsNullOrWhiteSpace(result.Proxy) ? "" : $" proxy={result.Proxy}";
+            var error = string.IsNullOrWhiteSpace(result.Error) ? "" : $" error={result.Error}";
+            lines.Add($"{result.Route}: {status}{code} time={result.DurationMs}ms target={result.Target}{proxy}{error}");
+        }
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private bool ValidateSubscription(Subscription subscription)
+    {
+        subscription.DisplayName = subscription.DisplayName.Trim();
+        subscription.Url = subscription.Url.Trim();
+        if (string.IsNullOrWhiteSpace(subscription.DisplayName))
+        {
+            SubscriptionStatusText = "Subscription name is required";
+            ErrorText = SubscriptionStatusText;
+            return false;
+        }
+        if (!Uri.TryCreate(subscription.Url, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            SubscriptionStatusText = "Subscription URL must be an absolute http or https URL";
+            ErrorText = SubscriptionStatusText;
+            return false;
+        }
+        if (subscription.UpdateIntervalMinutes <= 0)
+        {
+            SubscriptionStatusText = "Update interval must be greater than zero";
+            ErrorText = SubscriptionStatusText;
+            return false;
+        }
+        return true;
+    }
+
+    private static string BuildSubscriptionStatus(Subscription subscription)
+    {
+        var updated = subscription.LastUpdatedAt?.LocalDateTime.ToString("g", CultureInfo.CurrentCulture) ?? "-";
+        return string.Join(Environment.NewLine, new[]
+        {
+            $"Last result: {subscription.LastResult}",
+            $"Updated: {updated}",
+            $"Cache: etag={subscription.ETag ?? "-"} modified={subscription.LastModified ?? "-"}"
+        });
+    }
+
     private static string BuildDiagnosticsSummary(DiagnosticReport report)
     {
         var lines = new List<string>
@@ -1209,5 +1474,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ConnectCommand.RaiseCanExecuteChanged();
         DisconnectCommand.RaiseCanExecuteChanged();
         RestartCommand.RaiseCanExecuteChanged();
+    }
+
+    private void RaiseSubscriptionCommandState()
+    {
+        SaveSubscriptionCommand.RaiseCanExecuteChanged();
+        DeleteSubscriptionCommand.RaiseCanExecuteChanged();
+        RefreshSubscriptionCommand.RaiseCanExecuteChanged();
     }
 }
