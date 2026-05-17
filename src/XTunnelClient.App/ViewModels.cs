@@ -194,6 +194,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         UseDetectedCorePathCommand = new RelayCommand(UseDetectedCorePath);
+        ClearLogFiltersCommand = new RelayCommand(ClearLogFilters);
         RestoreProxyCommand = new RelayCommand(() => systemProxy.Restore());
         CopyProxyCommand = new RelayCommand(CopyProxySummary);
         OpenDataFolderCommand = new RelayCommand(() => OpenFolder(_paths.Root));
@@ -542,6 +543,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
     public ICommand SaveSettingsCommand { get; }
     public ICommand UseDetectedCorePathCommand { get; }
+    public ICommand ClearLogFiltersCommand { get; }
     public ICommand RestoreProxyCommand { get; }
     public ICommand CopyProxyCommand { get; }
     public ICommand OpenDataFolderCommand { get; }
@@ -1178,6 +1180,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             ErrorText = $"Open folder failed: {ex.Message}";
         }
+    }
+
+    private void ClearLogFilters()
+    {
+        LogFilterText = "";
+        SelectedLogLevelFilter = "All";
+        UpdateFilteredLogText();
     }
 
     private void OnRuntimeChanged(object? sender, RuntimeChangedEventArgs e)

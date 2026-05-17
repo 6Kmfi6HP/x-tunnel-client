@@ -412,6 +412,15 @@ try {
         }
         return $null
     } | Out-Null
+    $clearLogFiltersButton = Get-ByAutomationId -Root $window -AutomationId "ClearLogFiltersButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $clearLogFiltersButton
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear log filters did not restore log output." -Condition {
+        $text = Get-ElementValue $filteredLogBox
+        if (![string]::IsNullOrWhiteSpace($text)) {
+            return $text
+        }
+        return $null
+    } | Out-Null
 
     $subscriptionsTab = Get-ByAutomationId -Root $window -AutomationId "SubscriptionsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $subscriptionsTab
