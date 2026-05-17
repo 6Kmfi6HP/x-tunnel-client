@@ -103,10 +103,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private readonly AppPaths _paths = new();
     private readonly RuntimeConfigService _configService = new();
+    private readonly CoreConfigTool _coreConfigTool = new();
     private readonly ProfileRepository _repository;
     private readonly SidecarSupervisor _supervisor;
     private readonly DiagnosticsService _diagnostics;
     private readonly StartupService _startupService = new();
+    private readonly CoreLocator _coreLocator;
 
     private Profile? _selectedProfile;
     private AppSettings _settings;
@@ -141,7 +143,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var systemProxy = new SystemProxyService(new RegistryProxySettingsStore());
         var proxyCoordinator = new ProxyCoordinator(systemProxy, new PacServer());
         var portChecker = new PortChecker();
-        _supervisor = new SidecarSupervisor(_paths, _repository, _configService, new CoreLocator(_paths), proxyCoordinator, portChecker);
+        _coreLocator = new CoreLocator(_paths);
+        _supervisor = new SidecarSupervisor(_paths, _repository, _configService, _coreLocator, proxyCoordinator, portChecker);
         _diagnostics = new DiagnosticsService(_paths, _configService, systemProxy, portChecker);
         _supervisor.RuntimeChanged += OnRuntimeChanged;
 
@@ -151,7 +154,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SaveProfileCommand = new RelayCommand(SaveSelectedProfile, () => SelectedProfile is not null);
         ApplyFormCommand = new RelayCommand(ApplyStructuredForm, () => SelectedProfile is not null);
         ValidateProfileCommand = new AsyncRelayCommand(ValidateProfileAsync, () => SelectedProfile is not null);
-        FormatProfileCommand = new RelayCommand(FormatProfile, () => SelectedProfile is not null);
+        FormatProfileCommand = new AsyncRelayCommand(FormatProfileAsync, () => SelectedProfile is not null);
         ConnectCommand = new AsyncRelayCommand(ConnectAsync, CanConnect);
         DisconnectCommand = new AsyncRelayCommand(() => _supervisor.DisconnectAsync(), CanDisconnect);
         RestartCommand = new AsyncRelayCommand(RestartAsync, CanRestart);
@@ -335,7 +338,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand SaveProfileCommand { get; }
     public RelayCommand ApplyFormCommand { get; }
     public AsyncRelayCommand ValidateProfileCommand { get; }
-    public RelayCommand FormatProfileCommand { get; }
+    public AsyncRelayCommand FormatProfileCommand { get; }
     public AsyncRelayCommand ConnectCommand { get; }
     public AsyncRelayCommand DisconnectCommand { get; }
     public AsyncRelayCommand RestartCommand { get; }
@@ -549,11 +552,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         try
         {
-            _configService.ParseAndValidate(SelectedProfile.CoreConfigJson);
+            var runtimeJson = GenerateRuntimeConfigForSelectedProfile();
+            var corePath = _coreLocator.Resolve(Settings);
+            if (corePath is not null)
+            {
+                await _coreConfigTool.CheckJsonAsync(corePath, runtimeJson);
+                ErrorText = "Core config check passed";
+            }
+            else
+            {
+                _configService.ParseAndValidate(SelectedProfile.CoreConfigJson);
+                ErrorText = "Local config check passed; core path not found";
+            }
             SelectedProfile.LastValidatedAt = DateTimeOffset.UtcNow;
             SelectedProfile.LastValidationError = null;
             _repository.SaveProfile(SelectedProfile);
-            ErrorText = "配置校验通过";
         }
         catch (Exception ex)
         {
@@ -564,15 +577,37 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         await Task.CompletedTask;
     }
 
-    private void FormatProfile()
+    private async Task FormatProfileAsync()
     {
         if (SelectedProfile is null)
         {
             return;
         }
-        var obj = _configService.ParseAndValidate(SelectedProfile.CoreConfigJson);
-        SelectedProfile.CoreConfigJson = obj.ToJsonString(JsonDefaults.Pretty);
-        OnPropertyChanged(nameof(SelectedProfile));
+        try
+        {
+            var obj = _configService.ParseAndValidate(SelectedProfile.CoreConfigJson);
+            var corePath = _coreLocator.Resolve(Settings);
+            if (corePath is not null)
+            {
+                var formatInput = BuildCoreFormatInput(obj, out var secretField);
+                var formatted = await _coreConfigTool.FormatJsonAsync(corePath, formatInput);
+                SelectedProfile.CoreConfigJson = RestoreProfileSecretField(formatted, secretField);
+                ErrorText = "Formatted with core";
+            }
+            else
+            {
+                SelectedProfile.CoreConfigJson = obj.ToJsonString(JsonDefaults.Pretty);
+                ErrorText = "Core path not found; formatted locally";
+            }
+            SelectedProfile.LastValidationError = null;
+            OnPropertyChanged(nameof(SelectedProfile));
+            LoadStructuredFields();
+        }
+        catch (Exception ex)
+        {
+            SelectedProfile.LastValidationError = ex.Message;
+            ErrorText = ex.Message;
+        }
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
@@ -819,6 +854,53 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private static string FirstNonEmpty(params string?[] values)
     {
         return values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "";
+    }
+
+    private string GenerateRuntimeConfigForSelectedProfile()
+    {
+        if (SelectedProfile is null)
+        {
+            return "";
+        }
+        if (!string.IsNullOrWhiteSpace(SelectedProfile.SecretRef) && !string.IsNullOrEmpty(SecretValue))
+        {
+            _repository.SaveSecret(SelectedProfile.Id, SelectedProfile.SecretRef, SecretValue);
+        }
+        return _configService.GenerateRuntimeConfig(SelectedProfile, _repository);
+    }
+
+    private static string BuildCoreFormatInput(JsonObject profileConfig, out (string Field, string Value)? secretField)
+    {
+        secretField = null;
+        var obj = profileConfig.DeepClone().AsObject();
+        if (obj.TryGetPropertyValue("token_ref", out var tokenRefNode))
+        {
+            secretField = ("token_ref", tokenRefNode?.GetValue<string>() ?? "");
+            obj.Remove("token_ref");
+            obj["token"] = "format-placeholder-token";
+        }
+        else if (obj.TryGetPropertyValue("token", out var tokenNode))
+        {
+            var token = tokenNode?.GetValue<string>() ?? "";
+            if (token.StartsWith("secret:", StringComparison.Ordinal))
+            {
+                secretField = ("token", token);
+                obj["token"] = "format-placeholder-token";
+            }
+        }
+        return obj.ToJsonString(JsonDefaults.Pretty);
+    }
+
+    private static string RestoreProfileSecretField(string formattedCoreJson, (string Field, string Value)? secretField)
+    {
+        var obj = JsonNode.Parse(formattedCoreJson)?.AsObject()
+            ?? throw new InvalidOperationException("core format returned non-object JSON");
+        if (secretField is { } secret)
+        {
+            obj.Remove("token");
+            obj[secret.Field] = secret.Value;
+        }
+        return obj.ToJsonString(JsonDefaults.Pretty);
     }
 
     private bool CanConnect()

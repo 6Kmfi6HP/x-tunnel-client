@@ -125,6 +125,32 @@ public sealed class ClientCoreTests
     }
 
     [Fact]
+    public async Task CoreConfigToolChecksAndFormatsWithRealCore()
+    {
+        var corePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..", "x-tunnel", "build", "x-tunnel.exe"));
+        if (!File.Exists(corePath))
+        {
+            return;
+        }
+
+        var tool = new CoreConfigTool();
+        var json = """
+            {
+              "listen": "ws://127.0.0.1:18080/tunnel",
+              "token": "local-test-token",
+              "allow-target": "127.0.0.0/8",
+              "metrics": "127.0.0.1:0"
+            }
+            """;
+
+        await tool.CheckJsonAsync(corePath, json);
+        var formatted = await tool.FormatJsonAsync(corePath, json);
+
+        Assert.Contains("\"allow_target\"", formatted);
+        Assert.DoesNotContain("allow-target", formatted);
+    }
+
+    [Fact]
     public async Task RealCoreSidecarSupervisorStartsAndStops()
     {
         var corePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "..", "x-tunnel", "build", "x-tunnel.exe"));

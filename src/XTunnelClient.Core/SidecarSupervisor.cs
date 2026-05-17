@@ -8,6 +8,7 @@ public sealed class SidecarSupervisor : IDisposable
     private readonly AppPaths _paths;
     private readonly ProfileRepository _repository;
     private readonly RuntimeConfigService _configService;
+    private readonly CoreConfigTool _configTool = new();
     private readonly CoreLocator _coreLocator;
     private readonly ProxyCoordinator _proxyCoordinator;
     private readonly PortChecker _portChecker;
@@ -66,7 +67,7 @@ public sealed class SidecarSupervisor : IDisposable
             throw new InvalidOperationException("本地端口占用: " + string.Join(", ", occupied.Select(x => $"{x.Address} {x.Error}")));
         }
 
-        await RunOfflineConfigCheckAsync(corePath, runtimePath, cancellationToken);
+        await _configTool.CheckFileAsync(corePath, runtimePath, cancellationToken);
 
         var coreLogPath = _paths.CoreLogPath();
         _process = StartCore(corePath, runtimePath, coreLogPath);
@@ -211,28 +212,6 @@ public sealed class SidecarSupervisor : IDisposable
             {
                 await log.WriteLineAsync($"{DateTimeOffset.UtcNow:O} {RuntimeConfigService.Redact(line)}");
             }
-        }
-    }
-
-    private async Task RunOfflineConfigCheckAsync(string corePath, string runtimePath, CancellationToken cancellationToken)
-    {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = corePath,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
-        startInfo.ArgumentList.Add("-check-config");
-        startInfo.ArgumentList.Add(runtimePath);
-        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("启动 core config check 失败");
-        await process.WaitForExitAsync(cancellationToken);
-        if (process.ExitCode != 0)
-        {
-            var error = await process.StandardError.ReadToEndAsync(cancellationToken);
-            var output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-            throw new InvalidOperationException(RuntimeConfigService.Redact(string.IsNullOrWhiteSpace(error) ? output : error));
         }
     }
 
