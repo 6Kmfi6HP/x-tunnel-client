@@ -611,6 +611,16 @@ try {
 
     Save-ElementScreenshot -Element $window -Path $ScreenshotPath
     Write-Host "GUI screenshot: $ScreenshotPath"
+    $clearEndpointTestsButton = Get-ByAutomationId -Root $window -AutomationId "ClearEndpointTestsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $clearEndpointTestsButton
+    $clearedEndpointSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear endpoint tests did not reset summary counts." -Condition {
+        $text = Get-ElementValue $profileSummaryBlock
+        if ($text -match "Profiles 2/2 visible" -and $text -match "0 endpoint ok") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Endpoint tests cleared: $clearedEndpointSummary"
     Write-Host "GUI smoke passed"
 }
 finally {

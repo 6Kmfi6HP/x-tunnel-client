@@ -198,6 +198,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
         TestVisibleProfilesCommand = new AsyncRelayCommand(TestVisibleProfilesAsync, () => FilteredProfiles.Count > 0);
         SelectFastestProfileCommand = new RelayCommand(SelectFastestProfile, HasSuccessfulVisibleEndpointTest);
+        ClearVisibleProfileEndpointTestsCommand = new RelayCommand(ClearVisibleProfileEndpointTests, HasVisibleEndpointTestResults);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         UseDetectedCorePathCommand = new RelayCommand(UseDetectedCorePath);
         ClearLogFiltersCommand = new RelayCommand(ClearLogFilters);
@@ -588,6 +589,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
     public AsyncRelayCommand TestVisibleProfilesCommand { get; }
     public RelayCommand SelectFastestProfileCommand { get; }
+    public RelayCommand ClearVisibleProfileEndpointTestsCommand { get; }
     public ICommand SaveSettingsCommand { get; }
     public ICommand UseDetectedCorePathCommand { get; }
     public ICommand ClearLogFiltersCommand { get; }
@@ -1188,6 +1190,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ProfileBatchTestText = $"Endpoint tests: {ok} ok, {failed} failed";
         ErrorText = failed == 0 ? "" : ProfileBatchTestText;
         SelectFastestProfileCommand.RaiseCanExecuteChanged();
+        ClearVisibleProfileEndpointTestsCommand.RaiseCanExecuteChanged();
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
@@ -1208,6 +1211,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SelectedProfile = fastest;
         ProfileBatchTestText = $"Selected fastest: {fastest.Name} ({fastest.LastEndpointTestDurationMs ?? 0}ms)";
         ErrorText = "";
+    }
+
+    private void ClearVisibleProfileEndpointTests()
+    {
+        var profiles = FilteredProfiles.Where(x => x.LastEndpointTestAt.HasValue).ToList();
+        foreach (var profile in profiles)
+        {
+            profile.LastEndpointTestAt = null;
+            profile.LastEndpointTestDurationMs = null;
+            profile.LastEndpointTestError = null;
+            profile.LastEndpointTestTarget = null;
+            _repository.SaveProfile(profile);
+            RefreshProfileListItem(profile);
+        }
+
+        ProfileBatchTestText = $"Cleared endpoint results for {profiles.Count} visible profile(s)";
+        ErrorText = "";
+        SelectFastestProfileCommand.RaiseCanExecuteChanged();
+        ClearVisibleProfileEndpointTestsCommand.RaiseCanExecuteChanged();
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
     private void SaveSettings()
@@ -1532,6 +1555,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         UpdateProfileSummary();
         TestVisibleProfilesCommand.RaiseCanExecuteChanged();
         SelectFastestProfileCommand.RaiseCanExecuteChanged();
+        ClearVisibleProfileEndpointTestsCommand.RaiseCanExecuteChanged();
 
         if (FilteredProfiles.Count == 0)
         {
@@ -1571,6 +1595,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool HasSuccessfulVisibleEndpointTest()
     {
         return FilteredProfiles.Any(HasSuccessfulEndpointTest);
+    }
+
+    private bool HasVisibleEndpointTestResults()
+    {
+        return FilteredProfiles.Any(x => x.LastEndpointTestAt.HasValue);
     }
 
     private void UpdateProfileSummary()
