@@ -141,6 +141,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _diagnosticsText = "";
     private string _diagnosticsSummaryText = "";
     private string _subscriptionStatusText = "";
+    private string _subscriptionSummaryText = "";
     private string _networkTestUrl = "https://www.gstatic.com/generate_204";
     private string _networkTestText = "Not tested";
     private string _profileEndpointTestText = "Not tested";
@@ -389,6 +390,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _subscriptionStatusText;
         set => SetProperty(ref _subscriptionStatusText, value);
+    }
+
+    public string SubscriptionSummaryText
+    {
+        get => _subscriptionSummaryText;
+        set => SetProperty(ref _subscriptionSummaryText, value);
     }
 
     public string NetworkTestUrl
@@ -651,6 +658,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             Subscriptions.Add(subscription);
         }
+        UpdateSubscriptionSummary();
         if (Subscriptions.Count == 0)
         {
             SelectedSubscription = null;
@@ -773,6 +781,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         };
         Subscriptions.Add(subscription);
         SelectedSubscription = subscription;
+        UpdateSubscriptionSummary();
         RaiseSubscriptionCommandState();
     }
 
@@ -800,6 +809,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Subscriptions.Remove(subscription);
         SelectedSubscription = Subscriptions.FirstOrDefault();
         SubscriptionStatusText = "Subscription deleted";
+        UpdateSubscriptionSummary();
         RaiseSubscriptionCommandState();
     }
 
@@ -1772,6 +1782,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             $"Updated: {updated}",
             $"Cache: etag={subscription.ETag ?? "-"} modified={subscription.LastModified ?? "-"}"
         });
+    }
+
+    private void UpdateSubscriptionSummary()
+    {
+        if (Subscriptions.Count == 0)
+        {
+            SubscriptionSummaryText = "Subscriptions 0 configured";
+            return;
+        }
+
+        var updated = Subscriptions.Count(x => x.LastUpdatedAt.HasValue);
+        var failed = Subscriptions.Count(x => x.LastResult.StartsWith("failed:", StringComparison.OrdinalIgnoreCase));
+        var newest = Subscriptions
+            .Where(x => x.LastUpdatedAt.HasValue)
+            .OrderByDescending(x => x.LastUpdatedAt)
+            .Select(x => x.LastUpdatedAt!.Value.LocalDateTime.ToString("g", CultureInfo.CurrentCulture))
+            .FirstOrDefault() ?? "-";
+        SubscriptionSummaryText = $"Subscriptions {Subscriptions.Count} configured, {updated} updated, {failed} failed, latest {newest}";
     }
 
     private static string BuildDiagnosticsSummary(DiagnosticReport report)

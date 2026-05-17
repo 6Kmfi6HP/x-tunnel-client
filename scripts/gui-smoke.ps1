@@ -520,6 +520,15 @@ try {
         return $null
     }
     Write-Host $updateAllText
+    $subscriptionSummaryBlock = Get-ByAutomationId -Root $window -AutomationId "SubscriptionSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $subscriptionSummaryText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Subscription summary did not reflect the updated subscription." -Condition {
+        $text = Get-ElementValue $subscriptionSummaryBlock
+        if ($text -match "Subscriptions 1 configured" -and $text -match "1 updated" -and $text -match "0 failed") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Subscription summary: $subscriptionSummaryText"
 
     Select-Element $profilesTab
     $profileSearchBox = Get-ByAutomationId -Root $window -AutomationId "ProfileSearchTextBox" -TimeoutSeconds $TimeoutSeconds
