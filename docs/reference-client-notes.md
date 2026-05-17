@@ -65,3 +65,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added GUI smoke coverage for the Overview proxy-address copy action using a stable AutomationId.
 - Added stable AutomationIds and smoke assertions for the status bar proxy mode, local proxy, core, and issue fields.
 - Extended status bar smoke coverage to assert the core field changes on connect and returns to stopped on disconnect.
+- Added a Diagnostics Clear Network action that resets raw network results, route chips, and Overview network freshness text.

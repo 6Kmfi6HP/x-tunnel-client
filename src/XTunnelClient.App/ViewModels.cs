@@ -250,6 +250,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RunOverviewNetworkTestCommand = new AsyncRelayCommand(RunOverviewNetworkTestAsync);
         TestNetworkCommand = new AsyncRelayCommand(TestNetworkAsync);
         CopyNetworkTestResultCommand = new RelayCommand(CopyNetworkTestResult, HasNetworkTestResult);
+        ClearNetworkTestCommand = new RelayCommand(ClearNetworkTest, HasNetworkTestResult);
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
         CopyProfileEndpointTestResultCommand = new RelayCommand(CopyProfileEndpointTestResult, HasProfileEndpointTestResult);
         TestVisibleProfilesCommand = new AsyncRelayCommand(TestVisibleProfilesAsync, () => FilteredProfiles.Count > 0);
@@ -722,6 +723,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _networkTestText, value))
             {
                 CopyNetworkTestResultCommand.RaiseCanExecuteChanged();
+                ClearNetworkTestCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -983,6 +985,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand RunOverviewNetworkTestCommand { get; }
     public AsyncRelayCommand TestNetworkCommand { get; }
     public RelayCommand CopyNetworkTestResultCommand { get; }
+    public RelayCommand ClearNetworkTestCommand { get; }
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
     public RelayCommand CopyProfileEndpointTestResultCommand { get; }
     public AsyncRelayCommand TestVisibleProfilesCommand { get; }
@@ -1691,6 +1694,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         CopyTextRequested?.Invoke(this, NetworkTestText);
         ErrorText = "Network test result copied";
+    }
+
+    private void ClearNetworkTest()
+    {
+        NetworkTestText = "Not tested";
+        NetworkTestSummary = "Not tested";
+        NetworkTestDetail = "Run Test Network to check direct and proxy routes.";
+        NetworkTestLastRunText = "Network test not run";
+        SetNetworkRouteNotTested();
+        ErrorText = "Network test result cleared";
     }
 
     private void CopyProfileEndpointTestResult()
@@ -2479,6 +2492,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Ok,
         Warning,
         Failed
+    }
+
+    private void SetNetworkRouteNotTested()
+    {
+        SetDirectRoute("Direct: not tested", "Run Test Network", RouteVisual.Neutral);
+        SetProxyRoute("Proxy: not tested", "Uses selected profile local proxy", RouteVisual.Neutral);
     }
 
     private void SetNetworkRouteReady(string target)

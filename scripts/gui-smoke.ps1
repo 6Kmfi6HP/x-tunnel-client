@@ -597,6 +597,40 @@ try {
     }
     Write-Host "Copied network result: $($clipboardNetworkText.Split([Environment]::NewLine)[0])"
 
+    $clearNetworkTestButton = Get-ByAutomationId -Root $window -AutomationId "ClearNetworkTestButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $clearNetworkTestButton
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear network test did not reset the Diagnostics result text." -Condition {
+        $text = Get-ElementValue $resultBox
+        if ($text -match "Not tested") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear network test did not reset the direct route chip." -Condition {
+        $text = Get-ElementValue $directRouteStatus
+        if ($text -match "Direct: not tested") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Select-Element $overviewTab
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear network test did not reset the Overview summary." -Condition {
+        $text = Get-ElementValue $overviewNetworkSummaryText
+        if ($text -match "Not tested") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear network test did not reset the Overview last-run text." -Condition {
+        $text = Get-ElementValue $overviewNetworkLastRunText
+        if ($text -match "Network test not run") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Write-Host "Network test cleared"
+    Select-Element $diagnosticsTab
+
     $endpointButton = Get-ByAutomationId -Root $window -AutomationId "TestProfileEndpointButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $endpointButton
 
