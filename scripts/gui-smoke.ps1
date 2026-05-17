@@ -1450,6 +1450,35 @@ try {
         return $null
     }
     Write-Host "Clipboard profile imported: $importedProfileName / $importedProfileValidation / $importedProfileSummary"
+
+    $duplicateProfileButton = Get-ByAutomationId -Root $window -AutomationId "DuplicateProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $duplicateProfileButton
+    $duplicatedProfileName = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Duplicate profile did not select the copied profile." -Condition {
+        $text = Get-ElementValue $profileNameBox
+        if ($text -match "Clipboard profile Copy") {
+            return $text
+        }
+        return $null
+    }
+    $duplicatedProfileSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Duplicate profile did not update the profile count." -Condition {
+        $text = Get-ElementValue $profileSummaryBlock
+        if ($text -match "Profiles 4/4 visible") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Profile duplicated: $duplicatedProfileName / $duplicatedProfileSummary"
+
+    $deleteProfileButton = Get-ByAutomationId -Root $window -AutomationId "DeleteProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $deleteProfileButton
+    $deletedProfileSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Delete profile did not remove the copied profile." -Condition {
+        $text = Get-ElementValue $profileSummaryBlock
+        if ($text -match "Profiles 3/3 visible" -and $text -notmatch "Profiles 4/4 visible") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Profile copy deleted: $deletedProfileSummary"
     Write-Host "GUI smoke passed"
 }
 finally {

@@ -230,9 +230,9 @@
                 <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileSortOptions}" SelectedItem="{Binding SelectedProfileSort}" MinHeight="30" automation:AutomationProperties.AutomationId="ProfileSortComboBox"/>
               </Grid>
               <WrapPanel>
-                <Button Content="New" Command="{Binding NewProfileCommand}"/>
-                <Button Content="Copy" Command="{Binding DuplicateProfileCommand}" Margin="8,0,0,0"/>
-                <Button Content="Delete" Command="{Binding DeleteProfileCommand}" Margin="8,0,0,0"/>
+                <Button Content="New" Command="{Binding NewProfileCommand}" automation:AutomationProperties.AutomationId="NewProfileButton"/>
+                <Button Content="Copy" Command="{Binding DuplicateProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="DuplicateProfileButton"/>
+                <Button Content="Delete" Command="{Binding DeleteProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="DeleteProfileButton"/>
                 <Button Content="Test Visible" Command="{Binding TestVisibleProfilesCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="TestVisibleProfilesButton"/>
                 <Button Content="Test + Fastest" Command="{Binding TestAndSelectFastestProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="TestAndSelectFastestProfileButton"/>
                 <Button Content="Fastest" Command="{Binding SelectFastestProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="SelectFastestProfileButton"/>
