@@ -1405,14 +1405,21 @@ try {
         }
         return $null
     }
-    $importedProfileSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Imported clipboard profile did not appear in the profile summary." -Condition {
-        $text = Get-ElementValue $profileSummaryBlock
-        if ($text -match "Profiles 3/3 visible" -and $text -match "1 issues") {
+    $importedProfileValidation = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Imported clipboard profile did not finish validation." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "Profile ready") {
             return $text
         }
         return $null
     }
-    Write-Host "Clipboard profile imported: $importedProfileName / $importedProfileSummary"
+    $importedProfileSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Imported clipboard profile did not appear in the profile summary." -Condition {
+        $text = Get-ElementValue $profileSummaryBlock
+        if ($text -match "Profiles 3/3 visible" -and $text -match "1 ready" -and $text -match "1 issues") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Clipboard profile imported: $importedProfileName / $importedProfileValidation / $importedProfileSummary"
     Write-Host "GUI smoke passed"
 }
 finally {
