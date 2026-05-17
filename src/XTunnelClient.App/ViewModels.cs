@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -84,6 +85,20 @@ public sealed class AsyncRelayCommand : ICommand
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }
 
+public sealed class DashboardMetric
+{
+    public string Label { get; init; } = "";
+    public string Value { get; init; } = "";
+    public string Detail { get; init; } = "";
+}
+
+public sealed class SummaryRow
+{
+    public string Name { get; init; } = "";
+    public string Value { get; init; } = "";
+    public string Detail { get; init; } = "";
+}
+
 public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private readonly AppPaths _paths = new();
@@ -108,6 +123,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private decimal _profileConnections = 1;
     private bool _profileFallback = true;
     private ProxyMode _selectedProxyMode;
+    private string _connectionHeading = "Disconnected";
+    private string _connectionDetail = "Select a profile and connect the sidecar.";
+    private string _activeProfileSummary = "-";
+    private string _proxySummary = "Off";
+    private string _localProxySummary = "-";
+    private string _coreSummary = "Core not running";
+    private string _validationSummary = "Not validated";
+    private string _recentIssueSummary = "-";
 
     public MainViewModel()
     {
@@ -140,6 +163,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     }
 
     public ObservableCollection<Profile> Profiles { get; } = [];
+    public ObservableCollection<DashboardMetric> OverviewMetrics { get; } = [];
+    public ObservableCollection<SummaryRow> ListenerRows { get; } = [];
+    public ObservableCollection<SummaryRow> ChannelRows { get; } = [];
     public IReadOnlyList<ProxyMode> ProxyModes { get; } = Enum.GetValues<ProxyMode>();
 
     public Profile? SelectedProfile
@@ -151,6 +177,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 SecretValue = value?.SecretRef is null ? "" : _repository.GetSecret(value.Id, value.SecretRef) ?? "";
                 LoadStructuredFields();
+                RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
                 RaiseCommandState();
             }
         }
@@ -170,6 +197,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _selectedProxyMode, value))
             {
                 Settings.DefaultProxyMode = value;
+                RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
             }
         }
     }
@@ -246,6 +274,54 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set => SetProperty(ref _profileFallback, value);
     }
 
+    public string ConnectionHeading
+    {
+        get => _connectionHeading;
+        set => SetProperty(ref _connectionHeading, value);
+    }
+
+    public string ConnectionDetail
+    {
+        get => _connectionDetail;
+        set => SetProperty(ref _connectionDetail, value);
+    }
+
+    public string ActiveProfileSummary
+    {
+        get => _activeProfileSummary;
+        set => SetProperty(ref _activeProfileSummary, value);
+    }
+
+    public string ProxySummary
+    {
+        get => _proxySummary;
+        set => SetProperty(ref _proxySummary, value);
+    }
+
+    public string LocalProxySummary
+    {
+        get => _localProxySummary;
+        set => SetProperty(ref _localProxySummary, value);
+    }
+
+    public string CoreSummary
+    {
+        get => _coreSummary;
+        set => SetProperty(ref _coreSummary, value);
+    }
+
+    public string ValidationSummary
+    {
+        get => _validationSummary;
+        set => SetProperty(ref _validationSummary, value);
+    }
+
+    public string RecentIssueSummary
+    {
+        get => _recentIssueSummary;
+        set => SetProperty(ref _recentIssueSummary, value);
+    }
+
     public ICommand NewProfileCommand { get; }
     public RelayCommand DuplicateProfileCommand { get; }
     public RelayCommand DeleteProfileCommand { get; }
@@ -276,6 +352,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         SelectedProfile ??= Profiles.FirstOrDefault();
         StatusText = "Stopped";
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
     public async Task ImportProfileJsonAsync(string json, string name)
@@ -390,6 +467,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _repository.SaveSecret(SelectedProfile.Id, SelectedProfile.SecretRef, SecretValue);
         }
         ErrorText = "Profile saved";
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
     private void LoadStructuredFields()
@@ -452,6 +530,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SelectedProfile.CoreConfigJson = obj.ToJsonString(JsonDefaults.Pretty);
         OnPropertyChanged(nameof(SelectedProfile));
         ErrorText = "Structured fields applied to JSON";
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
     private async Task ValidateProfileAsync()
@@ -473,6 +552,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SelectedProfile.LastValidationError = ex.Message;
             ErrorText = ex.Message;
         }
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
         await Task.CompletedTask;
     }
 
@@ -485,6 +565,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var obj = _configService.ParseAndValidate(SelectedProfile.CoreConfigJson);
         SelectedProfile.CoreConfigJson = obj.ToJsonString(JsonDefaults.Pretty);
         OnPropertyChanged(nameof(SelectedProfile));
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
     private async Task ConnectAsync()
@@ -532,6 +613,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             var endpoints = _configService.GetLocalProxyEndpoints(SelectedProfile.CoreConfigJson);
             ErrorText = $"HTTP: {endpoints.Http ?? "-"}  SOCKS5: {endpoints.Socks ?? "-"}";
+            LocalProxySummary = BuildProxyEndpointSummary(endpoints);
         }
         catch (Exception ex)
         {
@@ -548,7 +630,166 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             StatusText = e.Status is null ? e.State.ToString() : e.Status.ToPrettyJson();
             StatsText = e.Stats?.ToPrettyJson() ?? "";
             LogText = string.Join(Environment.NewLine, _supervisor.Logs.Select(x => $"{x.Time:HH:mm:ss} [{x.Component ?? x.Level}] {x.Message}"));
+            RefreshOverview(e.Status, e.Stats);
         });
+    }
+
+    private void RefreshOverview(CoreStatus? status, CoreStats? stats)
+    {
+        ConnectionHeading = RuntimeState switch
+        {
+            RuntimeState.Running => "Connected",
+            RuntimeState.Degraded => "Degraded",
+            RuntimeState.Starting => "Starting",
+            RuntimeState.Stopping => "Stopping",
+            RuntimeState.Faulted => "Faulted",
+            RuntimeState.Recovering => "Recovering",
+            _ => "Disconnected"
+        };
+        ConnectionDetail = status is null
+            ? "Sidecar is not running."
+            : $"{status.Mode} mode, uptime {FormatDuration(status.UptimeSeconds)}";
+        ActiveProfileSummary = SelectedProfile is null
+            ? "-"
+            : $"{SelectedProfile.Name} ({SelectedProfile.Kind}, {SelectedProfile.Source})";
+        ProxySummary = SelectedProxyMode.ToString();
+        CoreSummary = status is null ? "Core not running" : $"{status.Version} / {ShortCommit(status.Commit)}";
+        RecentIssueSummary = FirstNonEmpty(ErrorText, status?.LastFatalError, SelectedProfile?.LastValidationError, "-");
+        ValidationSummary = SelectedProfile?.LastValidationError is { Length: > 0 } validationError
+            ? validationError
+            : SelectedProfile?.LastValidatedAt is { } validatedAt
+                ? $"Last checked {validatedAt.LocalDateTime:g}"
+                : "Not validated";
+
+        try
+        {
+            LocalProxySummary = SelectedProfile is null
+                ? "-"
+                : BuildProxyEndpointSummary(_configService.GetLocalProxyEndpoints(SelectedProfile.CoreConfigJson));
+        }
+        catch (Exception ex)
+        {
+            LocalProxySummary = ex.Message;
+        }
+
+        var sent = GetJsonUInt64(stats?.Traffic, "bytes_sent");
+        var received = GetJsonUInt64(stats?.Traffic, "bytes_received");
+        var totalChannels = status?.Client?.Channels.Count ?? 0;
+        var upChannels = status?.Client?.Channels.Count(x => x.Up) ?? 0;
+        var avgRtt = status?.Client?.Channels.Where(x => x.Up && x.RttSeconds > 0).Select(x => x.RttSeconds).DefaultIfEmpty(0).Average() ?? 0;
+        var runningListeners = status?.Listeners.Count(x => string.Equals(x.State, "running", StringComparison.OrdinalIgnoreCase)) ?? 0;
+        var totalListeners = status?.Listeners.Count ?? 0;
+        var reconnects = GetJsonUInt64(stats?.Counters, "client_reconnects_total");
+        var activeStreams = stats?.Server?.ActiveStreams ?? status?.Server?.ActiveStreams ?? 0;
+
+        ReplaceCollection(OverviewMetrics,
+        [
+            new DashboardMetric { Label = "Runtime", Value = ConnectionHeading, Detail = ConnectionDetail },
+            new DashboardMetric { Label = "Traffic", Value = $"{FormatBytes(sent)} up", Detail = $"{FormatBytes(received)} down" },
+            new DashboardMetric { Label = "Channels", Value = $"{upChannels}/{totalChannels} up", Detail = avgRtt > 0 ? $"{avgRtt * 1000:0} ms avg RTT" : "waiting for RTT" },
+            new DashboardMetric { Label = "Listeners", Value = $"{runningListeners}/{totalListeners} running", Detail = ListenerDetail(status) },
+            new DashboardMetric { Label = "Reconnects", Value = reconnects.ToString(CultureInfo.InvariantCulture), Detail = $"{activeStreams} active streams" },
+            new DashboardMetric { Label = "Proxy Mode", Value = ProxySummary, Detail = LocalProxySummary }
+        ]);
+
+        ReplaceCollection(ListenerRows, status?.Listeners.Select(x => new SummaryRow
+        {
+            Name = x.Protocol,
+            Value = string.IsNullOrWhiteSpace(x.Actual) ? x.Configured : x.Actual,
+            Detail = string.IsNullOrWhiteSpace(x.LastError) ? x.State : x.LastError
+        }) ?? []);
+
+        ReplaceCollection(ChannelRows, status?.Client?.Channels.Select(x => new SummaryRow
+        {
+            Name = $"Channel {x.Channel}",
+            Value = x.Up ? "Up" : "Down",
+            Detail = x.RttSeconds > 0 ? $"{x.RttSeconds * 1000:0} ms RTT, caps {x.Capabilities}" : $"caps {x.Capabilities}"
+        }) ?? []);
+    }
+
+    private static void ReplaceCollection<T>(ObservableCollection<T> target, IEnumerable<T> values)
+    {
+        target.Clear();
+        foreach (var value in values)
+        {
+            target.Add(value);
+        }
+    }
+
+    private static ulong GetJsonUInt64(JsonElement? element, string propertyName)
+    {
+        if (element is not { ValueKind: JsonValueKind.Object } obj || !obj.TryGetProperty(propertyName, out var value))
+        {
+            return 0;
+        }
+        return value.ValueKind switch
+        {
+            JsonValueKind.Number when value.TryGetUInt64(out var result) => result,
+            _ => 0
+        };
+    }
+
+    private static string FormatBytes(ulong bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB", "TB"];
+        var value = (double)bytes;
+        var unit = 0;
+        while (value >= 1024 && unit < units.Length - 1)
+        {
+            value /= 1024;
+            unit++;
+        }
+        return unit == 0 ? $"{bytes} {units[unit]}" : $"{value:0.##} {units[unit]}";
+    }
+
+    private static string FormatDuration(double seconds)
+    {
+        if (seconds <= 0)
+        {
+            return "0s";
+        }
+        var span = TimeSpan.FromSeconds(seconds);
+        if (span.TotalDays >= 1)
+        {
+            return $"{(int)span.TotalDays}d {span.Hours}h";
+        }
+        if (span.TotalHours >= 1)
+        {
+            return $"{(int)span.TotalHours}h {span.Minutes}m";
+        }
+        if (span.TotalMinutes >= 1)
+        {
+            return $"{(int)span.TotalMinutes}m {span.Seconds}s";
+        }
+        return $"{span.Seconds}s";
+    }
+
+    private static string BuildProxyEndpointSummary(LocalProxyEndpoints endpoints)
+    {
+        return $"HTTP {endpoints.Http ?? "-"} / SOCKS {endpoints.Socks ?? "-"}";
+    }
+
+    private static string ListenerDetail(CoreStatus? status)
+    {
+        if (status?.Listeners.Count > 0)
+        {
+            return string.Join(", ", status.Listeners.Select(x => string.IsNullOrWhiteSpace(x.Actual) ? x.Configured : x.Actual));
+        }
+        return "no listeners";
+    }
+
+    private static string ShortCommit(string? commit)
+    {
+        if (string.IsNullOrWhiteSpace(commit))
+        {
+            return "unknown";
+        }
+        return commit.Length <= 8 ? commit : commit[..8];
+    }
+
+    private static string FirstNonEmpty(params string?[] values)
+    {
+        return values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "";
     }
 
     private void RaiseCommandState()
