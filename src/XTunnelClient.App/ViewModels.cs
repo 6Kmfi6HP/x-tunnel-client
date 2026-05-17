@@ -134,6 +134,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _filteredLogText = "";
     private string _logFilterText = "";
     private string _selectedLogLevelFilter = "All";
+    private string _profileSearchText = "";
     private string _diagnosticsText = "";
     private string _diagnosticsSummaryText = "";
     private string _subscriptionStatusText = "";
@@ -195,6 +196,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         UseDetectedCorePathCommand = new RelayCommand(UseDetectedCorePath);
         ClearLogFiltersCommand = new RelayCommand(ClearLogFilters);
+        ClearProfileSearchCommand = new RelayCommand(ClearProfileSearch);
         RestoreProxyCommand = new RelayCommand(() => systemProxy.Restore());
         CopyProxyCommand = new RelayCommand(CopyProxySummary);
         OpenDataFolderCommand = new RelayCommand(() => OpenFolder(_paths.Root));
@@ -209,6 +211,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public event EventHandler<string>? CopyTextRequested;
 
     public ObservableCollection<Profile> Profiles { get; } = [];
+    public ObservableCollection<Profile> FilteredProfiles { get; } = [];
     public ObservableCollection<DashboardMetric> OverviewMetrics { get; } = [];
     public ObservableCollection<SummaryRow> ListenerRows { get; } = [];
     public ObservableCollection<SummaryRow> ChannelRows { get; } = [];
@@ -332,6 +335,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _selectedLogLevelFilter, value))
             {
                 UpdateFilteredLogText();
+            }
+        }
+    }
+
+    public string ProfileSearchText
+    {
+        get => _profileSearchText;
+        set
+        {
+            if (SetProperty(ref _profileSearchText, value))
+            {
+                UpdateFilteredProfiles();
             }
         }
     }
@@ -544,6 +559,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand SaveSettingsCommand { get; }
     public ICommand UseDetectedCorePathCommand { get; }
     public ICommand ClearLogFiltersCommand { get; }
+    public ICommand ClearProfileSearchCommand { get; }
     public ICommand RestoreProxyCommand { get; }
     public ICommand CopyProxyCommand { get; }
     public ICommand OpenDataFolderCommand { get; }
@@ -575,24 +591,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             Profiles.Add(profile);
         }
         var targetId = preferredProfileId ?? Settings.AutoConnectProfileId;
-        SelectedProfile = targetId.HasValue
-            ? Profiles.FirstOrDefault(x => x.Id == targetId.Value) ?? Profiles.FirstOrDefault()
-            : Profiles.FirstOrDefault();
+        UpdateFilteredProfiles(targetId);
     }
 
     private void RefreshProfileListItem(Profile profile)
     {
-        var wasSelected = SelectedProfile?.Id == profile.Id;
+        var selectedId = SelectedProfile?.Id;
         var index = Profiles.IndexOf(profile);
         if (index >= 0)
         {
             Profiles[index] = profile;
         }
-        if (wasSelected)
-        {
-            SelectedProfile = profile;
-            RaiseCommandState();
-        }
+        UpdateFilteredProfiles(selectedId);
     }
 
     private void LoadSubscriptions(Guid? preferredSubscriptionId = null)
@@ -626,7 +636,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         };
         _repository.SaveProfile(profile);
         Profiles.Add(profile);
-        SelectedProfile = profile;
+        UpdateFilteredProfiles(profile.Id);
         await ValidateProfileAsync();
     }
 
@@ -674,7 +684,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SortOrder = Profiles.Count * 100
         };
         Profiles.Add(profile);
-        SelectedProfile = profile;
+        UpdateFilteredProfiles(profile.Id);
     }
 
     private void DuplicateProfile()
@@ -700,7 +710,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         _repository.SaveProfile(copy);
         Profiles.Add(copy);
-        SelectedProfile = copy;
+        UpdateFilteredProfiles(copy.Id);
     }
 
     private void DeleteProfile()
@@ -712,7 +722,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var profile = SelectedProfile;
         _repository.DeleteProfile(profile.Id);
         Profiles.Remove(profile);
-        SelectedProfile = Profiles.FirstOrDefault();
+        UpdateFilteredProfiles();
     }
 
     private void NewSubscription()
@@ -1189,6 +1199,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         UpdateFilteredLogText();
     }
 
+    private void ClearProfileSearch()
+    {
+        ProfileSearchText = "";
+    }
+
     private void OnRuntimeChanged(object? sender, RuntimeChangedEventArgs e)
     {
         Dispatcher.UIThread.Post(() =>
@@ -1406,6 +1421,45 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         var source = string.IsNullOrWhiteSpace(log.Component) ? log.Level : $"{log.Level}/{log.Component}";
         return $"{log.Time:HH:mm:ss} [{source}] {log.Message}";
+    }
+
+    private void UpdateFilteredProfiles(Guid? preferredProfileId = null)
+    {
+        var selectedId = preferredProfileId ?? SelectedProfile?.Id;
+        var matches = Profiles.Where(MatchesProfileSearch).ToList();
+        ReplaceCollection(FilteredProfiles, matches);
+
+        if (FilteredProfiles.Count == 0)
+        {
+            SelectedProfile = null;
+            return;
+        }
+
+        var preferred = selectedId.HasValue
+            ? FilteredProfiles.FirstOrDefault(x => x.Id == selectedId.Value)
+            : null;
+        SelectedProfile = preferred ?? FilteredProfiles.First();
+    }
+
+    private bool MatchesProfileSearch(Profile profile)
+    {
+        var filter = ProfileSearchText.Trim();
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            return true;
+        }
+
+        return ProfileFieldContains(profile.Name, filter)
+            || ProfileFieldContains(profile.Kind, filter)
+            || ProfileFieldContains(profile.Source, filter)
+            || ProfileFieldContains(profile.ValidationState, filter)
+            || ProfileFieldContains(profile.ValidationDetail, filter);
+    }
+
+    private static bool ProfileFieldContains(string? value, string filter)
+    {
+        return !string.IsNullOrWhiteSpace(value)
+            && value.Contains(filter, StringComparison.OrdinalIgnoreCase);
     }
 
     private LocalProxyEndpoints? TryGetSelectedLocalProxyEndpoints(out string? error)

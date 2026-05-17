@@ -183,12 +183,18 @@
       <TabItem Header="Profiles" automation:AutomationProperties.AutomationId="ProfilesTab">
         <Grid Margin="16" ColumnDefinitions="320,*" ColumnSpacing="16">
           <DockPanel>
-            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
-              <Button Content="New" Command="{Binding NewProfileCommand}"/>
-              <Button Content="Copy" Command="{Binding DuplicateProfileCommand}"/>
-              <Button Content="Delete" Command="{Binding DeleteProfileCommand}"/>
+            <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,10">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <TextBox Text="{Binding ProfileSearchText}" PlaceholderText="Search profiles" automation:AutomationProperties.AutomationId="ProfileSearchTextBox"/>
+                <Button Grid.Column="1" Content="Clear" Command="{Binding ClearProfileSearchCommand}" automation:AutomationProperties.AutomationId="ClearProfileSearchButton"/>
+              </Grid>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="New" Command="{Binding NewProfileCommand}"/>
+                <Button Content="Copy" Command="{Binding DuplicateProfileCommand}"/>
+                <Button Content="Delete" Command="{Binding DeleteProfileCommand}"/>
+              </StackPanel>
             </StackPanel>
-            <ListBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}">
+            <ListBox ItemsSource="{Binding FilteredProfiles}" SelectedItem="{Binding SelectedProfile}">
               <ListBox.ItemTemplate>
                 <DataTemplate>
                   <Border Padding="8" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">

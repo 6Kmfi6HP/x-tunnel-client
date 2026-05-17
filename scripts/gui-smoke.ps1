@@ -203,26 +203,28 @@ $coreForwardUrl = "ws://127.0.0.1:$coreServerPort/tunnel"
 $profileListen = "socks5://127.0.0.1:$socksPort,http://127.0.0.1:$httpPort"
 $subscriptionUrl = "http://127.0.0.1:$subscriptionPort/subscription.json"
 $serverJob = Start-Job -ScriptBlock {
-    param([int]$Port)
+    param([int]$Port, [int]$RequestCount)
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
     $listener.Start()
     try {
-        $client = $listener.AcceptTcpClient()
-        try {
-            $stream = $client.GetStream()
-            $buffer = New-Object byte[] 1024
-            $null = $stream.Read($buffer, 0, $buffer.Length)
-            $response = [System.Text.Encoding]::ASCII.GetBytes("HTTP/1.1 204 No Content`r`nContent-Length: 0`r`nConnection: close`r`n`r`n")
-            $stream.Write($response, 0, $response.Length)
-        }
-        finally {
-            $client.Dispose()
+        for ($i = 0; $i -lt $RequestCount; $i++) {
+            $client = $listener.AcceptTcpClient()
+            try {
+                $stream = $client.GetStream()
+                $buffer = New-Object byte[] 1024
+                $null = $stream.Read($buffer, 0, $buffer.Length)
+                $response = [System.Text.Encoding]::ASCII.GetBytes("HTTP/1.1 204 No Content`r`nContent-Length: 0`r`nConnection: close`r`n`r`n")
+                $stream.Write($response, 0, $response.Length)
+            }
+            finally {
+                $client.Dispose()
+            }
         }
     }
     finally {
         $listener.Stop()
     }
-} -ArgumentList $port
+} -ArgumentList $port, 3
 
 $subscriptionJob = Start-Job -ScriptBlock {
     param([int]$Port)
@@ -361,6 +363,18 @@ try {
     }
     Write-Host "Connection state: $connectedText"
 
+    Select-Element $diagnosticsTab
+    $testButton = Get-ByAutomationId -Root $window -AutomationId "TestNetworkButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $testButton
+    $connectedNetworkText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Connected network test did not report proxy success." -Condition {
+        $text = Get-ElementValue $resultBox
+        if ($text -match "Direct: ok" -and $text -match "HTTP proxy: ok" -and $text -match "status=204") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Connected network test: $connectedNetworkText"
+
     $disconnectButton = Get-ByAutomationId -Root $window -AutomationId "DisconnectButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $disconnectButton
 
@@ -448,6 +462,35 @@ try {
     Write-Host $subscriptionText
 
     Select-Element $profilesTab
+    $profileSearchBox = Get-ByAutomationId -Root $window -AutomationId "ProfileSearchTextBox" -TimeoutSeconds $TimeoutSeconds
+    Set-ElementValue -Element $profileSearchBox -Value "Smoke"
+    $searchedProfileText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile search did not show the subscription profile." -Condition {
+        $item = Find-ByAutomationId -Root $window -AutomationId "ProfileListItemName"
+        if (!$item) {
+            return $null
+        }
+        $text = Get-ElementValue $item
+        if ($text -match "Smoke subscription profile") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Profile search result: $searchedProfileText"
+    $clearProfileSearchButton = Get-ByAutomationId -Root $window -AutomationId "ClearProfileSearchButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $clearProfileSearchButton
+    $clearedProfileText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear profile search did not restore the local profile." -Condition {
+        $item = Find-ByAutomationId -Root $window -AutomationId "ProfileListItemName"
+        if (!$item) {
+            return $null
+        }
+        $text = Get-ElementValue $item
+        if ($text -match "Local x-tunnel") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Profile search cleared: $clearedProfileText"
+
     $profileJsonBox = Get-ByAutomationId -Root $window -AutomationId "ProfileJsonTextBox" -TimeoutSeconds $TimeoutSeconds
     Set-ElementValue -Element $profileJsonBox -Value "{"
 
