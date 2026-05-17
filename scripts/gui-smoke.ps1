@@ -1377,6 +1377,13 @@ try {
     Save-ElementScreenshot -Element $window -Path $LogsRegexScreenshotPath
     Write-Host "Regex logs GUI screenshot: $LogsRegexScreenshotPath"
     Set-ElementValue -Element $logFilterBox -Value "/[/"
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Invalid regex text did not appear in the log filter box before screenshot capture." -Condition {
+        $text = Get-ElementValue $logFilterBox
+        if ($text -eq "/[/") {
+            return $text
+        }
+        return $null
+    } | Out-Null
     $invalidRegexSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Invalid regex summary did not show the parse error." -Condition {
         $text = Get-ElementValue $logFilterSummaryText
         if ($text -match "Invalid regex") {
@@ -1392,6 +1399,7 @@ try {
         return $null
     }
     Write-Host "Invalid regex filter: $invalidRegexSummary / $invalidRegexBadge"
+    Start-Sleep -Milliseconds 250
     Save-ElementScreenshot -Element $window -Path $LogsInvalidRegexScreenshotPath
     Write-Host "Invalid regex logs GUI screenshot: $LogsInvalidRegexScreenshotPath"
     Set-ElementValue -Element $logFilterBox -Value "unlikely-smoke-filter"
