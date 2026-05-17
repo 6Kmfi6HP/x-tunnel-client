@@ -205,6 +205,23 @@ try {
     Write-Host "GUI smoke passed"
     Write-Host $resultText
     Write-Host $endpointText
+
+    Select-Element $profilesTab
+    $profileJsonBox = Get-ByAutomationId -Root $window -AutomationId "ProfileJsonTextBox" -TimeoutSeconds $TimeoutSeconds
+    Set-ElementValue -Element $profileJsonBox -Value "{"
+
+    $saveProfileButton = Get-ByAutomationId -Root $window -AutomationId "SaveProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $saveProfileButton
+
+    $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $profileError = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Invalid profile save did not surface an error in the GUI." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "JSON" -or $text -match "配置") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host $profileError
 }
 finally {
     $env:XTUNNEL_CLIENT_HOME = $oldHome

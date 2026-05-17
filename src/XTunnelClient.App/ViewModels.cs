@@ -748,18 +748,35 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void SaveSelectedProfile()
     {
+        TrySaveSelectedProfile();
+    }
+
+    private bool TrySaveSelectedProfile()
+    {
         if (SelectedProfile is null)
         {
-            return;
+            return false;
         }
-        _configService.ParseAndValidate(SelectedProfile.CoreConfigJson);
-        _repository.SaveProfile(SelectedProfile);
-        if (SelectedProfile.SecretRef is not null)
+        try
         {
-            _repository.SaveSecret(SelectedProfile.Id, SelectedProfile.SecretRef, SecretValue);
+            _configService.ParseAndValidate(SelectedProfile.CoreConfigJson);
+            _repository.SaveProfile(SelectedProfile);
+            if (SelectedProfile.SecretRef is not null)
+            {
+                _repository.SaveSecret(SelectedProfile.Id, SelectedProfile.SecretRef, SecretValue);
+            }
+            SelectedProfile.LastValidationError = null;
+            ProfileIssues.Clear();
+            ErrorText = "Profile saved";
+            RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+            return true;
         }
-        ErrorText = "Profile saved";
-        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+        catch (Exception ex)
+        {
+            ReportProfileError(ex);
+            RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+            return false;
+        }
     }
 
     private void LoadStructuredFields()
@@ -799,30 +816,39 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             return;
         }
-        var obj = JsonNode.Parse(SelectedProfile.CoreConfigJson) as JsonObject ?? [];
-        obj["listen"] = ProfileListen;
-        if (!string.IsNullOrWhiteSpace(ProfileForward))
+        try
         {
-            obj["forward"] = ProfileForward;
+            var obj = JsonNode.Parse(SelectedProfile.CoreConfigJson) as JsonObject ?? [];
+            obj["listen"] = ProfileListen;
+            if (!string.IsNullOrWhiteSpace(ProfileForward))
+            {
+                obj["forward"] = ProfileForward;
+            }
+            else
+            {
+                obj.Remove("forward");
+            }
+            obj["connections"] = Math.Max(1, (int)ProfileConnections);
+            obj["fallback"] = ProfileFallback;
+            if (!string.IsNullOrWhiteSpace(ProfileMetrics))
+            {
+                obj["metrics"] = ProfileMetrics;
+            }
+            else
+            {
+                obj.Remove("metrics");
+            }
+            SelectedProfile.CoreConfigJson = obj.ToJsonString(JsonDefaults.Pretty);
+            OnPropertyChanged(nameof(SelectedProfile));
+            ProfileIssues.Clear();
+            ErrorText = "Structured fields applied to JSON";
+            RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
         }
-        else
+        catch (Exception ex)
         {
-            obj.Remove("forward");
+            ReportProfileError(ex);
+            RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
         }
-        obj["connections"] = Math.Max(1, (int)ProfileConnections);
-        obj["fallback"] = ProfileFallback;
-        if (!string.IsNullOrWhiteSpace(ProfileMetrics))
-        {
-            obj["metrics"] = ProfileMetrics;
-        }
-        else
-        {
-            obj.Remove("metrics");
-        }
-        SelectedProfile.CoreConfigJson = obj.ToJsonString(JsonDefaults.Pretty);
-        OnPropertyChanged(nameof(SelectedProfile));
-        ErrorText = "Structured fields applied to JSON";
-        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
     private async Task ValidateProfileAsync()
@@ -919,7 +945,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         try
         {
-            SaveSelectedProfile();
+            if (!TrySaveSelectedProfile())
+            {
+                return;
+            }
             SaveSettings();
             await _supervisor.ConnectAsync(SelectedProfile, Settings);
         }
@@ -939,7 +968,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         try
         {
-            SaveSelectedProfile();
+            if (!TrySaveSelectedProfile())
+            {
+                return;
+            }
             SaveSettings();
             await _supervisor.RestartAsync(SelectedProfile, Settings);
         }
@@ -1405,6 +1437,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             Severity = "error",
             Message = message
         };
+    }
+
+    private void ReportProfileError(Exception ex)
+    {
+        if (SelectedProfile is null)
+        {
+            ErrorText = ex.Message;
+            return;
+        }
+        var issue = BuildProfileIssue(ex);
+        SelectedProfile.LastValidationError = issue.Message;
+        ReplaceCollection(ProfileIssues, [issue]);
+        ErrorText = issue.Message;
     }
 
     private static string InferIssueField(string message)
