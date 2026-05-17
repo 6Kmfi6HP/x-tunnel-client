@@ -7,6 +7,7 @@ param(
     [string]$ScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke.png"),
     [string]$SubscriptionScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-subscriptions.png"),
     [string]$DiagnosticsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-diagnostics.png"),
+    [string]$LogsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-logs.png"),
     [int]$TimeoutSeconds = 25
 )
 
@@ -551,13 +552,27 @@ try {
     } | Out-Null
     $clearLogFiltersButton = Get-ByAutomationId -Root $window -AutomationId "ClearLogFiltersButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $clearLogFiltersButton
-    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear log filters did not restore log output." -Condition {
+    $restoredLogText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear log filters did not restore log output." -Condition {
         $text = Get-ElementValue $filteredLogBox
         if (![string]::IsNullOrWhiteSpace($text)) {
             return $text
         }
         return $null
-    } | Out-Null
+    }
+    $copyFilteredLogsButton = Get-ByAutomationId -Root $window -AutomationId "CopyFilteredLogsButton" -TimeoutSeconds $TimeoutSeconds
+    $restoredFirstLogLine = $restoredLogText.Split([Environment]::NewLine)[0]
+    Set-Clipboard -Value ""
+    Invoke-Element $copyFilteredLogsButton
+    $clipboardLogText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy filtered logs did not place the restored log output on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match [Regex]::Escape($restoredFirstLogLine)) {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied filtered logs: $($clipboardLogText.Split([Environment]::NewLine)[0])"
+    Save-ElementScreenshot -Element $window -Path $LogsScreenshotPath
+    Write-Host "Logs GUI screenshot: $LogsScreenshotPath"
 
     $subscriptionsTab = Get-ByAutomationId -Root $window -AutomationId "SubscriptionsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $subscriptionsTab

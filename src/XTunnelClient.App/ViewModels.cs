@@ -216,6 +216,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         UseDetectedCorePathCommand = new RelayCommand(UseDetectedCorePath);
         ClearLogFiltersCommand = new RelayCommand(ClearLogFilters);
+        CopyFilteredLogsCommand = new RelayCommand(CopyFilteredLogs, HasFilteredLogs);
         ClearProfileSearchCommand = new RelayCommand(ClearProfileSearch);
         ClearSubscriptionSearchCommand = new RelayCommand(ClearSubscriptionSearch);
         RestoreProxyCommand = new RelayCommand(() => systemProxy.Restore());
@@ -338,7 +339,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string FilteredLogText
     {
         get => _filteredLogText;
-        set => SetProperty(ref _filteredLogText, value);
+        set
+        {
+            if (SetProperty(ref _filteredLogText, value))
+            {
+                CopyFilteredLogsCommand.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     public string LogFilterText
@@ -712,6 +719,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand SaveSettingsCommand { get; }
     public ICommand UseDetectedCorePathCommand { get; }
     public ICommand ClearLogFiltersCommand { get; }
+    public RelayCommand CopyFilteredLogsCommand { get; }
     public ICommand ClearProfileSearchCommand { get; }
     public ICommand ClearSubscriptionSearchCommand { get; }
     public ICommand RestoreProxyCommand { get; }
@@ -1603,6 +1611,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         UpdateFilteredLogText();
     }
 
+    private void CopyFilteredLogs()
+    {
+        if (!HasFilteredLogs())
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, FilteredLogText);
+        ErrorText = "Filtered logs copied";
+    }
+
     private void ClearProfileSearch()
     {
         ProfileSearchText = "";
@@ -2286,6 +2305,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             && !string.Equals(ProfileEndpointTestText, "Not tested", StringComparison.OrdinalIgnoreCase)
             && !string.Equals(ProfileEndpointTestText, "Testing profile forward endpoint...", StringComparison.OrdinalIgnoreCase)
             && !string.Equals(ProfileEndpointTestText, "No selected profile", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool HasFilteredLogs()
+    {
+        return !string.IsNullOrWhiteSpace(FilteredLogText);
     }
 
     private void RaiseCommandState()
