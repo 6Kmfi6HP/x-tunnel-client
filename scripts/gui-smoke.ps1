@@ -406,6 +406,29 @@ try {
     $saveProfileButton = Get-ByAutomationId -Root $window -AutomationId "SaveProfileButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $saveProfileButton
 
+    $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $validateProfileButton = Get-ByAutomationId -Root $window -AutomationId "ValidateProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $validateProfileButton
+    $profileValidateText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Validate profile did not report a ready or warning state." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "Profile ready" -or $text -match "Profile validated with warnings") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Profile validation: $profileValidateText"
+
+    $formatProfileButton = Get-ByAutomationId -Root $window -AutomationId "FormatProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $formatProfileButton
+    $profileFormatText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Format profile did not report success." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "Formatted with core" -or $text -match "formatted locally") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Profile format: $profileFormatText"
+
     $copyProfileSummaryButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileSummaryButton" -TimeoutSeconds $TimeoutSeconds
     Set-Clipboard -Value ""
     Invoke-Element $copyProfileSummaryButton
@@ -1287,7 +1310,6 @@ try {
     $saveProfileButton = Get-ByAutomationId -Root $window -AutomationId "SaveProfileButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $saveProfileButton
 
-    $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
     $profileError = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Invalid profile save did not surface an error in the GUI." -Condition {
         $text = Get-ElementValue $appErrorText
         if ($text -match "JSON" -or $text -match "配置") {
