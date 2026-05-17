@@ -288,7 +288,7 @@
               <Button Content="Validate" Command="{Binding ValidateProfileCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="ValidateProfileButton"/>
               <Button Content="Format" Command="{Binding FormatProfileCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="FormatProfileButton"/>
               <Button Content="Import File" Click="ImportFile_OnClick" Margin="0,0,8,8"/>
-              <Button Content="Import Clipboard" Click="ImportClipboard_OnClick" Margin="0,0,8,8"/>
+              <Button Content="Import Clipboard" Click="ImportClipboard_OnClick" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="ImportProfileClipboardButton"/>
               <Button Content="Export" Click="ExportProfile_OnClick" Margin="0,0,8,8"/>
               <Button Content="Copy Summary" Command="{Binding CopyProfileSummaryCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="CopyProfileSummaryButton"/>
               <Button Content="Copy Config" Command="{Binding CopyProfileConfigCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="CopyProfileConfigButton"/>

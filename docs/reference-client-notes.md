@@ -80,3 +80,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added a Profiles Copy Config action for copying the selected profile core JSON without exposing the DPAPI secret value.
 - Added a Profiles Copy Issues action for sharing selected-profile validation state and field issues after failed saves or checks.
 - Added GUI smoke coverage for the Profiles Validate and Format actions through stable AutomationIds.
+- Added GUI smoke coverage for importing a selected profile from clipboard JSON.

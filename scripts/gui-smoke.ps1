@@ -1365,6 +1365,26 @@ try {
         return $null
     }
     Write-Host "Endpoint tests cleared: $clearedEndpointSummary"
+
+    $importProfileClipboardButton = Get-ByAutomationId -Root $window -AutomationId "ImportProfileClipboardButton" -TimeoutSeconds $TimeoutSeconds
+    $importProfileJson = $profileConfigClipboardText -replace '"token_ref"\s*:\s*"secret:profile-token"', '"token": "clipboard-token"'
+    Set-Clipboard -Value $importProfileJson
+    Invoke-Element $importProfileClipboardButton
+    $importedProfileName = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Import profile from clipboard did not select the imported profile." -Condition {
+        $text = Get-ElementValue $profileNameBox
+        if ($text -match "Clipboard profile") {
+            return $text
+        }
+        return $null
+    }
+    $importedProfileSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Imported clipboard profile did not appear in the profile summary." -Condition {
+        $text = Get-ElementValue $profileSummaryBlock
+        if ($text -match "Profiles 3/3 visible" -and $text -match "1 issues") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Clipboard profile imported: $importedProfileName / $importedProfileSummary"
     Write-Host "GUI smoke passed"
 }
 finally {
