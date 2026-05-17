@@ -611,6 +611,8 @@ try {
     $diagnosticsNetworkButton = Get-ByAutomationId -Root $window -AutomationId "TestNetworkButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $diagnosticsNetworkButton
     $resultBox = Get-ByAutomationId -Root $window -AutomationId "NetworkTestResultTextBox" -TimeoutSeconds $TimeoutSeconds
+    $invalidDirectRouteStatus = Get-ByAutomationId -Root $window -AutomationId "NetworkDirectRouteStatusText" -TimeoutSeconds $TimeoutSeconds
+    $invalidProxyRouteStatus = Get-ByAutomationId -Root $window -AutomationId "NetworkProxyRouteStatusText" -TimeoutSeconds $TimeoutSeconds
     $invalidNetworkText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Invalid network target did not report a validation error." -Condition {
         $text = Get-ElementValue $resultBox
         if ($text -match "Target URL must be an absolute http or https URL") {
@@ -618,7 +620,21 @@ try {
         }
         return $null
     }
-    Write-Host "Invalid network target: $invalidNetworkText"
+    $invalidDirectRouteText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Invalid network target did not mark the direct route chip invalid." -Condition {
+        $text = Get-ElementValue $invalidDirectRouteStatus
+        if ($text -match "Direct: invalid target") {
+            return $text
+        }
+        return $null
+    }
+    $invalidProxyRouteText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Invalid network target did not mark the proxy route chip invalid." -Condition {
+        $text = Get-ElementValue $invalidProxyRouteStatus
+        if ($text -match "Proxy: invalid target") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Invalid network target: $invalidNetworkText / $invalidDirectRouteText / $invalidProxyRouteText"
     Set-ElementValue -Element $urlBox -Value $testUrl
 
     $overviewTab = Get-ByAutomationId -Root $window -AutomationId "OverviewTab" -TimeoutSeconds $TimeoutSeconds
