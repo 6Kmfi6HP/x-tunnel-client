@@ -46,3 +46,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added copyable filtered logs to keep troubleshooting output available after narrowing the runtime log view.
 - Added copyable subscription update results so aggregate subscription refresh outcomes can be pasted into troubleshooting notes.
 - Added a one-click test-and-select-fastest profile action to reduce the common latency-check then choose-node workflow.
+- Added Overview quick navigation and made the header diagnostics action open the Diagnostics page before refreshing checks.

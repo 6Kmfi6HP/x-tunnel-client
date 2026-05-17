@@ -139,6 +139,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _selectedLogLevelFilter = "All";
     private string _profileSearchText = "";
     private string _selectedProfileSort = "Saved";
+    private int _selectedMainTabIndex;
     private string _diagnosticsText = "";
     private string _diagnosticsSummaryText = "";
     private string _subscriptionStatusText = "";
@@ -207,6 +208,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         DisconnectCommand = new AsyncRelayCommand(() => _supervisor.DisconnectAsync(), CanDisconnect);
         RestartCommand = new AsyncRelayCommand(RestartAsync, CanRestart);
         RefreshDiagnosticsCommand = new AsyncRelayCommand(RefreshDiagnosticsAsync);
+        OpenProfilesCommand = new RelayCommand(() => SelectedMainTabIndex = 1);
+        OpenSubscriptionsCommand = new RelayCommand(() => SelectedMainTabIndex = 2);
+        OpenLogsCommand = new RelayCommand(() => SelectedMainTabIndex = 3);
+        OpenDiagnosticsCommand = new AsyncRelayCommand(OpenDiagnosticsAsync);
+        OpenSettingsCommand = new RelayCommand(() => SelectedMainTabIndex = 5);
         TestNetworkCommand = new AsyncRelayCommand(TestNetworkAsync);
         CopyNetworkTestResultCommand = new RelayCommand(CopyNetworkTestResult, HasNetworkTestResult);
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
@@ -251,6 +257,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public IReadOnlyList<string> ProfileSortOptions { get; } = ["Saved", "Name", "Endpoint"];
     public IReadOnlyList<string> SubscriptionSortOptions { get; } = ["Saved", "Name", "Updated", "Status"];
     public IReadOnlyList<string> NetworkTestTargets { get; } = ["Google 204", "Cloudflare Trace", "Firefox Success", "Custom"];
+
+    public int SelectedMainTabIndex
+    {
+        get => _selectedMainTabIndex;
+        set => SetProperty(ref _selectedMainTabIndex, value);
+    }
 
     public Profile? SelectedProfile
     {
@@ -718,6 +730,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand DisconnectCommand { get; }
     public AsyncRelayCommand RestartCommand { get; }
     public AsyncRelayCommand RefreshDiagnosticsCommand { get; }
+    public RelayCommand OpenProfilesCommand { get; }
+    public RelayCommand OpenSubscriptionsCommand { get; }
+    public RelayCommand OpenLogsCommand { get; }
+    public AsyncRelayCommand OpenDiagnosticsCommand { get; }
+    public RelayCommand OpenSettingsCommand { get; }
     public AsyncRelayCommand TestNetworkCommand { get; }
     public RelayCommand CopyNetworkTestResultCommand { get; }
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
@@ -1332,6 +1349,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var report = await _diagnostics.CreateReportAsync(SelectedProfile, _supervisor.Control);
         DiagnosticsSummaryText = BuildDiagnosticsSummary(report);
         DiagnosticsText = JsonSerializer.Serialize(report, JsonDefaults.Pretty);
+    }
+
+    private async Task OpenDiagnosticsAsync()
+    {
+        SelectedMainTabIndex = 4;
+        await RefreshDiagnosticsAsync();
     }
 
     private async Task TestNetworkAsync()

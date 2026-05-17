@@ -4,6 +4,7 @@ param(
     [string]$CoreExe = (Join-Path $PSScriptRoot "..\..\x-tunnel\build\x-tunnel.exe"),
     [string]$AppHome = (Join-Path $env:TEMP ("xtunnel-client-gui-" + [Guid]::NewGuid().ToString("N"))),
     [string]$InstanceName = ("Local\x-tunnel-client-gui-" + [Guid]::NewGuid().ToString("N")),
+    [string]$OverviewScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-overview.png"),
     [string]$ScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke.png"),
     [string]$SubscriptionScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-subscriptions.png"),
     [string]$DiagnosticsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-diagnostics.png"),
@@ -331,8 +332,11 @@ try {
         throw "Unexpected status bar text: state='$stateText' profile='$profileText'"
     }
 
-    $profilesTab = Get-ByAutomationId -Root $window -AutomationId "ProfilesTab" -TimeoutSeconds $TimeoutSeconds
-    Select-Element $profilesTab
+    Save-ElementScreenshot -Element $window -Path $OverviewScreenshotPath
+    Write-Host "Overview GUI screenshot: $OverviewScreenshotPath"
+
+    $openProfilesButton = Get-ByAutomationId -Root $window -AutomationId "OpenProfilesButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $openProfilesButton
 
     $profileListName = Get-ByAutomationId -Root $window -AutomationId "ProfileListItemName" -TimeoutSeconds $TimeoutSeconds
     $profileListText = Get-ElementValue $profileListName
@@ -426,8 +430,8 @@ try {
     }
     Write-Host "Test + Fastest selected: $fastestProfileName / $fastestText"
 
-    $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
-    Select-Element $diagnosticsTab
+    $headerDiagnosticsButton = Get-ByAutomationId -Root $window -AutomationId "HeaderDiagnosticsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $headerDiagnosticsButton
 
     $targetCombo = Get-ByAutomationId -Root $window -AutomationId "NetworkTestTargetComboBox" -TimeoutSeconds $TimeoutSeconds
     Select-ComboBoxItem -Element $targetCombo -Name "Cloudflare Trace" -TimeoutSeconds $TimeoutSeconds
@@ -506,7 +510,7 @@ try {
     }
     Write-Host "Connection state: $connectedText"
 
-    Select-Element $diagnosticsTab
+    Invoke-Element $headerDiagnosticsButton
     $testButton = Get-ByAutomationId -Root $window -AutomationId "TestNetworkButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $testButton
     $connectedNetworkText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Connected network test did not report proxy success." -Condition {
@@ -711,6 +715,7 @@ try {
     Save-ElementScreenshot -Element $window -Path $SubscriptionScreenshotPath
     Write-Host "Subscription GUI screenshot: $SubscriptionScreenshotPath"
 
+    $profilesTab = Get-ByAutomationId -Root $window -AutomationId "ProfilesTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $profilesTab
     $profileSearchBox = Get-ByAutomationId -Root $window -AutomationId "ProfileSearchTextBox" -TimeoutSeconds $TimeoutSeconds
     Set-ElementValue -Element $profileSearchBox -Value "Smoke"
