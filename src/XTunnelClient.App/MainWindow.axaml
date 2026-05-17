@@ -229,17 +229,17 @@
                 <TextBlock Text="Sort" Classes="caption" VerticalAlignment="Center"/>
                 <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileSortOptions}" SelectedItem="{Binding SelectedProfileSort}" MinHeight="30" automation:AutomationProperties.AutomationId="ProfileSortComboBox"/>
               </Grid>
-              <WrapPanel>
+              <WrapPanel ItemSpacing="8" LineSpacing="8">
                 <Button Content="New" Command="{Binding NewProfileCommand}" automation:AutomationProperties.AutomationId="NewProfileButton"/>
-                <Button Content="Copy" Command="{Binding DuplicateProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="DuplicateProfileButton"/>
-                <Button Content="Delete" Command="{Binding DeleteProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="DeleteProfileButton"/>
-                <Button Content="Test Selected" Command="{Binding TestSelectedProfileEndpointCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="TestSelectedProfileButton"/>
-                <Button Content="Test Visible" Command="{Binding TestVisibleProfilesCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="TestVisibleProfilesButton"/>
-                <Button Content="Test + Fastest" Command="{Binding TestAndSelectFastestProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="TestAndSelectFastestProfileButton"/>
-                <Button Content="Fastest" Command="{Binding SelectFastestProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="SelectFastestProfileButton"/>
-                <Button Content="Clear Tests" Command="{Binding ClearVisibleProfileEndpointTestsCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="ClearEndpointTestsButton"/>
-                <Button Content="Startup" Command="{Binding UseSelectedProfileAtStartupCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="UseStartupProfileButton"/>
-                <Button Content="Clear Startup" Command="{Binding ClearStartupProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="ClearStartupProfileButton"/>
+                <Button Content="Copy" Command="{Binding DuplicateProfileCommand}" automation:AutomationProperties.AutomationId="DuplicateProfileButton"/>
+                <Button Content="Delete" Command="{Binding DeleteProfileCommand}" automation:AutomationProperties.AutomationId="DeleteProfileButton"/>
+                <Button Content="Test Selected" Command="{Binding TestSelectedProfileEndpointCommand}" automation:AutomationProperties.AutomationId="TestSelectedProfileButton"/>
+                <Button Content="Test Visible" Command="{Binding TestVisibleProfilesCommand}" automation:AutomationProperties.AutomationId="TestVisibleProfilesButton"/>
+                <Button Content="Test + Fastest" Command="{Binding TestAndSelectFastestProfileCommand}" automation:AutomationProperties.AutomationId="TestAndSelectFastestProfileButton"/>
+                <Button Content="Fastest" Command="{Binding SelectFastestProfileCommand}" automation:AutomationProperties.AutomationId="SelectFastestProfileButton"/>
+                <Button Content="Clear Tests" Command="{Binding ClearVisibleProfileEndpointTestsCommand}" automation:AutomationProperties.AutomationId="ClearEndpointTestsButton"/>
+                <Button Content="Startup" Command="{Binding UseSelectedProfileAtStartupCommand}" automation:AutomationProperties.AutomationId="UseStartupProfileButton"/>
+                <Button Content="Clear Startup" Command="{Binding ClearStartupProfileCommand}" automation:AutomationProperties.AutomationId="ClearStartupProfileButton"/>
               </WrapPanel>
               <TextBlock Text="{Binding StartupProfileSummary}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StartupProfileSummaryTextBlock"/>
               <TextBlock Text="{Binding ProfileBatchTestText}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="ProfileBatchTestTextBlock"/>
