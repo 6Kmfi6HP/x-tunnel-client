@@ -277,7 +277,7 @@
               <TextBox Text="{Binding ProfileListen}" PlaceholderText="listen" automation:AutomationProperties.AutomationId="ProfileListenTextBox"/>
               <TextBox Grid.Column="1" Text="{Binding ProfileForward}" PlaceholderText="forward" automation:AutomationProperties.AutomationId="ProfileForwardTextBox"/>
             </Grid>
-            <Grid Grid.Row="2" ColumnDefinitions="120,120,160,*" ColumnSpacing="8">
+            <Grid Grid.Row="2" ColumnDefinitions="120,120,*" ColumnSpacing="8">
               <NumericUpDown Value="{Binding ProfileConnections}" Minimum="1" Maximum="32"/>
               <CheckBox Grid.Column="1" IsChecked="{Binding ProfileFallback}" Content="fallback" VerticalAlignment="Center"/>
               <TextBox Grid.Column="2" Text="{Binding ProfileMetrics}" PlaceholderText="metrics"/>
