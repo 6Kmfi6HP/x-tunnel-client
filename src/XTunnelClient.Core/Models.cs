@@ -37,6 +37,10 @@ public sealed class Profile
     public int SortOrder { get; set; } = 100;
     public DateTimeOffset? LastValidatedAt { get; set; }
     public string? LastValidationError { get; set; }
+    public DateTimeOffset? LastEndpointTestAt { get; set; }
+    public long? LastEndpointTestDurationMs { get; set; }
+    public string? LastEndpointTestError { get; set; }
+    public string? LastEndpointTestTarget { get; set; }
 
     public string ListSubtitle => $"{Kind} / {Source}";
 
@@ -75,6 +79,51 @@ public sealed class Profile
     {
         "Ready" => "#BBF7D0",
         "Issue" => "#FECACA",
+        _ => "#CBD5E1"
+    };
+
+    public string EndpointTestState
+    {
+        get
+        {
+            if (!LastEndpointTestAt.HasValue)
+            {
+                return "TCP ?";
+            }
+            return string.IsNullOrWhiteSpace(LastEndpointTestError)
+                ? $"TCP {LastEndpointTestDurationMs ?? 0}ms"
+                : "TCP Fail";
+        }
+    }
+
+    public string EndpointTestDetail
+    {
+        get
+        {
+            if (!LastEndpointTestAt.HasValue)
+            {
+                return "Endpoint not tested";
+            }
+            if (!string.IsNullOrWhiteSpace(LastEndpointTestError))
+            {
+                return $"Endpoint failed: {LastEndpointTestError}";
+            }
+            var target = string.IsNullOrWhiteSpace(LastEndpointTestTarget) ? "forward endpoint" : LastEndpointTestTarget;
+            return $"Endpoint ok {LastEndpointTestDurationMs ?? 0}ms -> {target}";
+        }
+    }
+
+    public string EndpointBadgeBackground => LastEndpointTestAt.HasValue switch
+    {
+        true when string.IsNullOrWhiteSpace(LastEndpointTestError) => "#1E3A8A",
+        true => "#7F1D1D",
+        _ => "#334155"
+    };
+
+    public string EndpointBadgeForeground => LastEndpointTestAt.HasValue switch
+    {
+        true when string.IsNullOrWhiteSpace(LastEndpointTestError) => "#BFDBFE",
+        true => "#FECACA",
         _ => "#CBD5E1"
     };
 

@@ -141,6 +141,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _networkTestUrl = "https://www.gstatic.com/generate_204";
     private string _networkTestText = "Not tested";
     private string _profileEndpointTestText = "Not tested";
+    private string _profileBatchTestText = "Endpoint tests not run";
     private string _detectedCorePath = "";
     private string _errorText = "";
     private string _secretValue = "";
@@ -193,6 +194,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         RefreshDiagnosticsCommand = new AsyncRelayCommand(RefreshDiagnosticsAsync);
         TestNetworkCommand = new AsyncRelayCommand(TestNetworkAsync);
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
+        TestVisibleProfilesCommand = new AsyncRelayCommand(TestVisibleProfilesAsync, () => FilteredProfiles.Count > 0);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         UseDetectedCorePathCommand = new RelayCommand(UseDetectedCorePath);
         ClearLogFiltersCommand = new RelayCommand(ClearLogFilters);
@@ -387,6 +389,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         set => SetProperty(ref _profileEndpointTestText, value);
     }
 
+    public string ProfileBatchTestText
+    {
+        get => _profileBatchTestText;
+        set => SetProperty(ref _profileBatchTestText, value);
+    }
+
     public string DetectedCorePath
     {
         get => _detectedCorePath;
@@ -556,6 +564,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand RefreshDiagnosticsCommand { get; }
     public AsyncRelayCommand TestNetworkCommand { get; }
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
+    public AsyncRelayCommand TestVisibleProfilesCommand { get; }
     public ICommand SaveSettingsCommand { get; }
     public ICommand UseDetectedCorePathCommand { get; }
     public ICommand ClearLogFiltersCommand { get; }
@@ -1109,6 +1118,55 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    private async Task TestVisibleProfilesAsync()
+    {
+        var profiles = FilteredProfiles.ToList();
+        if (profiles.Count == 0)
+        {
+            ProfileBatchTestText = "No visible profiles to test";
+            return;
+        }
+
+        ProfileBatchTestText = $"Testing {profiles.Count} visible profile(s)...";
+        var ok = 0;
+        var failed = 0;
+        foreach (var profile in profiles)
+        {
+            try
+            {
+                var endpoint = _configService.GetForwardEndpoint(profile.CoreConfigJson);
+                var result = await _networkTester.TestEndpointAsync(endpoint);
+                profile.LastEndpointTestAt = DateTimeOffset.UtcNow;
+                profile.LastEndpointTestDurationMs = result.DurationMs;
+                profile.LastEndpointTestTarget = result.Target;
+                profile.LastEndpointTestError = result.Success ? null : result.Error ?? "Endpoint test failed";
+                if (result.Success)
+                {
+                    ok++;
+                }
+                else
+                {
+                    failed++;
+                }
+            }
+            catch (Exception ex)
+            {
+                profile.LastEndpointTestAt = DateTimeOffset.UtcNow;
+                profile.LastEndpointTestDurationMs = null;
+                profile.LastEndpointTestTarget = null;
+                profile.LastEndpointTestError = ex.Message;
+                failed++;
+            }
+
+            _repository.SaveProfile(profile);
+            RefreshProfileListItem(profile);
+        }
+
+        ProfileBatchTestText = $"Endpoint tests: {ok} ok, {failed} failed";
+        ErrorText = failed == 0 ? "" : ProfileBatchTestText;
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+    }
+
     private void SaveSettings()
     {
         if (AutoConnectSelectedProfile && SelectedProfile is not null)
@@ -1428,6 +1486,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var selectedId = preferredProfileId ?? SelectedProfile?.Id;
         var matches = Profiles.Where(MatchesProfileSearch).ToList();
         ReplaceCollection(FilteredProfiles, matches);
+        TestVisibleProfilesCommand.RaiseCanExecuteChanged();
 
         if (FilteredProfiles.Count == 0)
         {
@@ -1453,7 +1512,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             || ProfileFieldContains(profile.Kind, filter)
             || ProfileFieldContains(profile.Source, filter)
             || ProfileFieldContains(profile.ValidationState, filter)
-            || ProfileFieldContains(profile.ValidationDetail, filter);
+            || ProfileFieldContains(profile.ValidationDetail, filter)
+            || ProfileFieldContains(profile.EndpointTestState, filter)
+            || ProfileFieldContains(profile.EndpointTestDetail, filter);
     }
 
     private static bool ProfileFieldContains(string? value, string filter)

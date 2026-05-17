@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Diagnostics;
 using System.Text;
+using Microsoft.Data.Sqlite;
 using XTunnelClient.Core;
 
 namespace XTunnelClient.Tests;
@@ -189,6 +190,94 @@ public sealed class ClientCoreTests
 
             repository.DeleteSubscription(subscription.Id);
             Assert.Empty(repository.GetSubscriptions());
+        }
+        finally
+        {
+            DeleteDirectoryWithRetry(root);
+        }
+    }
+
+    [Fact]
+    public void RepositoryPersistsProfileEndpointTestResults()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "xtunnel-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            var repository = new ProfileRepository(new AppPaths(root));
+            var testedAt = DateTimeOffset.Parse("2026-05-17T10:00:00Z");
+            var profile = new Profile
+            {
+                Name = "Endpoint checked",
+                CoreConfigJson = """{"listen":"socks5://127.0.0.1:1","forward":"ws://127.0.0.1:18080/tunnel"}""",
+                LastEndpointTestAt = testedAt,
+                LastEndpointTestDurationMs = 42,
+                LastEndpointTestTarget = "ws://127.0.0.1:18080",
+                LastEndpointTestError = null
+            };
+
+            repository.SaveProfile(profile);
+
+            var saved = Assert.Single(repository.GetProfiles());
+            Assert.Equal(testedAt, saved.LastEndpointTestAt);
+            Assert.Equal(42, saved.LastEndpointTestDurationMs);
+            Assert.Equal("ws://127.0.0.1:18080", saved.LastEndpointTestTarget);
+            Assert.Null(saved.LastEndpointTestError);
+            Assert.Equal("TCP 42ms", saved.EndpointTestState);
+            Assert.Contains("Endpoint ok 42ms", saved.EndpointTestDetail);
+        }
+        finally
+        {
+            DeleteDirectoryWithRetry(root);
+        }
+    }
+
+    [Fact]
+    public void RepositoryMigratesOldProfileTableForEndpointTestResults()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "xtunnel-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            var paths = new AppPaths(root);
+            paths.Ensure();
+            using (var connection = new SqliteConnection($"Data Source={paths.Database}"))
+            {
+                connection.Open();
+                using var command = connection.CreateCommand();
+                command.CommandText = """
+                    create table profiles (
+                        id text primary key,
+                        name text not null,
+                        kind text not null,
+                        enabled integer not null,
+                        source text not null,
+                        created_at text not null,
+                        updated_at text not null,
+                        core_config_json text not null,
+                        secret_ref text null,
+                        color text null,
+                        sort_order integer not null,
+                        last_validated_at text null,
+                        last_validation_error text null
+                    );
+                    """;
+                command.ExecuteNonQuery();
+            }
+
+            var repository = new ProfileRepository(paths);
+            var profile = new Profile
+            {
+                Name = "Migrated",
+                CoreConfigJson = """{"listen":"socks5://127.0.0.1:1","forward":"ws://127.0.0.1:18080/tunnel"}""",
+                LastEndpointTestAt = DateTimeOffset.Parse("2026-05-17T11:00:00Z"),
+                LastEndpointTestDurationMs = 7,
+                LastEndpointTestTarget = "ws://127.0.0.1:18080"
+            };
+
+            repository.SaveProfile(profile);
+
+            var saved = Assert.Single(repository.GetProfiles());
+            Assert.Equal(7, saved.LastEndpointTestDurationMs);
+            Assert.Equal("TCP 7ms", saved.EndpointTestState);
         }
         finally
         {

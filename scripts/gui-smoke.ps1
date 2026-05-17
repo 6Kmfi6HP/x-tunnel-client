@@ -318,6 +318,28 @@ try {
     $saveProfileButton = Get-ByAutomationId -Root $window -AutomationId "SaveProfileButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $saveProfileButton
 
+    $testVisibleProfilesButton = Get-ByAutomationId -Root $window -AutomationId "TestVisibleProfilesButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $testVisibleProfilesButton
+    $profileBatchTestTextBlock = Get-ByAutomationId -Root $window -AutomationId "ProfileBatchTestTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $profileBatchTestText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Visible profile endpoint test did not report success." -Condition {
+        $text = Get-ElementValue $profileBatchTestTextBlock
+        if ($text -match "Endpoint tests: 1 ok, 0 failed") {
+            return $text
+        }
+        return $null
+    }
+    $profileEndpointState = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile list did not display endpoint latency." -Condition {
+        $items = Find-AllByAutomationId -Root $window -AutomationId "ProfileListItemEndpointState"
+        foreach ($item in $items) {
+            $text = Get-ElementValue $item
+            if ($text -match "TCP \d+ms") {
+                return $text
+            }
+        }
+        return $null
+    }
+    Write-Host "Profile endpoint batch: $profileBatchTestText / $profileEndpointState"
+
     $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $diagnosticsTab
 

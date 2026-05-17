@@ -47,9 +47,17 @@ public sealed class ProfileRepository : ISecretStore
                 color text null,
                 sort_order integer not null,
                 last_validated_at text null,
-                last_validation_error text null
+                last_validation_error text null,
+                last_endpoint_test_at text null,
+                last_endpoint_test_duration_ms integer null,
+                last_endpoint_test_error text null,
+                last_endpoint_test_target text null
             );
             """);
+        EnsureColumn(connection, "profiles", "last_endpoint_test_at", "text null");
+        EnsureColumn(connection, "profiles", "last_endpoint_test_duration_ms", "integer null");
+        EnsureColumn(connection, "profiles", "last_endpoint_test_error", "text null");
+        EnsureColumn(connection, "profiles", "last_endpoint_test_target", "text null");
         Execute(connection, """
             create table if not exists settings (
                 key text primary key,
@@ -102,7 +110,11 @@ public sealed class ProfileRepository : ISecretStore
                 Color = ReadNullableString(reader, "color"),
                 SortOrder = reader.GetInt32(reader.GetOrdinal("sort_order")),
                 LastValidatedAt = ReadNullableDate(reader, "last_validated_at"),
-                LastValidationError = ReadNullableString(reader, "last_validation_error")
+                LastValidationError = ReadNullableString(reader, "last_validation_error"),
+                LastEndpointTestAt = ReadNullableDate(reader, "last_endpoint_test_at"),
+                LastEndpointTestDurationMs = ReadNullableInt64(reader, "last_endpoint_test_duration_ms"),
+                LastEndpointTestError = ReadNullableString(reader, "last_endpoint_test_error"),
+                LastEndpointTestTarget = ReadNullableString(reader, "last_endpoint_test_target")
             });
         }
         return profiles;
@@ -116,10 +128,12 @@ public sealed class ProfileRepository : ISecretStore
         command.CommandText = """
             insert into profiles (
                 id, name, kind, enabled, source, created_at, updated_at, core_config_json,
-                secret_ref, color, sort_order, last_validated_at, last_validation_error
+                secret_ref, color, sort_order, last_validated_at, last_validation_error,
+                last_endpoint_test_at, last_endpoint_test_duration_ms, last_endpoint_test_error, last_endpoint_test_target
             ) values (
                 $id, $name, $kind, $enabled, $source, $created_at, $updated_at, $core_config_json,
-                $secret_ref, $color, $sort_order, $last_validated_at, $last_validation_error
+                $secret_ref, $color, $sort_order, $last_validated_at, $last_validation_error,
+                $last_endpoint_test_at, $last_endpoint_test_duration_ms, $last_endpoint_test_error, $last_endpoint_test_target
             )
             on conflict(id) do update set
                 name = excluded.name,
@@ -132,7 +146,11 @@ public sealed class ProfileRepository : ISecretStore
                 color = excluded.color,
                 sort_order = excluded.sort_order,
                 last_validated_at = excluded.last_validated_at,
-                last_validation_error = excluded.last_validation_error;
+                last_validation_error = excluded.last_validation_error,
+                last_endpoint_test_at = excluded.last_endpoint_test_at,
+                last_endpoint_test_duration_ms = excluded.last_endpoint_test_duration_ms,
+                last_endpoint_test_error = excluded.last_endpoint_test_error,
+                last_endpoint_test_target = excluded.last_endpoint_test_target;
             """;
         Add(command, "$id", profile.Id.ToString());
         Add(command, "$name", profile.Name);
@@ -147,6 +165,10 @@ public sealed class ProfileRepository : ISecretStore
         Add(command, "$sort_order", profile.SortOrder);
         Add(command, "$last_validated_at", profile.LastValidatedAt?.ToString("O"));
         Add(command, "$last_validation_error", profile.LastValidationError);
+        Add(command, "$last_endpoint_test_at", profile.LastEndpointTestAt?.ToString("O"));
+        Add(command, "$last_endpoint_test_duration_ms", profile.LastEndpointTestDurationMs);
+        Add(command, "$last_endpoint_test_error", profile.LastEndpointTestError);
+        Add(command, "$last_endpoint_test_target", profile.LastEndpointTestTarget);
         command.ExecuteNonQuery();
     }
 
@@ -317,6 +339,24 @@ public sealed class ProfileRepository : ISecretStore
         command.ExecuteNonQuery();
     }
 
+    private static void EnsureColumn(SqliteConnection connection, string table, string column, string definition)
+    {
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = $"pragma table_info({table})";
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                if (string.Equals(reader.GetString(reader.GetOrdinal("name")), column, StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+            }
+        }
+
+        Execute(connection, $"alter table {table} add column {column} {definition}");
+    }
+
     private static void Add(SqliteCommand command, string name, object? value)
     {
         command.Parameters.AddWithValue(name, value ?? DBNull.Value);
@@ -332,6 +372,12 @@ public sealed class ProfileRepository : ISecretStore
     {
         var value = ReadNullableString(reader, name);
         return string.IsNullOrWhiteSpace(value) ? null : DateTimeOffset.Parse(value);
+    }
+
+    private static long? ReadNullableInt64(SqliteDataReader reader, string name)
+    {
+        var index = reader.GetOrdinal(name);
+        return reader.IsDBNull(index) ? null : reader.GetInt64(index);
     }
 
     private static byte[] Protect(byte[] value)
