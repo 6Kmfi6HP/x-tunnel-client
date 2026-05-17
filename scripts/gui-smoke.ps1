@@ -999,6 +999,23 @@ try {
         return $null
     }
     Write-Host "Copied core path: $clipboardCorePath"
+
+    $copySettingsFoldersButton = Get-ByAutomationId -Root $window -AutomationId "CopySettingsFoldersButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copySettingsFoldersButton
+    $clipboardSettingsFolders = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy settings folders did not place local folder paths on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "App data:" -and
+            $text -match "Profiles:" -and
+            $text -match "Logs:" -and
+            $text -match "Runtime:" -and
+            $text -match [Regex]::Escape($AppHome) -and
+            $text -match [Regex]::Escape($settingsCorePath)) {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied settings folders: $($clipboardSettingsFolders.Split([Environment]::NewLine)[0])"
     Save-ElementScreenshot -Element $window -Path $SettingsScreenshotPath
     Write-Host "Settings GUI screenshot: $SettingsScreenshotPath"
 

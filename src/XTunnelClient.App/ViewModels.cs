@@ -269,6 +269,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         UseDetectedCorePathCommand = new RelayCommand(UseDetectedCorePath);
         CopyCorePathCommand = new RelayCommand(CopyCorePath, HasCorePathToCopy);
+        CopySettingsFoldersCommand = new RelayCommand(CopySettingsFolders);
         ClearLogFiltersCommand = new RelayCommand(ClearLogFilters);
         CopyFilteredLogsCommand = new RelayCommand(CopyFilteredLogs, HasFilteredLogs);
         ClearProfileSearchCommand = new RelayCommand(ClearProfileSearch);
@@ -1042,6 +1043,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ICommand SaveSettingsCommand { get; }
     public ICommand UseDetectedCorePathCommand { get; }
     public RelayCommand CopyCorePathCommand { get; }
+    public ICommand CopySettingsFoldersCommand { get; }
     public ICommand ClearLogFiltersCommand { get; }
     public RelayCommand CopyFilteredLogsCommand { get; }
     public ICommand ClearProfileSearchCommand { get; }
@@ -1236,6 +1238,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         summary.AppendLine($"Core: {CoreSummary}");
         summary.AppendLine($"Validation: {ValidationSummary}");
         summary.AppendLine($"Issue: {RecentIssueSummary}");
+        return summary.ToString().TrimEnd();
+    }
+
+    public string BuildSettingsFoldersSummary()
+    {
+        var summary = new StringBuilder();
+        summary.AppendLine($"App data: {_paths.Root}");
+        summary.AppendLine($"Profiles: {_paths.Profiles}");
+        summary.AppendLine($"Logs: {_paths.Logs}");
+        summary.AppendLine($"Runtime: {_paths.Runtime}");
+        summary.AppendLine($"Core: {FirstNonEmpty(CorePath, DetectedCorePath, "-")}");
         return summary.ToString().TrimEnd();
     }
 
@@ -2044,6 +2057,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         CopyTextRequested?.Invoke(this, path);
         ErrorText = "Core path copied";
+    }
+
+    private void CopySettingsFolders()
+    {
+        CopyTextRequested?.Invoke(this, BuildSettingsFoldersSummary());
+        ErrorText = "Settings folders copied";
     }
 
     private async Task AutoConnectOnStartupAsync()
