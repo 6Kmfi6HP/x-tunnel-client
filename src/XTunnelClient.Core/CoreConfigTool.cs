@@ -24,7 +24,17 @@ public sealed class CoreConfigTool
         return await RunAsync(corePath, "-format-config", "-", json, cancellationToken);
     }
 
+    public async Task<string> GetVersionAsync(string corePath, CancellationToken cancellationToken = default)
+    {
+        return (await RunAsync(corePath, ["-version"], null, cancellationToken)).Trim();
+    }
+
     private static async Task<string> RunAsync(string corePath, string flag, string pathOrDash, string? stdin, CancellationToken cancellationToken)
+    {
+        return await RunAsync(corePath, [flag, pathOrDash], stdin, cancellationToken);
+    }
+
+    private static async Task<string> RunAsync(string corePath, IEnumerable<string> arguments, string? stdin, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(corePath) || !File.Exists(corePath))
         {
@@ -40,8 +50,10 @@ public sealed class CoreConfigTool
             RedirectStandardError = true,
             RedirectStandardInput = stdin is not null
         };
-        startInfo.ArgumentList.Add(flag);
-        startInfo.ArgumentList.Add(pathOrDash);
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
 
         using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("启动 core config 工具失败");
         if (stdin is not null)

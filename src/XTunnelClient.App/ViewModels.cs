@@ -279,6 +279,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ClearVisibleProfileEndpointTestsCommand = new RelayCommand(ClearVisibleProfileEndpointTests, HasVisibleEndpointTestResults);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         UseDetectedCorePathCommand = new RelayCommand(UseDetectedCorePath);
+        CheckCoreVersionCommand = new AsyncRelayCommand(CheckCoreVersionAsync);
         CopyCorePathCommand = new RelayCommand(CopyCorePath, HasCorePathToCopy);
         CopySettingsFoldersCommand = new RelayCommand(CopySettingsFolders);
         ClearLogFiltersCommand = new RelayCommand(ClearLogFilters);
@@ -1091,6 +1092,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand ClearVisibleProfileEndpointTestsCommand { get; }
     public ICommand SaveSettingsCommand { get; }
     public ICommand UseDetectedCorePathCommand { get; }
+    public AsyncRelayCommand CheckCoreVersionCommand { get; }
     public RelayCommand CopyCorePathCommand { get; }
     public ICommand CopySettingsFoldersCommand { get; }
     public ICommand ClearLogFiltersCommand { get; }
@@ -2142,6 +2144,29 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(CorePath));
         UpdateCorePathStatus();
         ErrorText = "Core path set from auto-detect";
+    }
+
+    private async Task CheckCoreVersionAsync()
+    {
+        var path = FirstNonEmpty(CorePath, DetectedCorePath, _coreLocator.Resolve(new AppSettings())).Trim();
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            SetCorePathStatus("Core missing", "Set or auto-detect x-tunnel.exe before checking the version.", "#7F1D1D", "#FECACA");
+            ErrorText = "No x-tunnel.exe was auto-detected";
+            return;
+        }
+
+        try
+        {
+            var version = await _coreConfigTool.GetVersionAsync(path);
+            SetCorePathStatus("Version OK", $"{version} | {path}", "#065F46", "#D1FAE5");
+            ErrorText = "Core version checked";
+        }
+        catch (Exception ex)
+        {
+            SetCorePathStatus("Version failed", RuntimeConfigService.Redact(ex.Message), "#7F1D1D", "#FECACA");
+            ErrorText = $"Core version check failed: {ex.Message}";
+        }
     }
 
     private void CopyCorePath()

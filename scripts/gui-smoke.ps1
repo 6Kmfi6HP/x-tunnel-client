@@ -1291,6 +1291,17 @@ try {
     }
     $corePathStatusDetailText = Get-ByAutomationId -Root $window -AutomationId "CorePathStatusDetailText" -TimeoutSeconds $TimeoutSeconds
     Write-Host "Core path status: $corePathStatus / $(Get-ElementValue $corePathStatusDetailText)"
+    $checkCoreVersionButton = Get-ByAutomationId -Root $window -AutomationId "CheckCoreVersionButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $checkCoreVersionButton
+    $coreVersionDetail = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Check core version did not report x-tunnel version output." -Condition {
+        $status = Get-ElementValue $corePathStatusText
+        $detail = Get-ElementValue $corePathStatusDetailText
+        if ($status -match "Version OK" -and $detail -match "x-tunnel version=") {
+            return $detail
+        }
+        return $null
+    }
+    Write-Host "Core version status: $coreVersionDetail"
     $copyCorePathButton = Get-ByAutomationId -Root $window -AutomationId "CopyCorePathButton" -TimeoutSeconds $TimeoutSeconds
     Set-Clipboard -Value ""
     Invoke-Element $copyCorePathButton
