@@ -107,8 +107,10 @@ if (!(Test-Path $AppExe)) {
 
 $port = Get-FreeTcpPort
 $forwardPort = Get-FreeTcpPort
+$subscriptionPort = Get-FreeTcpPort
 $testUrl = "http://127.0.0.1:$port/generate_204"
 $forwardUrl = "ws://127.0.0.1:$forwardPort/tunnel"
+$subscriptionUrl = "http://127.0.0.1:$subscriptionPort/subscription.json"
 $serverJob = Start-Job -ScriptBlock {
     param([int]$Port)
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
@@ -143,6 +145,32 @@ $forwardJob = Start-Job -ScriptBlock {
         $listener.Stop()
     }
 } -ArgumentList $forwardPort
+
+$subscriptionJob = Start-Job -ScriptBlock {
+    param([int]$Port)
+    $body = '[{"name":"Smoke subscription profile","core_config":{"listen":"socks5://127.0.0.1:12080","forward":"ws://127.0.0.1:18080/tunnel","token_ref":"secret:profile-token","connections":1}}]'
+    $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
+    $listener.Start()
+    try {
+        $client = $listener.AcceptTcpClient()
+        try {
+            $stream = $client.GetStream()
+            $buffer = New-Object byte[] 2048
+            $null = $stream.Read($buffer, 0, $buffer.Length)
+            $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+            $header = "HTTP/1.1 200 OK`r`nContent-Type: application/json`r`nContent-Length: $($bodyBytes.Length)`r`nConnection: close`r`n`r`n"
+            $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($header)
+            $stream.Write($headerBytes, 0, $headerBytes.Length)
+            $stream.Write($bodyBytes, 0, $bodyBytes.Length)
+        }
+        finally {
+            $client.Dispose()
+        }
+    }
+    finally {
+        $listener.Stop()
+    }
+} -ArgumentList $subscriptionPort
 
 $oldHome = $env:XTUNNEL_CLIENT_HOME
 $oldInstance = $env:XTUNNEL_CLIENT_INSTANCE
@@ -210,9 +238,33 @@ try {
         return $null
     }
 
-    Write-Host "GUI smoke passed"
     Write-Host $resultText
     Write-Host $endpointText
+
+    $subscriptionsTab = Get-ByAutomationId -Root $window -AutomationId "SubscriptionsTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $subscriptionsTab
+
+    $newSubscriptionButton = Get-ByAutomationId -Root $window -AutomationId "NewSubscriptionButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $newSubscriptionButton
+
+    $subscriptionNameBox = Get-ByAutomationId -Root $window -AutomationId "SubscriptionNameTextBox" -TimeoutSeconds $TimeoutSeconds
+    Set-ElementValue -Element $subscriptionNameBox -Value "Smoke subscription"
+
+    $subscriptionUrlBox = Get-ByAutomationId -Root $window -AutomationId "SubscriptionUrlTextBox" -TimeoutSeconds $TimeoutSeconds
+    Set-ElementValue -Element $subscriptionUrlBox -Value $subscriptionUrl
+
+    $updateSubscriptionButton = Get-ByAutomationId -Root $window -AutomationId "UpdateSubscriptionNowButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $updateSubscriptionButton
+
+    $subscriptionStatusBox = Get-ByAutomationId -Root $window -AutomationId "SubscriptionStatusTextBox" -TimeoutSeconds $TimeoutSeconds
+    $subscriptionText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Subscription update did not add a profile." -Condition {
+        $text = Get-ElementValue $subscriptionStatusBox
+        if ($text -match "added 1" -and $text -match "updated 0") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host $subscriptionText
 
     Select-Element $profilesTab
     $profileJsonBox = Get-ByAutomationId -Root $window -AutomationId "ProfileJsonTextBox" -TimeoutSeconds $TimeoutSeconds
@@ -230,6 +282,7 @@ try {
         return $null
     }
     Write-Host $profileError
+    Write-Host "GUI smoke passed"
 }
 finally {
     $env:XTUNNEL_CLIENT_HOME = $oldHome
@@ -244,5 +297,9 @@ finally {
     if ($forwardJob) {
         Stop-Job $forwardJob -ErrorAction SilentlyContinue | Out-Null
         Remove-Job $forwardJob -Force -ErrorAction SilentlyContinue
+    }
+    if ($subscriptionJob) {
+        Stop-Job $subscriptionJob -ErrorAction SilentlyContinue | Out-Null
+        Remove-Job $subscriptionJob -Force -ErrorAction SilentlyContinue
     }
 }

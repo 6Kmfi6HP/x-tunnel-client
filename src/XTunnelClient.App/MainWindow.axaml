@@ -239,13 +239,13 @@
         </Grid>
       </TabItem>
 
-      <TabItem Header="Subscriptions">
+      <TabItem Header="Subscriptions" automation:AutomationProperties.AutomationId="SubscriptionsTab">
         <Grid Margin="16" ColumnDefinitions="320,*" ColumnSpacing="16">
           <DockPanel>
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,10">
-              <Button Content="New" Command="{Binding NewSubscriptionCommand}"/>
-              <Button Content="Update" Command="{Binding RefreshSubscriptionCommand}"/>
-              <Button Content="Save" Command="{Binding SaveSubscriptionCommand}"/>
+              <Button Content="New" Command="{Binding NewSubscriptionCommand}" automation:AutomationProperties.AutomationId="NewSubscriptionButton"/>
+              <Button Content="Update" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionButton"/>
+              <Button Content="Save" Command="{Binding SaveSubscriptionCommand}" automation:AutomationProperties.AutomationId="SaveSubscriptionButton"/>
               <Button Content="Delete" Command="{Binding DeleteSubscriptionCommand}"/>
             </StackPanel>
             <ListBox ItemsSource="{Binding Subscriptions}" SelectedItem="{Binding SelectedSubscription}" DisplayMemberBinding="{Binding DisplayName}"/>
@@ -254,19 +254,19 @@
           <Grid Grid.Column="1" RowDefinitions="Auto,Auto,150" RowSpacing="10">
             <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="10">
               <TextBlock Text="Name" VerticalAlignment="Center"/>
-              <TextBox Grid.Column="1" Text="{Binding SelectedSubscription.DisplayName}" PlaceholderText="Subscription name"/>
+              <TextBox Grid.Column="1" Text="{Binding SelectedSubscription.DisplayName}" PlaceholderText="Subscription name" automation:AutomationProperties.AutomationId="SubscriptionNameTextBox"/>
               <TextBlock Grid.Row="1" Text="URL" VerticalAlignment="Center"/>
-              <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SelectedSubscription.Url}" PlaceholderText="https://example.com/subscription.json"/>
+              <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SelectedSubscription.Url}" PlaceholderText="https://example.com/subscription.json" automation:AutomationProperties.AutomationId="SubscriptionUrlTextBox"/>
               <TextBlock Grid.Row="2" Text="Update interval minutes" VerticalAlignment="Center"/>
               <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding SelectedSubscription.UpdateIntervalMinutes}" Minimum="1" Maximum="10080"/>
               <TextBlock Grid.Row="3" Text="Trust policy" VerticalAlignment="Center"/>
               <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding SubscriptionTrustPolicies}" SelectedItem="{Binding SelectedSubscription.TrustPolicy}"/>
             </Grid>
             <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
-              <Button Content="Update Now" Command="{Binding RefreshSubscriptionCommand}"/>
+              <Button Content="Update Now" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionNowButton"/>
               <Button Content="Save Subscription" Command="{Binding SaveSubscriptionCommand}"/>
             </StackPanel>
-            <TextBox Grid.Row="2" Text="{Binding SubscriptionStatusText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+            <TextBox Grid.Row="2" Text="{Binding SubscriptionStatusText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="SubscriptionStatusTextBox"/>
           </Grid>
         </Grid>
       </TabItem>

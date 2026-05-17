@@ -80,4 +80,4 @@ Run the desktop GUI smoke after a debug build:
 .\scripts\gui-smoke.ps1
 ```
 
-The GUI smoke launches the app with an isolated `XTUNNEL_CLIENT_HOME`, controls the Profiles and Diagnostics tabs through Windows UI Automation, runs the network test against a local HTTP 204 endpoint, checks the selected profile's forward endpoint against a local TCP listener, and verifies the result text.
+The GUI smoke launches the app with an isolated `XTUNNEL_CLIENT_HOME`, controls the Profiles, Subscriptions, and Diagnostics tabs through Windows UI Automation, runs the network test against a local HTTP 204 endpoint, checks the selected profile's forward endpoint against a local TCP listener, updates from a local subscription feed, and verifies the result text.
