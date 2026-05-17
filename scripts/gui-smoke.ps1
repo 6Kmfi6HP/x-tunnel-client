@@ -635,6 +635,7 @@ try {
     Invoke-Element $endpointButton
 
     $endpointResultBox = Get-ByAutomationId -Root $window -AutomationId "ProfileEndpointTestResultTextBox" -TimeoutSeconds $TimeoutSeconds
+    $forwardLastRunText = Get-ByAutomationId -Root $window -AutomationId "ProfileEndpointLastRunText" -TimeoutSeconds $TimeoutSeconds
     $endpointText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile endpoint test did not report success." -Condition {
         $text = Get-ElementValue $endpointResultBox
         if ($text -match "Forward TCP: ok" -and $text -match [Regex]::Escape($coreForwardUrl.Replace("/tunnel", ""))) {
@@ -651,9 +652,16 @@ try {
         return $null
     }
 
+    $forwardLastRun = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile endpoint test did not update last-run text." -Condition {
+        $text = Get-ElementValue $forwardLastRunText
+        if ($text -match "Last tested") {
+            return $text
+        }
+        return $null
+    }
     Write-Host $resultText
     Write-Host $endpointText
-    Write-Host "Forward route chip: $forwardRouteText"
+    Write-Host "Forward route chip: $forwardRouteText / $forwardLastRun"
     $copyEndpointResultButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileEndpointTestResultButton" -TimeoutSeconds $TimeoutSeconds
     Set-Clipboard -Value ""
     Invoke-Element $copyEndpointResultButton
@@ -678,6 +686,13 @@ try {
     Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear forward result did not reset the route chip." -Condition {
         $text = Get-ElementValue $forwardRouteStatus
         if ($text -match "Forward TCP: not tested") {
+            return $text
+        }
+        return $null
+    } | Out-Null
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clear forward result did not reset the last-run text." -Condition {
+        $text = Get-ElementValue $forwardLastRunText
+        if ($text -match "Forward test not run") {
             return $text
         }
         return $null
@@ -714,7 +729,14 @@ try {
         }
         return $null
     }
-    Write-Host "Run All diagnostics: $($runAllNetworkText.Split([Environment]::NewLine)[0]) / $($runAllForwardText.Split([Environment]::NewLine)[0]) / $runAllDirectRouteText / $runAllForwardRouteText"
+    $runAllForwardLastRun = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Run All did not update the forward last-run text." -Condition {
+        $text = Get-ElementValue $forwardLastRunText
+        if ($text -match "Last tested") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Run All diagnostics: $($runAllNetworkText.Split([Environment]::NewLine)[0]) / $($runAllForwardText.Split([Environment]::NewLine)[0]) / $runAllDirectRouteText / $runAllForwardRouteText / $runAllForwardLastRun"
 
     $copyDiagnosticsSummaryButton = Get-ByAutomationId -Root $window -AutomationId "CopyDiagnosticsSummaryButton" -TimeoutSeconds $TimeoutSeconds
     Set-Clipboard -Value ""

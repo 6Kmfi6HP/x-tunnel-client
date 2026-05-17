@@ -434,6 +434,7 @@
             <Button Content="Test Forward" Command="{Binding TestProfileEndpointCommand}" automation:AutomationProperties.AutomationId="TestProfileEndpointButton"/>
             <Button Content="Copy Forward" Command="{Binding CopyProfileEndpointTestResultCommand}" automation:AutomationProperties.AutomationId="CopyProfileEndpointTestResultButton"/>
             <Button Content="Clear Forward" Command="{Binding ClearProfileEndpointTestCommand}" automation:AutomationProperties.AutomationId="ClearProfileEndpointTestButton"/>
+            <TextBlock Text="{Binding ProfileEndpointTestLastRunText}" Classes="caption" VerticalAlignment="Center" automation:AutomationProperties.AutomationId="ProfileEndpointLastRunText"/>
           </StackPanel>
           <Border Grid.Row="6" Background="{Binding ProfileEndpointRouteBackground}" CornerRadius="4" Padding="8,5">
             <Grid RowDefinitions="Auto,Auto">

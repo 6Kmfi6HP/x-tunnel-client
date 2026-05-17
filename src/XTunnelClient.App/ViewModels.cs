@@ -177,6 +177,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _profileEndpointRouteBackground = "#374151";
     private string _profileEndpointRouteForeground = "#E5E7EB";
     private string _profileEndpointTestText = "Not tested";
+    private string _profileEndpointTestLastRunText = "Forward test not run";
     private string _profileBatchTestText = "Endpoint tests not run";
     private string _profileSummaryText = "";
     private string _detectedCorePath = "";
@@ -748,6 +749,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 ClearProfileEndpointTestCommand.RaiseCanExecuteChanged();
             }
         }
+    }
+
+    public string ProfileEndpointTestLastRunText
+    {
+        get => _profileEndpointTestLastRunText;
+        private set => SetProperty(ref _profileEndpointTestLastRunText, value);
     }
 
     public string ProfileBatchTestText
@@ -1753,6 +1760,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private void ClearProfileEndpointTest()
     {
         ProfileEndpointTestText = "Not tested";
+        ProfileEndpointTestLastRunText = "Forward test not run";
         SetProfileEndpointRouteNotTested();
         ErrorText = "Profile endpoint test result cleared";
     }
@@ -1762,6 +1770,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (SelectedProfile is null)
         {
             ProfileEndpointTestText = "No selected profile";
+            ProfileEndpointTestLastRunText = $"Last attempted {DateTimeOffset.Now.LocalDateTime:T}";
             SetProfileEndpointRoute("Forward TCP: unavailable", "No selected profile", RouteVisual.Warning);
             return;
         }
@@ -1769,16 +1778,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             ProfileEndpointTestText = "Testing profile forward endpoint...";
+            ProfileEndpointTestLastRunText = $"Testing started {DateTimeOffset.Now.LocalDateTime:T}";
             var endpoint = _configService.GetForwardEndpoint(SelectedProfile.CoreConfigJson);
             SetProfileEndpointRoute("Forward TCP: testing", endpoint.Display, RouteVisual.Busy);
             var result = await _networkTester.TestEndpointAsync(endpoint);
             ProfileEndpointTestText = FormatNetworkTestResults([result], note: null);
             UpdateProfileEndpointRoute(result);
+            ProfileEndpointTestLastRunText = $"Last tested {DateTimeOffset.Now.LocalDateTime:T}";
             ErrorText = result.Success ? "" : "Profile endpoint test failed";
         }
         catch (Exception ex)
         {
             ProfileEndpointTestText = $"Profile endpoint test failed: {ex.Message}";
+            ProfileEndpointTestLastRunText = $"Last failed {DateTimeOffset.Now.LocalDateTime:T}";
             SetProfileEndpointRoute("Forward TCP: failed", ex.Message, RouteVisual.Failed);
             ErrorText = ex.Message;
         }
