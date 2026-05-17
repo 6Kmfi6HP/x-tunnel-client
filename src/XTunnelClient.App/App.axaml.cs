@@ -51,6 +51,11 @@ public partial class App : Application
         _viewModel?.DisconnectCommand.Execute(null);
     }
 
+    private void Restart_OnClick(object? sender, EventArgs e)
+    {
+        _viewModel?.RestartCommand.Execute(null);
+    }
+
     private void Diagnostics_OnClick(object? sender, EventArgs e)
     {
         ShowWindow_OnClick(sender, e);

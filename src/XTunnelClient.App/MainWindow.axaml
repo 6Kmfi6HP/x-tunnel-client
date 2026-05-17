@@ -48,7 +48,7 @@
 
   <DockPanel Background="#F5F7FA">
     <Border DockPanel.Dock="Top" Background="#FFFFFF" BorderBrush="#D8DEE8" BorderThickness="0,0,0,1" Padding="16,10">
-      <Grid ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto">
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" RowDefinitions="Auto">
         <StackPanel Orientation="Horizontal" Spacing="12">
           <TextBlock Text="x-tunnel" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
           <TextBlock Text="{Binding RuntimeState}" VerticalAlignment="Center"/>
@@ -56,7 +56,8 @@
         </StackPanel>
         <Button Grid.Column="1" Content="Connect" Command="{Binding ConnectCommand}" Margin="0,0,8,0"/>
         <Button Grid.Column="2" Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,8,0"/>
-        <Button Grid.Column="3" Content="Diagnostics" Command="{Binding RefreshDiagnosticsCommand}"/>
+        <Button Grid.Column="3" Content="Restart" Command="{Binding RestartCommand}" Margin="0,0,8,0"/>
+        <Button Grid.Column="4" Content="Diagnostics" Command="{Binding RefreshDiagnosticsCommand}"/>
       </Grid>
     </Border>
 
@@ -87,10 +88,11 @@
                 <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberBinding="{Binding Name}" MinHeight="34"/>
                 <ComboBox ItemsSource="{Binding ProxyModes}" SelectedItem="{Binding SelectedProxyMode}" MinHeight="34"/>
                 <TextBox Text="{Binding Settings.CorePath}" PlaceholderText="Auto-detect or full path to x-tunnel.exe"/>
-                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
                   <Button Content="Save" Command="{Binding SaveSettingsCommand}"/>
                   <Button Grid.Column="1" Content="Restore Proxy" Command="{Binding RestoreProxyCommand}"/>
                   <Button Grid.Column="2" Content="Proxy Addr" Command="{Binding CopyProxyCommand}"/>
+                  <Button Grid.Column="3" Content="Restart" Command="{Binding RestartCommand}"/>
                 </Grid>
               </StackPanel>
             </Grid>

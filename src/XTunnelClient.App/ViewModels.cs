@@ -152,8 +152,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ApplyFormCommand = new RelayCommand(ApplyStructuredForm, () => SelectedProfile is not null);
         ValidateProfileCommand = new AsyncRelayCommand(ValidateProfileAsync, () => SelectedProfile is not null);
         FormatProfileCommand = new RelayCommand(FormatProfile, () => SelectedProfile is not null);
-        ConnectCommand = new AsyncRelayCommand(ConnectAsync, () => SelectedProfile is not null);
-        DisconnectCommand = new AsyncRelayCommand(() => _supervisor.DisconnectAsync());
+        ConnectCommand = new AsyncRelayCommand(ConnectAsync, CanConnect);
+        DisconnectCommand = new AsyncRelayCommand(() => _supervisor.DisconnectAsync(), CanDisconnect);
+        RestartCommand = new AsyncRelayCommand(RestartAsync, CanRestart);
         RefreshDiagnosticsCommand = new AsyncRelayCommand(RefreshDiagnosticsAsync);
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         RestoreProxyCommand = new RelayCommand(() => systemProxy.Restore());
@@ -205,7 +206,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RuntimeState RuntimeState
     {
         get => _runtimeState;
-        set => SetProperty(ref _runtimeState, value);
+        set
+        {
+            if (SetProperty(ref _runtimeState, value))
+            {
+                RaiseCommandState();
+            }
+        }
     }
 
     public string StatusText
@@ -331,6 +338,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand FormatProfileCommand { get; }
     public AsyncRelayCommand ConnectCommand { get; }
     public AsyncRelayCommand DisconnectCommand { get; }
+    public AsyncRelayCommand RestartCommand { get; }
     public AsyncRelayCommand RefreshDiagnosticsCommand { get; }
     public ICommand SaveSettingsCommand { get; }
     public ICommand RestoreProxyCommand { get; }
@@ -588,6 +596,27 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    private async Task RestartAsync()
+    {
+        if (SelectedProfile is null)
+        {
+            return;
+        }
+        try
+        {
+            SaveSelectedProfile();
+            SaveSettings();
+            await _supervisor.RestartAsync(SelectedProfile, Settings);
+        }
+        catch (Exception ex)
+        {
+            RuntimeState = RuntimeState.Faulted;
+            ErrorText = ex.Message;
+            StatusText = "Faulted";
+            RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+        }
+    }
+
     private async Task RefreshDiagnosticsAsync()
     {
         var report = await _diagnostics.CreateReportAsync(SelectedProfile, _supervisor.Control);
@@ -792,6 +821,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "";
     }
 
+    private bool CanConnect()
+    {
+        return SelectedProfile is not null && RuntimeState is (RuntimeState.Stopped or RuntimeState.Faulted);
+    }
+
+    private bool CanDisconnect()
+    {
+        return RuntimeState is RuntimeState.Starting or RuntimeState.Running or RuntimeState.Degraded or RuntimeState.Recovering;
+    }
+
+    private bool CanRestart()
+    {
+        return SelectedProfile is not null && RuntimeState is (RuntimeState.Running or RuntimeState.Degraded);
+    }
+
     private void RaiseCommandState()
     {
         DuplicateProfileCommand.RaiseCanExecuteChanged();
@@ -801,5 +845,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         FormatProfileCommand.RaiseCanExecuteChanged();
         ApplyFormCommand.RaiseCanExecuteChanged();
         ConnectCommand.RaiseCanExecuteChanged();
+        DisconnectCommand.RaiseCanExecuteChanged();
+        RestartCommand.RaiseCanExecuteChanged();
     }
 }
