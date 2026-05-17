@@ -851,6 +851,29 @@ try {
         return $null
     }
     Write-Host "Copied diagnostics report: $($clipboardDiagnosticsReport.Split([Environment]::NewLine)[0])"
+    $exportDiagnosticsZipButton = Get-ByAutomationId -Root $window -AutomationId "ExportDiagnosticsZipButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $exportDiagnosticsZipButton
+    $exportedDiagnosticsText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Export diagnostics zip did not report an exported file path." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "Diagnostics exported: .*\.zip") {
+            return $text
+        }
+        return $null
+    }
+    $exportedDiagnosticsPath = $exportedDiagnosticsText -replace '^Diagnostics exported:\s*', ''
+    if (!(Test-Path $exportedDiagnosticsPath)) {
+        throw "Exported diagnostics zip was not created: '$exportedDiagnosticsPath'"
+    }
+    $zip = [System.IO.Compression.ZipFile]::OpenRead($exportedDiagnosticsPath)
+    try {
+        if (!($zip.Entries | Where-Object { $_.FullName -eq "report.json" })) {
+            throw "Exported diagnostics zip did not contain report.json: '$exportedDiagnosticsPath'"
+        }
+    }
+    finally {
+        $zip.Dispose()
+    }
+    Write-Host "Exported diagnostics zip: $exportedDiagnosticsPath"
     Save-ElementScreenshot -Element $window -Path $DiagnosticsScreenshotPath
     Write-Host "Diagnostics GUI screenshot: $DiagnosticsScreenshotPath"
 
