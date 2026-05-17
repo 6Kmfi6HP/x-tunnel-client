@@ -19,7 +19,27 @@ public partial class MainWindow : Window
         _viewModel = viewModel;
         DataContext = _viewModel;
         InitializeComponent();
-        Closing += async (_, _) => await _viewModel.ShutdownAsync();
+        _viewModel.CopyTextRequested += ViewModel_CopyTextRequested;
+        Closing += async (_, _) =>
+        {
+            _viewModel.CopyTextRequested -= ViewModel_CopyTextRequested;
+            await _viewModel.ShutdownAsync();
+        };
+    }
+
+    private async void ViewModel_CopyTextRequested(object? sender, string text)
+    {
+        try
+        {
+            if (Clipboard is not null)
+            {
+                await Clipboard.SetTextAsync(text);
+            }
+        }
+        catch (Exception ex)
+        {
+            _viewModel.ErrorText = ex.Message;
+        }
     }
 
     private async void ImportFile_OnClick(object? sender, RoutedEventArgs e)

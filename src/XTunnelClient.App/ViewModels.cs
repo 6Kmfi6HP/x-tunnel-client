@@ -180,6 +180,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Load();
     }
 
+    public event EventHandler<string>? CopyTextRequested;
+
     public ObservableCollection<Profile> Profiles { get; } = [];
     public ObservableCollection<DashboardMetric> OverviewMetrics { get; } = [];
     public ObservableCollection<SummaryRow> ListenerRows { get; } = [];
@@ -772,8 +774,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             var endpoints = _configService.GetLocalProxyEndpoints(SelectedProfile.CoreConfigJson);
-            ErrorText = $"HTTP: {endpoints.Http ?? "-"}  SOCKS5: {endpoints.Socks ?? "-"}";
-            LocalProxySummary = BuildProxyEndpointSummary(endpoints);
+            var summary = BuildProxyEndpointSummary(endpoints);
+            LocalProxySummary = summary;
+            CopyTextRequested?.Invoke(this, summary);
+            ErrorText = "Proxy address copied";
         }
         catch (Exception ex)
         {
