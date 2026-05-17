@@ -925,6 +925,25 @@ try {
     Save-ElementScreenshot -Element $window -Path $OverviewRuntimeScreenshotPath
     Write-Host "Overview runtime GUI screenshot: $OverviewRuntimeScreenshotPath"
 
+    $restartButton = Get-ByAutomationId -Root $window -AutomationId "RestartButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $restartButton
+    Start-Sleep -Milliseconds 500
+    $restartedText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "GUI restart did not return to Connected or Degraded state." -Condition {
+        $text = Get-ElementValue $statusState
+        if ($text -match "Connected" -or $text -match "Degraded") {
+            return $text
+        }
+        return $null
+    }
+    $restartedCoreStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Status bar core field did not show a running core after restart." -Condition {
+        $text = Get-ElementValue $statusCore
+        if ($text -notmatch "Core not running" -and $text -match "/") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Restarted state: $restartedText / $restartedCoreStatus"
+
     Invoke-Element $headerDiagnosticsButton
     $testButton = Get-ByAutomationId -Root $window -AutomationId "TestNetworkButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $testButton
