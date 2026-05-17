@@ -145,6 +145,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _subscriptionSearchText = "";
     private string _selectedSubscriptionSort = "Saved";
     private string _networkTestUrl = "https://www.gstatic.com/generate_204";
+    private string _selectedNetworkTestTarget = "Google 204";
+    private bool _applyingNetworkTestTarget;
     private string _networkTestText = "Not tested";
     private string _profileEndpointTestText = "Not tested";
     private string _profileBatchTestText = "Endpoint tests not run";
@@ -239,6 +241,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public IReadOnlyList<string> LogLevelFilters { get; } = ["All", "debug", "info", "warn", "error"];
     public IReadOnlyList<string> ProfileSortOptions { get; } = ["Saved", "Name", "Endpoint"];
     public IReadOnlyList<string> SubscriptionSortOptions { get; } = ["Saved", "Name", "Updated", "Status"];
+    public IReadOnlyList<string> NetworkTestTargets { get; } = ["Google 204", "Cloudflare Trace", "Firefox Success", "Custom"];
 
     public Profile? SelectedProfile
     {
@@ -430,7 +433,43 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string NetworkTestUrl
     {
         get => _networkTestUrl;
-        set => SetProperty(ref _networkTestUrl, value);
+        set
+        {
+            if (SetProperty(ref _networkTestUrl, value) && !_applyingNetworkTestTarget)
+            {
+                var target = FindNetworkTestTargetForUrl(value);
+                if (!string.Equals(_selectedNetworkTestTarget, target, StringComparison.Ordinal))
+                {
+                    _selectedNetworkTestTarget = target;
+                    OnPropertyChanged(nameof(SelectedNetworkTestTarget));
+                }
+            }
+        }
+    }
+
+    public string SelectedNetworkTestTarget
+    {
+        get => _selectedNetworkTestTarget;
+        set
+        {
+            if (!SetProperty(ref _selectedNetworkTestTarget, value))
+            {
+                return;
+            }
+
+            if (TryGetNetworkTestTargetUrl(value, out var url))
+            {
+                _applyingNetworkTestTarget = true;
+                try
+                {
+                    NetworkTestUrl = url;
+                }
+                finally
+                {
+                    _applyingNetworkTestTarget = false;
+                }
+            }
+        }
     }
 
     public string NetworkTestText
@@ -1898,6 +1937,31 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var updated = Subscriptions.Count(x => x.LastUpdatedAt.HasValue);
         var failed = Subscriptions.Count(x => x.LastResult.StartsWith("failed:", StringComparison.OrdinalIgnoreCase));
         SubscriptionSummaryText = $"Subscriptions {FilteredSubscriptions.Count}/{Subscriptions.Count} visible, {updated} updated, {failed} failed";
+    }
+
+    private static bool TryGetNetworkTestTargetUrl(string target, out string url)
+    {
+        url = target switch
+        {
+            "Google 204" => "https://www.gstatic.com/generate_204",
+            "Cloudflare Trace" => "https://www.cloudflare.com/cdn-cgi/trace",
+            "Firefox Success" => "http://detectportal.firefox.com/success.txt",
+            _ => ""
+        };
+        return !string.IsNullOrWhiteSpace(url);
+    }
+
+    private static string FindNetworkTestTargetForUrl(string url)
+    {
+        foreach (var target in new[] { "Google 204", "Cloudflare Trace", "Firefox Success" })
+        {
+            if (TryGetNetworkTestTargetUrl(target, out var targetUrl)
+                && string.Equals(url.Trim(), targetUrl, StringComparison.OrdinalIgnoreCase))
+            {
+                return target;
+            }
+        }
+        return "Custom";
     }
 
     private static string BuildDiagnosticsSummary(DiagnosticReport report)

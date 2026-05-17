@@ -6,6 +6,7 @@ param(
     [string]$InstanceName = ("Local\x-tunnel-client-gui-" + [Guid]::NewGuid().ToString("N")),
     [string]$ScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke.png"),
     [string]$SubscriptionScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-subscriptions.png"),
+    [string]$DiagnosticsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-diagnostics.png"),
     [int]$TimeoutSeconds = 25
 )
 
@@ -372,7 +373,17 @@ try {
     $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $diagnosticsTab
 
+    $targetCombo = Get-ByAutomationId -Root $window -AutomationId "NetworkTestTargetComboBox" -TimeoutSeconds $TimeoutSeconds
+    Select-ComboBoxItem -Element $targetCombo -Name "Cloudflare Trace" -TimeoutSeconds $TimeoutSeconds
     $urlBox = Get-ByAutomationId -Root $window -AutomationId "NetworkTestUrlTextBox" -TimeoutSeconds $TimeoutSeconds
+    $presetUrl = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Network target preset did not update the test URL." -Condition {
+        $text = Get-ElementValue $urlBox
+        if ($text -match "cloudflare.com/cdn-cgi/trace") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Network target preset URL: $presetUrl"
     Set-ElementValue -Element $urlBox -Value $testUrl
 
     $testButton = Get-ByAutomationId -Root $window -AutomationId "TestNetworkButton" -TimeoutSeconds $TimeoutSeconds
@@ -401,6 +412,8 @@ try {
 
     Write-Host $resultText
     Write-Host $endpointText
+    Save-ElementScreenshot -Element $window -Path $DiagnosticsScreenshotPath
+    Write-Host "Diagnostics GUI screenshot: $DiagnosticsScreenshotPath"
 
     $connectButton = Get-ByAutomationId -Root $window -AutomationId "ConnectButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $connectButton

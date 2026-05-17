@@ -347,25 +347,29 @@
       </TabItem>
 
       <TabItem Header="Diagnostics" automation:AutomationProperties.AutomationId="DiagnosticsTab">
-        <Grid Margin="16" RowDefinitions="Auto,Auto,92,Auto,92,140,*" RowSpacing="10">
+        <Grid Margin="16" RowDefinitions="Auto,Auto,Auto,92,Auto,92,140,*" RowSpacing="10">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Content="Run Checks" Command="{Binding RefreshDiagnosticsCommand}" automation:AutomationProperties.AutomationId="RunDiagnosticsButton"/>
             <Button Content="Export Zip" Click="ExportDiagnostics_OnClick"/>
             <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}"/>
             <Button Content="Open Logs" Command="{Binding OpenLogsFolderCommand}"/>
           </StackPanel>
-          <Grid Grid.Row="1" ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
+          <Grid Grid.Row="1" ColumnDefinitions="90,*" ColumnSpacing="8">
+            <TextBlock Text="Target" VerticalAlignment="Center"/>
+            <ComboBox Grid.Column="1" ItemsSource="{Binding NetworkTestTargets}" SelectedItem="{Binding SelectedNetworkTestTarget}" MinHeight="30" automation:AutomationProperties.AutomationId="NetworkTestTargetComboBox"/>
+          </Grid>
+          <Grid Grid.Row="2" ColumnDefinitions="90,*,Auto" ColumnSpacing="8">
             <TextBlock Text="Test URL" VerticalAlignment="Center"/>
             <TextBox Grid.Column="1" Text="{Binding NetworkTestUrl}" automation:AutomationProperties.AutomationId="NetworkTestUrlTextBox"/>
             <Button Grid.Column="2" Content="Test Network" Command="{Binding TestNetworkCommand}" automation:AutomationProperties.AutomationId="TestNetworkButton"/>
           </Grid>
-          <TextBox Grid.Row="2" Text="{Binding NetworkTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="NetworkTestResultTextBox"/>
-          <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+          <TextBox Grid.Row="3" Text="{Binding NetworkTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="NetworkTestResultTextBox"/>
+          <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="8">
             <Button Content="Test Forward" Command="{Binding TestProfileEndpointCommand}" automation:AutomationProperties.AutomationId="TestProfileEndpointButton"/>
           </StackPanel>
-          <TextBox Grid.Row="4" Text="{Binding ProfileEndpointTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="ProfileEndpointTestResultTextBox"/>
-          <TextBox Grid.Row="5" Text="{Binding DiagnosticsSummaryText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
-          <TextBox Grid.Row="6" Text="{Binding DiagnosticsText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+          <TextBox Grid.Row="5" Text="{Binding ProfileEndpointTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="ProfileEndpointTestResultTextBox"/>
+          <TextBox Grid.Row="6" Text="{Binding DiagnosticsSummaryText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+          <TextBox Grid.Row="7" Text="{Binding DiagnosticsText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
         </Grid>
       </TabItem>
 
