@@ -430,6 +430,17 @@ try {
 
     Write-Host $resultText
     Write-Host $endpointText
+    $copyEndpointResultButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileEndpointTestResultButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyEndpointResultButton
+    $clipboardEndpointText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy profile endpoint result did not place the result on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "Forward TCP: ok" -and $text -match [Regex]::Escape($coreForwardUrl.Replace("/tunnel", ""))) {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied endpoint result: $($clipboardEndpointText.Split([Environment]::NewLine)[0])"
     Save-ElementScreenshot -Element $window -Path $DiagnosticsScreenshotPath
     Write-Host "Diagnostics GUI screenshot: $DiagnosticsScreenshotPath"
 

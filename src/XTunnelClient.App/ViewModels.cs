@@ -205,6 +205,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         TestNetworkCommand = new AsyncRelayCommand(TestNetworkAsync);
         CopyNetworkTestResultCommand = new RelayCommand(CopyNetworkTestResult, HasNetworkTestResult);
         TestProfileEndpointCommand = new AsyncRelayCommand(TestProfileEndpointAsync, () => SelectedProfile is not null);
+        CopyProfileEndpointTestResultCommand = new RelayCommand(CopyProfileEndpointTestResult, HasProfileEndpointTestResult);
         TestVisibleProfilesCommand = new AsyncRelayCommand(TestVisibleProfilesAsync, () => FilteredProfiles.Count > 0);
         SelectFastestProfileCommand = new RelayCommand(SelectFastestProfile, HasSuccessfulVisibleEndpointTest);
         ClearVisibleProfileEndpointTestsCommand = new RelayCommand(ClearVisibleProfileEndpointTests, HasVisibleEndpointTestResults);
@@ -488,7 +489,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string ProfileEndpointTestText
     {
         get => _profileEndpointTestText;
-        set => SetProperty(ref _profileEndpointTestText, value);
+        set
+        {
+            if (SetProperty(ref _profileEndpointTestText, value))
+            {
+                CopyProfileEndpointTestResultCommand.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     public string ProfileBatchTestText
@@ -674,6 +681,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand TestNetworkCommand { get; }
     public RelayCommand CopyNetworkTestResultCommand { get; }
     public AsyncRelayCommand TestProfileEndpointCommand { get; }
+    public RelayCommand CopyProfileEndpointTestResultCommand { get; }
     public AsyncRelayCommand TestVisibleProfilesCommand { get; }
     public RelayCommand SelectFastestProfileCommand { get; }
     public RelayCommand ClearVisibleProfileEndpointTestsCommand { get; }
@@ -1276,6 +1284,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         CopyTextRequested?.Invoke(this, NetworkTestText);
         ErrorText = "Network test result copied";
+    }
+
+    private void CopyProfileEndpointTestResult()
+    {
+        if (!HasProfileEndpointTestResult())
+        {
+            return;
+        }
+        CopyTextRequested?.Invoke(this, ProfileEndpointTestText);
+        ErrorText = "Profile endpoint test result copied";
     }
 
     private async Task TestProfileEndpointAsync()
@@ -2156,6 +2174,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return !string.IsNullOrWhiteSpace(NetworkTestText)
             && !string.Equals(NetworkTestText, "Not tested", StringComparison.OrdinalIgnoreCase)
             && !string.Equals(NetworkTestText, "Testing network...", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool HasProfileEndpointTestResult()
+    {
+        return !string.IsNullOrWhiteSpace(ProfileEndpointTestText)
+            && !string.Equals(ProfileEndpointTestText, "Not tested", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(ProfileEndpointTestText, "Testing profile forward endpoint...", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(ProfileEndpointTestText, "No selected profile", StringComparison.OrdinalIgnoreCase);
     }
 
     private void RaiseCommandState()
