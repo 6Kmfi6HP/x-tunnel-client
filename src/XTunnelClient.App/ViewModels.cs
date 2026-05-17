@@ -126,6 +126,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _statusText = "未连接";
     private string _statsText = "";
     private string _logText = "";
+    private string _filteredLogText = "";
+    private string _logFilterText = "";
     private string _diagnosticsText = "";
     private string _errorText = "";
     private string _secretValue = "";
@@ -250,7 +252,31 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string LogText
     {
         get => _logText;
-        set => SetProperty(ref _logText, value);
+        set
+        {
+            if (SetProperty(ref _logText, value))
+            {
+                UpdateFilteredLogText();
+            }
+        }
+    }
+
+    public string FilteredLogText
+    {
+        get => _filteredLogText;
+        set => SetProperty(ref _filteredLogText, value);
+    }
+
+    public string LogFilterText
+    {
+        get => _logFilterText;
+        set
+        {
+            if (SetProperty(ref _logFilterText, value))
+            {
+                UpdateFilteredLogText();
+            }
+        }
     }
 
     public string DiagnosticsText
@@ -763,7 +789,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ErrorText = e.Error ?? "";
             StatusText = e.Status is null ? e.State.ToString() : e.Status.ToPrettyJson();
             StatsText = e.Stats?.ToPrettyJson() ?? "";
-            LogText = string.Join(Environment.NewLine, _supervisor.Logs.Select(x => $"{x.Time:HH:mm:ss} [{x.Component ?? x.Level}] {x.Message}"));
+            LogText = FormatLogs(_supervisor.Logs);
             RefreshOverview(e.Status, e.Stats);
         });
     }
@@ -924,6 +950,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private static string FirstNonEmpty(params string?[] values)
     {
         return values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "";
+    }
+
+    private void UpdateFilteredLogText()
+    {
+        var filter = LogFilterText.Trim();
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            FilteredLogText = LogText;
+            return;
+        }
+        var lines = LogText.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        FilteredLogText = string.Join(Environment.NewLine, lines.Where(x => x.Contains(filter, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static string FormatLogs(IEnumerable<ControlLogEntry> logs)
+    {
+        return string.Join(Environment.NewLine, logs.Select(x => $"{x.Time:HH:mm:ss} [{x.Component ?? x.Level}] {x.Message}"));
     }
 
     private static void ApplyTheme(string? theme)
