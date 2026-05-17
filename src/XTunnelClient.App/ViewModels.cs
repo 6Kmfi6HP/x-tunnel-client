@@ -129,6 +129,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _filteredLogText = "";
     private string _logFilterText = "";
     private string _diagnosticsText = "";
+    private string _diagnosticsSummaryText = "";
     private string _errorText = "";
     private string _secretValue = "";
     private string _profileListen = "";
@@ -287,6 +288,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _diagnosticsText;
         set => SetProperty(ref _diagnosticsText, value);
+    }
+
+    public string DiagnosticsSummaryText
+    {
+        get => _diagnosticsSummaryText;
+        set => SetProperty(ref _diagnosticsSummaryText, value);
     }
 
     public string ErrorText
@@ -492,6 +499,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public async Task<string> ExportDiagnosticsAsync()
     {
         var report = await _diagnostics.CreateReportAsync(SelectedProfile, _supervisor.Control);
+        DiagnosticsSummaryText = BuildDiagnosticsSummary(report);
         DiagnosticsText = JsonSerializer.Serialize(report, JsonDefaults.Pretty);
         return await _diagnostics.ExportAsync(report);
     }
@@ -764,6 +772,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private async Task RefreshDiagnosticsAsync()
     {
         var report = await _diagnostics.CreateReportAsync(SelectedProfile, _supervisor.Control);
+        DiagnosticsSummaryText = BuildDiagnosticsSummary(report);
         DiagnosticsText = JsonSerializer.Serialize(report, JsonDefaults.Pretty);
     }
 
@@ -1005,6 +1014,28 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private static string FormatLogs(IEnumerable<ControlLogEntry> logs)
     {
         return string.Join(Environment.NewLine, logs.Select(x => $"{x.Time:HH:mm:ss} [{x.Component ?? x.Level}] {x.Message}"));
+    }
+
+    private static string BuildDiagnosticsSummary(DiagnosticReport report)
+    {
+        var lines = new List<string>
+        {
+            $"Created: {report.CreatedAt.LocalDateTime:g}",
+            $"OS: {report.OsVersion} / {report.Architecture}",
+            $"GUI: {report.GuiVersion}",
+            $"Profile: {report.ActiveProfile?.Name ?? "-"}",
+            $"Core: {report.Status?.Version ?? "-"} {report.Status?.Mode ?? ""}".Trim(),
+            $"Proxy: enable={report.CurrentProxy?.ProxyEnable ?? 0} server={report.CurrentProxy?.ProxyServer ?? "-"} pac={report.CurrentProxy?.AutoConfigUrl ?? "-"}"
+        };
+        if (report.PortChecks.Count > 0)
+        {
+            lines.Add("Ports: " + string.Join("; ", report.PortChecks.Select(x => x.Available ? $"{x.Address} ok" : $"{x.Address} blocked ({x.Error})")));
+        }
+        if (report.Warnings.Count > 0)
+        {
+            lines.Add("Warnings: " + string.Join("; ", report.Warnings));
+        }
+        return string.Join(Environment.NewLine, lines);
     }
 
     private static void ApplyTheme(string? theme)
