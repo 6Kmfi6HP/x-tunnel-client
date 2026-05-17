@@ -56,3 +56,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added `/regex/` runtime log filtering with a visible filter summary, matching v2rayN-style advanced log search while keeping plain text filtering.
 - Added a dedicated GUI smoke screenshot for the active regex log-filter state.
 - Added a Settings core executable status badge so users can immediately see whether the configured or auto-detected `x-tunnel.exe` path is usable.
+- Added a copyable Diagnostics summary for quickly sharing OS, profile, proxy, and port-check context.

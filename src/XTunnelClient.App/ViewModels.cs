@@ -223,6 +223,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OpenLogsCommand = new RelayCommand(() => SelectedMainTabIndex = 3);
         OpenDiagnosticsCommand = new AsyncRelayCommand(OpenDiagnosticsAsync);
         OpenSettingsCommand = new RelayCommand(() => SelectedMainTabIndex = 5);
+        CopyDiagnosticsSummaryCommand = new RelayCommand(CopyDiagnosticsSummary, HasDiagnosticsSummary);
         SetProxyModeOffCommand = new RelayCommand(() => SetProxyMode(ProxyMode.Off));
         SetProxyModeSystemCommand = new RelayCommand(() => SetProxyMode(ProxyMode.System));
         SetProxyModePacCommand = new RelayCommand(() => SetProxyMode(ProxyMode.Pac));
@@ -440,7 +441,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string DiagnosticsSummaryText
     {
         get => _diagnosticsSummaryText;
-        set => SetProperty(ref _diagnosticsSummaryText, value);
+        set
+        {
+            if (SetProperty(ref _diagnosticsSummaryText, value))
+            {
+                CopyDiagnosticsSummaryCommand.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     public string SubscriptionStatusText
@@ -824,6 +831,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand OpenLogsCommand { get; }
     public AsyncRelayCommand OpenDiagnosticsCommand { get; }
     public RelayCommand OpenSettingsCommand { get; }
+    public RelayCommand CopyDiagnosticsSummaryCommand { get; }
     public RelayCommand SetProxyModeOffCommand { get; }
     public RelayCommand SetProxyModeSystemCommand { get; }
     public RelayCommand SetProxyModePacCommand { get; }
@@ -1467,6 +1475,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         SelectedMainTabIndex = 4;
         await RefreshDiagnosticsAsync();
+    }
+
+    private void CopyDiagnosticsSummary()
+    {
+        if (!HasDiagnosticsSummary())
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, DiagnosticsSummaryText);
+        ErrorText = "Diagnostics summary copied";
     }
 
     private async Task RunOverviewNetworkTestAsync()
@@ -2697,6 +2716,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool HasFilteredLogs()
     {
         return !string.IsNullOrWhiteSpace(FilteredLogText);
+    }
+
+    private bool HasDiagnosticsSummary()
+    {
+        return !string.IsNullOrWhiteSpace(DiagnosticsSummaryText);
     }
 
     private bool HasSubscriptionStatusResult()

@@ -557,6 +557,18 @@ try {
         return $null
     }
     Write-Host "Copied endpoint result: $($clipboardEndpointText.Split([Environment]::NewLine)[0])"
+
+    $copyDiagnosticsSummaryButton = Get-ByAutomationId -Root $window -AutomationId "CopyDiagnosticsSummaryButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyDiagnosticsSummaryButton
+    $clipboardDiagnosticsSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy diagnostics summary did not place the summary on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "OS:" -and $text -match "Profile: Local x-tunnel" -and $text -match "Proxy:" -and $text -match "Ports:") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied diagnostics summary: $($clipboardDiagnosticsSummary.Split([Environment]::NewLine)[0])"
     Save-ElementScreenshot -Element $window -Path $DiagnosticsScreenshotPath
     Write-Host "Diagnostics GUI screenshot: $DiagnosticsScreenshotPath"
 

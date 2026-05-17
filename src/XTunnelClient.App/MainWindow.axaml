@@ -387,6 +387,7 @@
         <Grid Margin="16" RowDefinitions="Auto,Auto,Auto,92,Auto,92,140,*" RowSpacing="10">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <Button Content="Run Checks" Command="{Binding RefreshDiagnosticsCommand}" automation:AutomationProperties.AutomationId="RunDiagnosticsButton"/>
+            <Button Content="Copy Summary" Command="{Binding CopyDiagnosticsSummaryCommand}" automation:AutomationProperties.AutomationId="CopyDiagnosticsSummaryButton"/>
             <Button Content="Export Zip" Click="ExportDiagnostics_OnClick"/>
             <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}"/>
             <Button Content="Open Logs" Command="{Binding OpenLogsFolderCommand}"/>
