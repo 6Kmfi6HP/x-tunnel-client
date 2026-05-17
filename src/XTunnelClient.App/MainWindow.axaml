@@ -284,17 +284,17 @@
               <TextBox Text="{Binding SelectedProfile.SecretRef}" PlaceholderText="secret ref, e.g. profile-token"/>
               <TextBox Grid.Column="1" Text="{Binding SecretValue}" PasswordChar="*" PlaceholderText="profile secret saved with DPAPI" automation:AutomationProperties.AutomationId="ProfileSecretTextBox"/>
             </Grid>
-            <WrapPanel Grid.Row="3">
-              <Button Content="Apply Form" Command="{Binding ApplyFormCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="ApplyProfileFormButton"/>
-              <Button Content="Save" Command="{Binding SaveProfileCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="SaveProfileButton"/>
-              <Button Content="Validate" Command="{Binding ValidateProfileCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="ValidateProfileButton"/>
-              <Button Content="Format" Command="{Binding FormatProfileCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="FormatProfileButton"/>
-              <Button Content="Import File" Click="ImportFile_OnClick" Margin="0,0,8,8"/>
-              <Button Content="Import Clipboard" Click="ImportClipboard_OnClick" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="ImportProfileClipboardButton"/>
-              <Button Content="Export" Click="ExportProfile_OnClick" Margin="0,0,8,8"/>
-              <Button Content="Copy Summary" Command="{Binding CopyProfileSummaryCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="CopyProfileSummaryButton"/>
-              <Button Content="Copy Config" Command="{Binding CopyProfileConfigCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="CopyProfileConfigButton"/>
-              <Button Content="Copy Issues" Command="{Binding CopyProfileIssuesCommand}" Margin="0,0,8,8" automation:AutomationProperties.AutomationId="CopyProfileIssuesButton"/>
+            <WrapPanel Grid.Row="3" ItemSpacing="8" LineSpacing="8">
+              <Button Content="Apply Form" Command="{Binding ApplyFormCommand}" automation:AutomationProperties.AutomationId="ApplyProfileFormButton"/>
+              <Button Content="Save" Command="{Binding SaveProfileCommand}" automation:AutomationProperties.AutomationId="SaveProfileButton"/>
+              <Button Content="Validate" Command="{Binding ValidateProfileCommand}" automation:AutomationProperties.AutomationId="ValidateProfileButton"/>
+              <Button Content="Format" Command="{Binding FormatProfileCommand}" automation:AutomationProperties.AutomationId="FormatProfileButton"/>
+              <Button Content="Import File" Click="ImportFile_OnClick"/>
+              <Button Content="Import Clipboard" Click="ImportClipboard_OnClick" automation:AutomationProperties.AutomationId="ImportProfileClipboardButton"/>
+              <Button Content="Export" Click="ExportProfile_OnClick"/>
+              <Button Content="Copy Summary" Command="{Binding CopyProfileSummaryCommand}" automation:AutomationProperties.AutomationId="CopyProfileSummaryButton"/>
+              <Button Content="Copy Config" Command="{Binding CopyProfileConfigCommand}" automation:AutomationProperties.AutomationId="CopyProfileConfigButton"/>
+              <Button Content="Copy Issues" Command="{Binding CopyProfileIssuesCommand}" automation:AutomationProperties.AutomationId="CopyProfileIssuesButton"/>
             </WrapPanel>
             <Border Grid.Row="4" Classes="panel">
               <Grid RowDefinitions="Auto,*">
