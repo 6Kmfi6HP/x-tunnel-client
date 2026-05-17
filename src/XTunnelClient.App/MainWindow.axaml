@@ -120,7 +120,7 @@
                 </WrapPanel>
                 <TextBox Text="{Binding CorePath}" PlaceholderText="Auto-detect or full path to x-tunnel.exe"/>
                 <WrapPanel>
-                  <Button Content="Save" Command="{Binding SaveSettingsCommand}" Margin="0,0,8,0"/>
+                  <Button Content="Save" Command="{Binding SaveSettingsCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="OverviewSaveSettingsButton"/>
                   <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}" Margin="0,0,8,0"/>
                   <Button Content="Proxy Addr" Command="{Binding CopyProxyCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="CopyProxyAddressButton"/>
                   <Button Content="Copy Status" Command="{Binding CopyOverviewStatusCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="CopyOverviewStatusButton"/>

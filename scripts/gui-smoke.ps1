@@ -335,6 +335,7 @@ try {
     $statusLocalProxy = Get-ByAutomationId -Root $window -AutomationId "StatusBarLocalProxyText" -TimeoutSeconds $TimeoutSeconds
     $statusCore = Get-ByAutomationId -Root $window -AutomationId "StatusBarCoreText" -TimeoutSeconds $TimeoutSeconds
     $statusIssue = Get-ByAutomationId -Root $window -AutomationId "StatusBarIssueText" -TimeoutSeconds $TimeoutSeconds
+    $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
     $stateText = Get-ElementValue $statusState
     $profileText = Get-ElementValue $statusProfile
     if ($stateText -notmatch "Disconnected" -or $profileText -notmatch "Local x-tunnel") {
@@ -379,6 +380,17 @@ try {
     }
     Write-Host "Proxy mode quick actions: $proxyModeText"
 
+    $overviewSaveSettingsButton = Get-ByAutomationId -Root $window -AutomationId "OverviewSaveSettingsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $overviewSaveSettingsButton
+    $overviewSaveText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Overview Save did not report settings saved." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "Settings saved") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Overview settings saved: $overviewSaveText"
+
     Save-ElementScreenshot -Element $window -Path $OverviewScreenshotPath
     Write-Host "Overview GUI screenshot: $OverviewScreenshotPath"
 
@@ -406,7 +418,6 @@ try {
     $saveProfileButton = Get-ByAutomationId -Root $window -AutomationId "SaveProfileButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $saveProfileButton
 
-    $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
     $validateProfileButton = Get-ByAutomationId -Root $window -AutomationId "ValidateProfileButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $validateProfileButton
     $profileValidateText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Validate profile did not report a ready or warning state." -Condition {
