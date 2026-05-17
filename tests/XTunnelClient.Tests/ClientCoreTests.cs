@@ -79,6 +79,29 @@ public sealed class ClientCoreTests
     }
 
     [Fact]
+    public void PortCheckerReportsOccupiedLocalProxyPort()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        try
+        {
+            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            var config = $$"""{"listen":"socks5://127.0.0.1:{{port}}"}""";
+
+            var results = new PortChecker().CheckRuntimeConfig(config, new RuntimeConfigService());
+
+            var result = Assert.Single(results);
+            Assert.Equal($"127.0.0.1:{port}", result.Address);
+            Assert.False(result.Available);
+            Assert.False(string.IsNullOrWhiteSpace(result.Error));
+        }
+        finally
+        {
+            listener.Stop();
+        }
+    }
+
+    [Fact]
     public void SubscriptionDiffSeparatesAddedAndUpdatedProfiles()
     {
         var service = new SubscriptionService(new RuntimeConfigService(), new HttpClient(new StaticHandler("[]")));

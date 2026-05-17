@@ -175,7 +175,7 @@
             <ListBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberBinding="{Binding Name}"/>
           </DockPanel>
 
-          <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowSpacing="10">
+          <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto,120,*,Auto" RowSpacing="10">
             <Grid ColumnDefinitions="*,160,160" ColumnSpacing="8">
               <TextBox Text="{Binding SelectedProfile.Name}" PlaceholderText="Profile name"/>
               <ComboBox Grid.Column="1" SelectedItem="{Binding SelectedProfile.Kind}">
@@ -204,8 +204,26 @@
               <Button Content="Import Clipboard" Click="ImportClipboard_OnClick"/>
               <Button Content="Export" Click="ExportProfile_OnClick"/>
             </StackPanel>
-            <TextBox Grid.Row="4" Text="{Binding SelectedProfile.CoreConfigJson}" AcceptsReturn="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
-            <TextBlock Grid.Row="5" Text="{Binding SelectedProfile.LastValidationError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"/>
+            <Border Grid.Row="4" Classes="panel">
+              <Grid RowDefinitions="Auto,*">
+                <TextBlock Classes="section" Text="Profile Checks"/>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                  <ItemsControl ItemsSource="{Binding ProfileIssues}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Grid Margin="0,0,0,6" ColumnDefinitions="90,80,*">
+                          <TextBlock Text="{Binding Field}" Classes="caption"/>
+                          <TextBlock Grid.Column="1" Text="{Binding Severity}" Classes="caption"/>
+                          <TextBlock Grid.Column="2" Text="{Binding Message}" TextWrapping="Wrap"/>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </Grid>
+            </Border>
+            <TextBox Grid.Row="5" Text="{Binding SelectedProfile.CoreConfigJson}" AcceptsReturn="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+            <TextBlock Grid.Row="6" Text="{Binding SelectedProfile.LastValidationError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"/>
           </Grid>
         </Grid>
       </TabItem>

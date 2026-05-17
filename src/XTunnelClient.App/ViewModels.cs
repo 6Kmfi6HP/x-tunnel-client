@@ -99,6 +99,13 @@ public sealed class SummaryRow
     public string Detail { get; init; } = "";
 }
 
+public sealed class ProfileIssue
+{
+    public string Field { get; init; } = "";
+    public string Severity { get; init; } = "error";
+    public string Message { get; init; } = "";
+}
+
 public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private readonly AppPaths _paths = new();
@@ -109,6 +116,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly DiagnosticsService _diagnostics;
     private readonly StartupService _startupService = new();
     private readonly CoreLocator _coreLocator;
+    private readonly PortChecker _portChecker;
 
     private Profile? _selectedProfile;
     private AppSettings _settings;
@@ -142,10 +150,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         var systemProxy = new SystemProxyService(new RegistryProxySettingsStore());
         var proxyCoordinator = new ProxyCoordinator(systemProxy, new PacServer());
-        var portChecker = new PortChecker();
+        _portChecker = new PortChecker();
         _coreLocator = new CoreLocator(_paths);
-        _supervisor = new SidecarSupervisor(_paths, _repository, _configService, _coreLocator, proxyCoordinator, portChecker);
-        _diagnostics = new DiagnosticsService(_paths, _configService, systemProxy, portChecker);
+        _supervisor = new SidecarSupervisor(_paths, _repository, _configService, _coreLocator, proxyCoordinator, _portChecker);
+        _diagnostics = new DiagnosticsService(_paths, _configService, systemProxy, _portChecker);
         _supervisor.RuntimeChanged += OnRuntimeChanged;
 
         NewProfileCommand = new RelayCommand(NewProfile);
@@ -170,6 +178,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<DashboardMetric> OverviewMetrics { get; } = [];
     public ObservableCollection<SummaryRow> ListenerRows { get; } = [];
     public ObservableCollection<SummaryRow> ChannelRows { get; } = [];
+    public ObservableCollection<ProfileIssue> ProfileIssues { get; } = [];
     public IReadOnlyList<ProxyMode> ProxyModes { get; } = Enum.GetValues<ProxyMode>();
 
     public Profile? SelectedProfile
@@ -181,6 +190,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 SecretValue = value?.SecretRef is null ? "" : _repository.GetSecret(value.Id, value.SecretRef) ?? "";
                 LoadStructuredFields();
+                ProfileIssues.Clear();
                 RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
                 RaiseCommandState();
             }
@@ -554,24 +564,40 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             var runtimeJson = GenerateRuntimeConfigForSelectedProfile();
             var corePath = _coreLocator.Resolve(Settings);
+            var issues = new List<ProfileIssue>();
             if (corePath is not null)
             {
                 await _coreConfigTool.CheckJsonAsync(corePath, runtimeJson);
-                ErrorText = "Core config check passed";
             }
             else
             {
                 _configService.ParseAndValidate(SelectedProfile.CoreConfigJson);
-                ErrorText = "Local config check passed; core path not found";
+                issues.Add(new ProfileIssue
+                {
+                    Field = "core",
+                    Severity = "warning",
+                    Message = "Core path not found; only local JSON validation was run."
+                });
             }
+            issues.AddRange(CheckProfilePorts(runtimeJson));
+            var hasErrors = issues.Any(x => x.Severity == "error");
+            var hasWarnings = issues.Any(x => x.Severity == "warning");
             SelectedProfile.LastValidatedAt = DateTimeOffset.UtcNow;
-            SelectedProfile.LastValidationError = null;
+            SelectedProfile.LastValidationError = issues.FirstOrDefault(x => x.Severity == "error")?.Message;
             _repository.SaveProfile(SelectedProfile);
+            ReplaceCollection(ProfileIssues, issues.Count == 0
+                ? [new ProfileIssue { Field = "profile", Severity = "ok", Message = "Core config check and local port checks passed." }]
+                : issues);
+            ErrorText = hasErrors
+                ? "Profile has blocking validation issues"
+                : hasWarnings ? "Profile validated with warnings" : "Profile ready";
         }
         catch (Exception ex)
         {
-            SelectedProfile.LastValidationError = ex.Message;
-            ErrorText = ex.Message;
+            var issue = BuildProfileIssue(ex);
+            SelectedProfile.LastValidationError = issue.Message;
+            ReplaceCollection(ProfileIssues, [issue]);
+            ErrorText = issue.Message;
         }
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
         await Task.CompletedTask;
@@ -602,11 +628,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SelectedProfile.LastValidationError = null;
             OnPropertyChanged(nameof(SelectedProfile));
             LoadStructuredFields();
+            ProfileIssues.Clear();
         }
         catch (Exception ex)
         {
-            SelectedProfile.LastValidationError = ex.Message;
-            ErrorText = ex.Message;
+            var issue = BuildProfileIssue(ex);
+            SelectedProfile.LastValidationError = issue.Message;
+            ReplaceCollection(ProfileIssues, [issue]);
+            ErrorText = issue.Message;
         }
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
@@ -854,6 +883,63 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private static string FirstNonEmpty(params string?[] values)
     {
         return values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "";
+    }
+
+    private IEnumerable<ProfileIssue> CheckProfilePorts(string runtimeJson)
+    {
+        foreach (var result in _portChecker.CheckRuntimeConfig(runtimeJson, _configService))
+        {
+            yield return result.Available
+                ? new ProfileIssue
+                {
+                    Field = "listen",
+                    Severity = "ok",
+                    Message = $"{result.Address} is available."
+                }
+                : new ProfileIssue
+                {
+                    Field = "listen",
+                    Severity = "error",
+                    Message = $"{result.Address} is occupied or cannot bind: {result.Error}"
+                };
+        }
+    }
+
+    private static ProfileIssue BuildProfileIssue(Exception ex)
+    {
+        var message = ex.Message.Trim();
+        return new ProfileIssue
+        {
+            Field = InferIssueField(message),
+            Severity = "error",
+            Message = message
+        };
+    }
+
+    private static string InferIssueField(string message)
+    {
+        var lower = message.ToLowerInvariant();
+        if (lower.Contains("token") || lower.Contains("secret"))
+        {
+            return "token";
+        }
+        if (lower.Contains("listen") || lower.Contains("port") || lower.Contains("bind"))
+        {
+            return "listen";
+        }
+        if (lower.Contains("forward") || lower.Contains("websocket"))
+        {
+            return "forward";
+        }
+        if (lower.Contains("metrics"))
+        {
+            return "metrics";
+        }
+        if (lower.Contains("unknown") || lower.Contains("未知"))
+        {
+            return "json";
+        }
+        return "profile";
     }
 
     private string GenerateRuntimeConfigForSelectedProfile()
