@@ -394,6 +394,24 @@ try {
     Save-ElementScreenshot -Element $window -Path $OverviewScreenshotPath
     Write-Host "Overview GUI screenshot: $OverviewScreenshotPath"
 
+    $overviewOpenDiagnosticsButton = Get-ByAutomationId -Root $window -AutomationId "OverviewOpenDiagnosticsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $overviewOpenDiagnosticsButton
+    $overviewDiagnosticsLastRun = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Overview Diagnostics shortcut did not refresh diagnostics." -Condition {
+        $lastRun = Find-ByAutomationId -Root $window -AutomationId "DiagnosticsLastRunText"
+        if (!$lastRun) {
+            return $null
+        }
+        $text = Get-ElementValue $lastRun
+        if ($text -match "Checks refreshed") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Overview diagnostics shortcut: $overviewDiagnosticsLastRun"
+
+    $overviewTab = Get-ByAutomationId -Root $window -AutomationId "OverviewTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $overviewTab
+
     $openProfilesButton = Get-ByAutomationId -Root $window -AutomationId "OpenProfilesButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $openProfilesButton
 

@@ -49,6 +49,7 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added copyable subscription update results so aggregate subscription refresh outcomes can be pasted into troubleshooting notes.
 - Added a one-click test-and-select-fastest profile action to reduce the common latency-check then choose-node workflow.
 - Added Overview quick navigation and made the header diagnostics action open the Diagnostics page before refreshing checks.
+- Added GUI smoke coverage for the Overview Diagnostics shortcut before returning to the Overview workflow.
 - Added Overview proxy-mode quick actions for Off, System, and PAC so common mode changes are available without opening the mode combo box.
 - Added an Overview network-test shortcut that opens Diagnostics and runs the existing direct/proxy connectivity test.
 - Added an Overview network-test summary so the latest direct/proxy connectivity result is visible without reading the Diagnostics log block.
