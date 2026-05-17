@@ -200,6 +200,7 @@
                 <Button Content="Fastest" Command="{Binding SelectFastestProfileCommand}" Margin="8,0,0,0" automation:AutomationProperties.AutomationId="SelectFastestProfileButton"/>
               </WrapPanel>
               <TextBlock Text="{Binding ProfileBatchTestText}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="ProfileBatchTestTextBlock"/>
+              <TextBlock Text="{Binding ProfileSummaryText}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="ProfileSummaryTextBlock"/>
             </StackPanel>
             <ListBox ItemsSource="{Binding FilteredProfiles}" SelectedItem="{Binding SelectedProfile}">
               <ListBox.ItemTemplate>

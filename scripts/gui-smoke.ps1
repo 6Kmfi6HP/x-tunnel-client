@@ -599,6 +599,15 @@ try {
         return $null
     }
     Write-Host "Profile list state: $profileValidationText"
+    $profileSummaryBlock = Get-ByAutomationId -Root $window -AutomationId "ProfileSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $profileSummaryText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile summary did not reflect issue and endpoint counts." -Condition {
+        $text = Get-ElementValue $profileSummaryBlock
+        if ($text -match "Profiles 2/2 visible" -and $text -match "1 issues" -and $text -match "1 endpoint ok") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Profile summary: $profileSummaryText"
 
     Save-ElementScreenshot -Element $window -Path $ScreenshotPath
     Write-Host "GUI screenshot: $ScreenshotPath"

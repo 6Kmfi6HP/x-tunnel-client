@@ -143,6 +143,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _networkTestText = "Not tested";
     private string _profileEndpointTestText = "Not tested";
     private string _profileBatchTestText = "Endpoint tests not run";
+    private string _profileSummaryText = "";
     private string _detectedCorePath = "";
     private string _errorText = "";
     private string _secretValue = "";
@@ -408,6 +409,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         get => _profileBatchTestText;
         set => SetProperty(ref _profileBatchTestText, value);
+    }
+
+    public string ProfileSummaryText
+    {
+        get => _profileSummaryText;
+        set => SetProperty(ref _profileSummaryText, value);
     }
 
     public string DetectedCorePath
@@ -1522,6 +1529,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var selectedId = preferredProfileId ?? SelectedProfile?.Id;
         var matches = ApplyProfileSort(Profiles.Where(MatchesProfileSearch)).ToList();
         ReplaceCollection(FilteredProfiles, matches);
+        UpdateProfileSummary();
         TestVisibleProfilesCommand.RaiseCanExecuteChanged();
         SelectFastestProfileCommand.RaiseCanExecuteChanged();
 
@@ -1563,6 +1571,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool HasSuccessfulVisibleEndpointTest()
     {
         return FilteredProfiles.Any(HasSuccessfulEndpointTest);
+    }
+
+    private void UpdateProfileSummary()
+    {
+        var ready = Profiles.Count(x => string.Equals(x.ValidationState, "Ready", StringComparison.Ordinal));
+        var issues = Profiles.Count(x => string.Equals(x.ValidationState, "Issue", StringComparison.Ordinal));
+        var endpointOk = Profiles.Count(HasSuccessfulEndpointTest);
+        ProfileSummaryText = $"Profiles {FilteredProfiles.Count}/{Profiles.Count} visible, {ready} ready, {issues} issues, {endpointOk} endpoint ok";
     }
 
     private static bool HasSuccessfulEndpointTest(Profile profile)
