@@ -50,3 +50,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added Overview proxy-mode quick actions for Off, System, and PAC so common mode changes are available without opening the mode combo box.
 - Added an Overview network-test shortcut that opens Diagnostics and runs the existing direct/proxy connectivity test.
 - Added an Overview network-test summary so the latest direct/proxy connectivity result is visible without reading the Diagnostics log block.
+- Added a dedicated GUI smoke screenshot for the Overview network-test summary state.

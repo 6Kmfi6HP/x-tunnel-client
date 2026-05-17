@@ -5,6 +5,7 @@ param(
     [string]$AppHome = (Join-Path $env:TEMP ("xtunnel-client-gui-" + [Guid]::NewGuid().ToString("N"))),
     [string]$InstanceName = ("Local\x-tunnel-client-gui-" + [Guid]::NewGuid().ToString("N")),
     [string]$OverviewScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-overview.png"),
+    [string]$OverviewNetworkScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-overview-network.png"),
     [string]$ScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke.png"),
     [string]$SubscriptionScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-subscriptions.png"),
     [string]$DiagnosticsScreenshotPath = (Join-Path $PSScriptRoot "..\artifacts\gui-smoke-diagnostics.png"),
@@ -501,6 +502,8 @@ try {
     }
     $overviewNetworkDetailText = Get-ByAutomationId -Root $window -AutomationId "OverviewNetworkDetailText" -TimeoutSeconds $TimeoutSeconds
     Write-Host "Overview network summary: $overviewNetworkText / $(Get-ElementValue $overviewNetworkDetailText)"
+    Save-ElementScreenshot -Element $window -Path $OverviewNetworkScreenshotPath
+    Write-Host "Overview network GUI screenshot: $OverviewNetworkScreenshotPath"
 
     $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $diagnosticsTab
