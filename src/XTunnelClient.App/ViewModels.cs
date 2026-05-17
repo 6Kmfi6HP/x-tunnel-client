@@ -247,6 +247,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OpenSettingsCommand = new RelayCommand(() => SelectedMainTabIndex = 5);
         CopyDiagnosticsSummaryCommand = new RelayCommand(CopyDiagnosticsSummary, HasDiagnosticsSummary);
         CopyDiagnosticsReportCommand = new RelayCommand(CopyDiagnosticsReport, HasDiagnosticsReport);
+        CopyDiagnosticsPortsCommand = new RelayCommand(CopyDiagnosticsPorts, HasDiagnosticsPortDetail);
         SetProxyModeOffCommand = new RelayCommand(() => SetProxyMode(ProxyMode.Off));
         SetProxyModeSystemCommand = new RelayCommand(() => SetProxyMode(ProxyMode.System));
         SetProxyModePacCommand = new RelayCommand(() => SetProxyMode(ProxyMode.Pac));
@@ -509,7 +510,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string DiagnosticsPortDetail
     {
         get => _diagnosticsPortDetail;
-        private set => SetProperty(ref _diagnosticsPortDetail, value);
+        private set
+        {
+            if (SetProperty(ref _diagnosticsPortDetail, value))
+            {
+                CopyDiagnosticsPortsCommand.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     public string DiagnosticsPortBackground
@@ -998,6 +1005,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public RelayCommand OpenSettingsCommand { get; }
     public RelayCommand CopyDiagnosticsSummaryCommand { get; }
     public RelayCommand CopyDiagnosticsReportCommand { get; }
+    public RelayCommand CopyDiagnosticsPortsCommand { get; }
     public RelayCommand SetProxyModeOffCommand { get; }
     public RelayCommand SetProxyModeSystemCommand { get; }
     public RelayCommand SetProxyModePacCommand { get; }
@@ -1679,6 +1687,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         CopyTextRequested?.Invoke(this, DiagnosticsText);
         ErrorText = "Diagnostics report copied";
+    }
+
+    private void CopyDiagnosticsPorts()
+    {
+        if (!HasDiagnosticsPortDetail())
+        {
+            return;
+        }
+
+        CopyTextRequested?.Invoke(this, $"{DiagnosticsPortStatus}{Environment.NewLine}{DiagnosticsPortDetail}");
+        ErrorText = "Diagnostics ports copied";
     }
 
     private async Task RunOverviewNetworkTestAsync()
@@ -3158,6 +3177,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool HasDiagnosticsReport()
     {
         return !string.IsNullOrWhiteSpace(DiagnosticsText);
+    }
+
+    private bool HasDiagnosticsPortDetail()
+    {
+        return !string.IsNullOrWhiteSpace(DiagnosticsPortDetail);
     }
 
     private bool HasCorePathToCopy()

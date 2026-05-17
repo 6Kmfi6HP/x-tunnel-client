@@ -493,6 +493,17 @@ try {
         throw "Diagnostics port detail did not include local listen addresses: '$diagnosticsPortDetail'"
     }
     Write-Host "Diagnostics ports: $diagnosticsPortStatus / $diagnosticsPortDetail"
+    $copyDiagnosticsPortsButton = Get-ByAutomationId -Root $window -AutomationId "CopyDiagnosticsPortsButton" -TimeoutSeconds $TimeoutSeconds
+    Set-Clipboard -Value ""
+    Invoke-Element $copyDiagnosticsPortsButton
+    $clipboardDiagnosticsPorts = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy diagnostics ports did not place port details on the clipboard." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "Ports: available" -and $text -match "127.0.0.1") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Copied diagnostics ports: $($clipboardDiagnosticsPorts.Split([Environment]::NewLine)[0])"
 
     $targetCombo = Get-ByAutomationId -Root $window -AutomationId "NetworkTestTargetComboBox" -TimeoutSeconds $TimeoutSeconds
     Select-ComboBoxItem -Element $targetCombo -Name "Cloudflare Trace" -TimeoutSeconds $TimeoutSeconds
