@@ -12,17 +12,22 @@ Windows desktop client for `x-tunnel`, implemented as a separate C# / Avalonia r
 ## Features
 
 - Single-instance Windows desktop app with tray menu.
-- Overview, Profiles, Logs, Diagnostics, and Settings pages.
+- Overview dashboard with runtime, traffic, channel, listener, reconnect, proxy, recent-log, and raw-detail panels.
+- Profiles page with structured form editing, advanced JSON editing, core-backed format/check, field issue list, secret validation, and local port checks.
+- Logs page with runtime log filtering.
+- Diagnostics and Settings pages.
+- Tray menu for connect, disconnect, restart, copy proxy address, diagnostics, restore proxy, and quit.
 - SQLite profile/settings/subscription storage.
 - DPAPI-protected profile secrets.
 - Runtime config generation with `token_ref` replacement.
 - Offline config check through `x-tunnel.exe -check-config`.
+- Offline config format through `x-tunnel.exe -format-config`.
 - Sidecar launch using `-control`, `-ready-file`, and `-control-token-file`.
 - Control API client for version/capabilities, health, status, logs, stats, config check/format, and runtime stop.
 - Supervisor state machine: stopped, starting, running, degraded, stopping, faulted, recovering.
 - WinINET system proxy mode with previous-setting restore.
 - Local PAC server mode.
-- Startup registry integration.
+- Startup registry integration, minimized startup, delayed auto-connect, and selected-profile auto-connect.
 - Redacted diagnostics zip export.
 - Update manifest and checksum validation primitives.
 - Subscription fetch, validation, and diffing.
