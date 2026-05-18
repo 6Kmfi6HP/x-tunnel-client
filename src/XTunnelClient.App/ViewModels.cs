@@ -1393,33 +1393,33 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         var profile = SelectedProfile;
         var summary = new StringBuilder();
-        summary.AppendLine($"Profile: {profile.Name}");
-        summary.AppendLine($"Kind: {profile.Kind}");
-        summary.AppendLine($"Source: {profile.Source}");
-        summary.AppendLine($"Validation: {profile.ValidationState} - {profile.ValidationDetail}");
-        summary.AppendLine($"Endpoint test: {profile.EndpointTestState} - {profile.EndpointTestDetail}");
+        summary.AppendLine($"{T.Profile}: {profile.Name}");
+        summary.AppendLine($"{L("Kind", "类型")}: {profile.Kind}");
+        summary.AppendLine($"{L("Source", "来源")}: {profile.Source}");
+        summary.AppendLine($"{T.Validation}: {LocalizeValidationState(profile)} - {LocalizeValidationDetail(profile)}");
+        summary.AppendLine($"{L("Endpoint test", "端点测试")}: {LocalizeEndpointTestState(profile)} - {LocalizeEndpointTestDetail(profile)}");
 
         try
         {
             var endpoints = _configService.GetLocalProxyEndpoints(profile.CoreConfigJson);
-            summary.AppendLine($"Local proxy: {BuildProxyEndpointSummary(endpoints)}");
+            summary.AppendLine($"{L("Local proxy", "本地代理")}: {BuildProxyEndpointSummary(endpoints)}");
         }
         catch (Exception ex)
         {
-            summary.AppendLine($"Local proxy: {ex.Message}");
+            summary.AppendLine($"{L("Local proxy", "本地代理")}: {ex.Message}");
         }
 
         try
         {
             var endpoint = _configService.GetForwardEndpoint(profile.CoreConfigJson);
-            summary.AppendLine($"Forward: {endpoint.Display}");
+            summary.AppendLine($"{L("Forward", "转发")}: {endpoint.Display}");
         }
         catch (Exception ex)
         {
-            summary.AppendLine($"Forward: {ex.Message}");
+            summary.AppendLine($"{L("Forward", "转发")}: {ex.Message}");
         }
 
-        summary.AppendLine("Config:");
+        summary.AppendLine($"{L("Config", "配置")}:");
         summary.AppendLine(RuntimeConfigService.Redact(profile.CoreConfigJson));
         return summary.ToString().TrimEnd();
     }
@@ -1433,22 +1433,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         var profile = SelectedProfile;
         var summary = new StringBuilder();
-        summary.AppendLine($"Profile: {profile.Name}");
-        summary.AppendLine($"Kind: {profile.Kind}");
-        summary.AppendLine($"Source: {profile.Source}");
-        summary.AppendLine($"Validation: {profile.ValidationState} - {profile.ValidationDetail}");
+        summary.AppendLine($"{T.Profile}: {profile.Name}");
+        summary.AppendLine($"{L("Kind", "类型")}: {profile.Kind}");
+        summary.AppendLine($"{L("Source", "来源")}: {profile.Source}");
+        summary.AppendLine($"{T.Validation}: {LocalizeValidationState(profile)} - {LocalizeValidationDetail(profile)}");
         if (!string.IsNullOrWhiteSpace(profile.LastValidationError))
         {
-            summary.AppendLine($"Last error: {profile.LastValidationError}");
+            summary.AppendLine($"{L("Last error", "上次错误")}: {profile.LastValidationError}");
         }
 
         if (ProfileIssues.Count == 0)
         {
-            summary.AppendLine("Issues: none");
+            summary.AppendLine(IsChinese ? "问题: 无" : "Issues: none");
         }
         else
         {
-            summary.AppendLine("Issues:");
+            summary.AppendLine($"{T.Issue}:");
             foreach (var issue in ProfileIssues)
             {
                 summary.AppendLine($"- {issue.Field} [{issue.Severity}]: {issue.Message}");
@@ -1461,20 +1461,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string BuildOverviewStatusSummary()
     {
         var summary = new StringBuilder();
-        summary.AppendLine($"Status: {ConnectionHeading}");
-        summary.AppendLine($"Detail: {ConnectionDetail}");
-        summary.AppendLine($"Profile: {ActiveProfileSummary}");
-        summary.AppendLine($"Proxy mode: {ProxySummary}");
-        summary.AppendLine($"Local proxy: {LocalProxySummary}");
-        summary.AppendLine($"Traffic: {StatusBarTrafficSummary}");
-        summary.AppendLine($"Channels: {StatusBarChannelSummary}");
-        summary.AppendLine($"Network: {NetworkTestSummary}");
-        summary.AppendLine($"Network detail: {NetworkTestDetail}");
-        summary.AppendLine($"Network updated: {NetworkTestLastRunText}");
-        summary.AppendLine($"Network target: {NetworkTestUrl}");
-        summary.AppendLine($"Core: {CoreSummary}");
-        summary.AppendLine($"Validation: {ValidationSummary}");
-        summary.AppendLine($"Issue: {RecentIssueSummary}");
+        summary.AppendLine($"{L("Status", "状态")}: {ConnectionHeading}");
+        summary.AppendLine($"{L("Detail", "详情")}: {ConnectionDetail}");
+        summary.AppendLine($"{T.Profile}: {ActiveProfileSummary}");
+        summary.AppendLine($"{T.ProxyMode}: {ProxySummary}");
+        summary.AppendLine($"{L("Local proxy", "本地代理")}: {LocalProxySummary}");
+        summary.AppendLine($"{T.Traffic}: {StatusBarTrafficSummary}");
+        summary.AppendLine($"{T.Channels}: {StatusBarChannelSummary}");
+        summary.AppendLine($"{T.Network}: {NetworkTestSummary}");
+        summary.AppendLine($"{L("Network detail", "网络详情")}: {NetworkTestDetail}");
+        summary.AppendLine($"{L("Network updated", "网络更新时间")}: {NetworkTestLastRunText}");
+        summary.AppendLine($"{L("Network target", "网络目标")}: {NetworkTestUrl}");
+        summary.AppendLine($"{T.Core}: {CoreSummary}");
+        summary.AppendLine($"{T.Validation}: {ValidationSummary}");
+        summary.AppendLine($"{T.Issue}: {RecentIssueSummary}");
         return summary.ToString().TrimEnd();
     }
 
@@ -1739,7 +1739,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SelectedProfile.LastValidationError = null;
             RefreshProfileListItem(SelectedProfile);
             ProfileIssues.Clear();
-            ErrorText = "Profile saved";
+            ErrorText = L("Profile saved", "配置已保存");
             RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
             return true;
         }
@@ -1813,7 +1813,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SelectedProfile.CoreConfigJson = obj.ToJsonString(JsonDefaults.Pretty);
             OnPropertyChanged(nameof(SelectedProfile));
             ProfileIssues.Clear();
-            ErrorText = "Structured fields applied to JSON";
+            ErrorText = L("Structured fields applied to JSON", "结构化字段已应用到 JSON");
             RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
         }
         catch (Exception ex)
@@ -1845,7 +1845,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 {
                     Field = "core",
                     Severity = "warning",
-                    Message = "Core path not found; only local JSON validation was run."
+                    Message = L("Core path not found; only local JSON validation was run.", "未找到内核路径；仅运行本地 JSON 校验。")
                 });
             }
             issues.AddRange(CheckProfilePorts(runtimeJson));
@@ -1856,11 +1856,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _repository.SaveProfile(SelectedProfile);
             RefreshProfileListItem(SelectedProfile);
             ReplaceCollection(ProfileIssues, issues.Count == 0
-                ? [new ProfileIssue { Field = "profile", Severity = "ok", Message = "Core config check and local port checks passed." }]
+                ? [new ProfileIssue { Field = "profile", Severity = "ok", Message = L("Core config check and local port checks passed.", "内核配置检查和本地端口检查已通过。") }]
                 : issues);
             ErrorText = hasErrors
-                ? "Profile has blocking validation issues"
-                : hasWarnings ? "Profile validated with warnings" : "Profile ready";
+                ? L("Profile has blocking validation issues", "配置存在阻塞校验问题")
+                : hasWarnings ? L("Profile validated with warnings", "配置校验通过但有警告") : L("Profile ready", "配置就绪");
         }
         catch (Exception ex)
         {
@@ -1889,12 +1889,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 var formatInput = BuildCoreFormatInput(obj, out var secretField);
                 var formatted = await _coreConfigTool.FormatJsonAsync(corePath, formatInput);
                 SelectedProfile.CoreConfigJson = RestoreProfileSecretField(formatted, secretField);
-                ErrorText = "Formatted with core";
+                ErrorText = L("Formatted with core", "已使用内核格式化");
             }
             else
             {
                 SelectedProfile.CoreConfigJson = obj.ToJsonString(JsonDefaults.Pretty);
-                ErrorText = "Core path not found; formatted locally";
+                ErrorText = L("Core path not found; formatted locally", "未找到内核路径；已在本地格式化");
             }
             SelectedProfile.LastValidationError = null;
             RefreshProfileListItem(SelectedProfile);
@@ -2427,7 +2427,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var summary = BuildProxyEndpointSummary(endpoints);
             LocalProxySummary = summary;
             CopyTextRequested?.Invoke(this, summary);
-            ErrorText = "Proxy address copied";
+            ErrorText = L("Proxy address copied", "代理地址已复制");
         }
         catch (Exception ex)
         {
@@ -2439,7 +2439,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
         CopyTextRequested?.Invoke(this, BuildOverviewStatusSummary());
-        ErrorText = "Overview status copied";
+        ErrorText = L("Overview status copied", "概览状态已复制");
     }
 
     private void CopyOverviewRecentLogs()
@@ -2450,7 +2450,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, LogText);
-        ErrorText = "Overview recent logs copied";
+        ErrorText = L("Overview recent logs copied", "概览最近日志已复制");
     }
 
     private void CopyOverviewRuntimeDetails()
@@ -2461,18 +2461,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, BuildOverviewRuntimeDetailsShare());
-        ErrorText = "Overview runtime details copied";
+        ErrorText = L("Overview runtime details copied", "概览运行详情已复制");
     }
 
     private string BuildOverviewRuntimeDetailsShare()
     {
         var summary = new StringBuilder();
-        summary.AppendLine("Status:");
+        summary.AppendLine($"{L("Status", "状态")}:");
         summary.AppendLine(StatusText.Trim());
         if (!string.IsNullOrWhiteSpace(StatsText))
         {
             summary.AppendLine();
-            summary.AppendLine("Stats:");
+            summary.AppendLine($"{L("Stats", "统计")}:");
             summary.AppendLine(StatsText.Trim());
         }
 
@@ -2491,7 +2491,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             var metrics = await control.GetMetricsAsync();
             CopyTextRequested?.Invoke(this, metrics);
-            ErrorText = "Runtime metrics copied";
+            ErrorText = L("Runtime metrics copied", "运行指标已复制");
         }
         catch (Exception ex)
         {
@@ -2507,7 +2507,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, BuildSelectedProfileSummary());
-        ErrorText = "Profile summary copied";
+        ErrorText = L("Profile summary copied", "配置摘要已复制");
     }
 
     private void CopyProfileConfig()
@@ -2518,7 +2518,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, SelectedProfile.CoreConfigJson);
-        ErrorText = "Profile config copied";
+        ErrorText = L("Profile config copied", "配置 JSON 已复制");
     }
 
     private void CopyProfileIssues()
@@ -2529,7 +2529,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, BuildSelectedProfileIssuesReport());
-        ErrorText = "Profile issues copied";
+        ErrorText = L("Profile issues copied", "配置问题已复制");
     }
 
     private void UseSelectedProfileAtStartup()
@@ -2542,7 +2542,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Settings.AutoConnectProfileId = SelectedProfile.Id;
         SaveSettings();
         NotifyStartupProfileChanged();
-        ErrorText = $"Startup profile: {SelectedProfile.Name}";
+        ErrorText = IsChinese ? $"启动配置: {SelectedProfile.Name}" : $"Startup profile: {SelectedProfile.Name}";
     }
 
     private void ClearStartupProfile()
@@ -2550,7 +2550,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         Settings.AutoConnectProfileId = null;
         SaveSettings();
         NotifyStartupProfileChanged();
-        ErrorText = "Startup profile cleared";
+        ErrorText = L("Startup profile cleared", "启动配置已清除");
     }
 
     private void NotifyStartupProfileChanged()
@@ -2574,7 +2574,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            ErrorText = $"Open folder failed: {ex.Message}";
+            ErrorText = IsChinese ? $"打开文件夹失败: {ex.Message}" : $"Open folder failed: {ex.Message}";
         }
     }
 
@@ -2593,7 +2593,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, FilteredLogText);
-        ErrorText = "Filtered logs copied";
+        ErrorText = L("Filtered logs copied", "已复制过滤后的日志");
     }
 
     private void CopySubscriptionStatus()
@@ -3999,13 +3999,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 {
                     Field = "listen",
                     Severity = "ok",
-                    Message = $"{result.Address} is available."
+                    Message = IsChinese ? $"{result.Address} 可用。" : $"{result.Address} is available."
                 }
                 : new ProfileIssue
                 {
                     Field = "listen",
                     Severity = "error",
-                    Message = $"{result.Address} is occupied or cannot bind: {result.Error}"
+                    Message = IsChinese
+                        ? $"{result.Address} 被占用或无法绑定: {result.Error}"
+                        : $"{result.Address} is occupied or cannot bind: {result.Error}"
                 };
         }
     }

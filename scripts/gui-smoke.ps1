@@ -1942,6 +1942,16 @@ try {
         }
         return $null
     }
+    $copyProfileSummaryButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileSummaryButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $copyProfileSummaryButton
+    $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $localizedProfileCopyText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized profile copy feedback did not appear after switching to Chinese." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "配置摘要已复制") {
+            return $text
+        }
+        return $null
+    }
     $subscriptionsTab = Get-ByAutomationId -Root $window -AutomationId "SubscriptionsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $subscriptionsTab
     $subscriptionSummary = Get-ByAutomationId -Root $window -AutomationId "SubscriptionSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
@@ -1963,7 +1973,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedProfileSummary / $localizedProfileState / $localizedSubscriptionSummary / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedSubscriptionSummary / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force
