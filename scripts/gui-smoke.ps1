@@ -1908,6 +1908,22 @@ try {
         }
         return $null
     }
+    $themeCombo = Get-ByAutomationId -Root $window -AutomationId "ThemeComboBox" -TimeoutSeconds $TimeoutSeconds
+    $localizedThemeText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Theme option did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $themeCombo
+        if ($text -eq "跟随系统") {
+            return $text
+        }
+        return $null
+    }
+    $updateChannelCombo = Get-ByAutomationId -Root $window -AutomationId "UpdateChannelComboBox" -TimeoutSeconds $TimeoutSeconds
+    $localizedUpdateChannelText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Update channel option did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $updateChannelCombo
+        if ($text -eq "稳定版") {
+            return $text
+        }
+        return $null
+    }
     $saveSettingsButton = Get-ByAutomationId -Root $window -AutomationId "SaveSettingsButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $saveSettingsButton
     $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
@@ -1918,7 +1934,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force
@@ -1954,7 +1970,15 @@ try {
         }
         return $null
     }
-    Write-Host "Language persisted after restart: $persistedLanguage / $persistedLanguageLabel"
+    $themeCombo = Get-ByAutomationId -Root $window -AutomationId "ThemeComboBox" -TimeoutSeconds $TimeoutSeconds
+    $persistedThemeText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Persisted Chinese theme option was not visible after restart." -Condition {
+        $text = Get-ElementValue $themeCombo
+        if ($text -eq "跟随系统") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Language persisted after restart: $persistedLanguage / $persistedLanguageLabel / $persistedThemeText"
     Write-Host "GUI smoke passed"
 }
 finally {

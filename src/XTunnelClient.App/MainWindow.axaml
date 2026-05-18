@@ -115,7 +115,7 @@
               <StackPanel Grid.Column="1" Spacing="8">
                 <TextBlock Classes="section" Text="{Binding T.Control}"/>
                 <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberBinding="{Binding Name}" MinHeight="34"/>
-                <ComboBox ItemsSource="{Binding ProxyModes}" SelectedItem="{Binding SelectedProxyMode}" MinHeight="34"/>
+                <ComboBox ItemsSource="{Binding ProxyModeOptions}" SelectedItem="{Binding SelectedProxyModeOption}" DisplayMemberBinding="{Binding DisplayName}" MinHeight="34" automation:AutomationProperties.AutomationId="ProxyModeComboBox"/>
                 <TextBlock Classes="caption" Text="{Binding T.ProxyMode}"/>
                 <WrapPanel ItemSpacing="8" LineSpacing="8">
                   <Button Content="{Binding T.ProxyModeOff}" Command="{Binding SetProxyModeOffCommand}" automation:AutomationProperties.AutomationId="SetProxyModeOffButton"/>
@@ -231,7 +231,7 @@
               </Grid>
               <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
                 <TextBlock Text="{Binding T.Sort}" Classes="caption" VerticalAlignment="Center"/>
-                <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileSortOptions}" SelectedItem="{Binding SelectedProfileSort}" MinHeight="30" automation:AutomationProperties.AutomationId="ProfileSortComboBox"/>
+                <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileSortOptions}" SelectedItem="{Binding SelectedProfileSortOption}" DisplayMemberBinding="{Binding DisplayName}" MinHeight="30" automation:AutomationProperties.AutomationId="ProfileSortComboBox"/>
               </Grid>
               <WrapPanel ItemSpacing="8" LineSpacing="8">
                 <Button Content="{Binding T.New}" Command="{Binding NewProfileCommand}" automation:AutomationProperties.AutomationId="NewProfileButton"/>
@@ -335,7 +335,7 @@
             </Grid>
             <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,0,0,8">
               <TextBlock Text="{Binding T.Sort}" Classes="caption" VerticalAlignment="Center"/>
-              <ComboBox Grid.Column="1" ItemsSource="{Binding SubscriptionSortOptions}" SelectedItem="{Binding SelectedSubscriptionSort}" MinHeight="30" automation:AutomationProperties.AutomationId="SubscriptionSortComboBox"/>
+              <ComboBox Grid.Column="1" ItemsSource="{Binding SubscriptionSortOptions}" SelectedItem="{Binding SelectedSubscriptionSortOption}" DisplayMemberBinding="{Binding DisplayName}" MinHeight="30" automation:AutomationProperties.AutomationId="SubscriptionSortComboBox"/>
             </Grid>
             <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10" ItemSpacing="8" LineSpacing="8">
               <Button Content="{Binding T.New}" Command="{Binding NewSubscriptionCommand}" automation:AutomationProperties.AutomationId="NewSubscriptionButton"/>
@@ -391,7 +391,7 @@
           <WrapPanel ItemSpacing="8" LineSpacing="8">
             <Button Content="{Binding T.RefreshDiagnostics}" Command="{Binding RefreshDiagnosticsCommand}" automation:AutomationProperties.AutomationId="LogsRefreshDiagnosticsButton"/>
             <Button Content="{Binding T.ExportDiagnostics}" Click="ExportDiagnostics_OnClick" automation:AutomationProperties.AutomationId="ExportDiagnosticsButton"/>
-            <ComboBox Width="150" ItemsSource="{Binding LogLevelFilters}" SelectedItem="{Binding SelectedLogLevelFilter}" automation:AutomationProperties.AutomationId="LogLevelFilterComboBox"/>
+            <ComboBox Width="150" ItemsSource="{Binding LogLevelFilters}" SelectedItem="{Binding SelectedLogLevelFilterOption}" DisplayMemberBinding="{Binding DisplayName}" automation:AutomationProperties.AutomationId="LogLevelFilterComboBox"/>
             <TextBox Width="390" Text="{Binding LogFilterText}" PlaceholderText="{Binding T.FilterLogsPlaceholder}" automation:AutomationProperties.AutomationId="LogFilterTextBox"/>
             <Button Content="{Binding T.ClearFilters}" Command="{Binding ClearLogFiltersCommand}" automation:AutomationProperties.AutomationId="ClearLogFiltersButton"/>
             <Button Content="{Binding T.CopyLogs}" Command="{Binding CopyFilteredLogsCommand}" automation:AutomationProperties.AutomationId="CopyFilteredLogsButton"/>
@@ -486,7 +486,7 @@
             <TextBlock Grid.Row="3" Text="{Binding T.StartupDelaySeconds}" VerticalAlignment="Center"/>
             <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.StartupDelaySeconds}" Minimum="0" Maximum="120"/>
             <TextBlock Grid.Row="4" Text="{Binding T.Theme}" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding SelectedTheme}"/>
+            <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding SelectedThemeOption}" DisplayMemberBinding="{Binding DisplayName}" automation:AutomationProperties.AutomationId="ThemeComboBox"/>
             <TextBlock Grid.Row="5" Text="{Binding T.Language}" VerticalAlignment="Center" automation:AutomationProperties.AutomationId="SettingsLanguageLabel"/>
             <StackPanel Grid.Row="5" Grid.Column="1" Spacing="4">
               <ComboBox ItemsSource="{Binding LanguageOptions}" SelectedItem="{Binding SelectedLanguage}" DisplayMemberBinding="{Binding DisplayName}" MinHeight="30" automation:AutomationProperties.AutomationId="LanguageComboBox"/>
@@ -497,7 +497,7 @@
             <TextBlock Grid.Row="7" Text="{Binding T.LogRetentionDays}" VerticalAlignment="Center"/>
             <NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding Settings.LogRetentionDays}" Minimum="1" Maximum="365"/>
             <TextBlock Grid.Row="8" Text="{Binding T.UpdateChannel}" VerticalAlignment="Center"/>
-            <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding UpdateChannels}" SelectedItem="{Binding SelectedUpdateChannel}"/>
+            <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding UpdateChannels}" SelectedItem="{Binding SelectedUpdateChannelOption}" DisplayMemberBinding="{Binding DisplayName}" automation:AutomationProperties.AutomationId="UpdateChannelComboBox"/>
             <TextBlock Grid.Row="9" Text="{Binding T.CoreExecutable}" VerticalAlignment="Center"/>
             <Grid Grid.Row="9" Grid.Column="1" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
               <TextBox Text="{Binding CorePath}" PlaceholderText="{Binding T.CorePathPlaceholder}" automation:AutomationProperties.AutomationId="SettingsCorePathTextBox"/>

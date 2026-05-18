@@ -319,14 +319,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<ProfileIssue> ProfileIssues { get; } = [];
     public ObservableCollection<Subscription> Subscriptions { get; } = [];
     public ObservableCollection<Subscription> FilteredSubscriptions { get; } = [];
-    public IReadOnlyList<ProxyMode> ProxyModes { get; } = Enum.GetValues<ProxyMode>();
+    public ObservableCollection<SelectOption<ProxyMode>> ProxyModeOptions { get; } = [];
     public IReadOnlyList<string> ProfileKinds { get; } = ["client", "server"];
-    public IReadOnlyList<string> ThemeOptions { get; } = ["system", "light", "dark"];
-    public IReadOnlyList<string> UpdateChannels { get; } = ["stable", "beta", "disabled"];
+    public ObservableCollection<SelectOption<string>> ThemeOptions { get; } = [];
+    public ObservableCollection<SelectOption<string>> UpdateChannels { get; } = [];
     public IReadOnlyList<string> SubscriptionTrustPolicies { get; } = ["confirm", "auto"];
-    public IReadOnlyList<string> LogLevelFilters { get; } = ["All", "debug", "info", "warn", "error"];
-    public IReadOnlyList<string> ProfileSortOptions { get; } = ["Saved", "Name", "Endpoint"];
-    public IReadOnlyList<string> SubscriptionSortOptions { get; } = ["Saved", "Name", "Updated", "Status"];
+    public ObservableCollection<SelectOption<string>> LogLevelFilters { get; } = [];
+    public ObservableCollection<SelectOption<string>> ProfileSortOptions { get; } = [];
+    public ObservableCollection<SelectOption<string>> SubscriptionSortOptions { get; } = [];
     public IReadOnlyList<string> NetworkTestTargets { get; } = ["Google 204", "Microsoft NCSI", "Cloudflare Trace", "Firefox Success", "Custom"];
     public IReadOnlyList<LanguageOption> LanguageOptions { get; } = AppText.LanguageOptions;
 
@@ -381,7 +381,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _selectedProxyMode, value))
             {
                 Settings.DefaultProxyMode = value;
+                OnPropertyChanged(nameof(SelectedProxyModeOption));
                 RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+            }
+        }
+    }
+
+    public SelectOption<ProxyMode>? SelectedProxyModeOption
+    {
+        get => FindOption(ProxyModeOptions, SelectedProxyMode);
+        set
+        {
+            if (value is not null)
+            {
+                SelectedProxyMode = value.Value;
             }
         }
     }
@@ -496,7 +509,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _selectedLogLevelFilter, value))
             {
+                OnPropertyChanged(nameof(SelectedLogLevelFilterOption));
                 UpdateFilteredLogText();
+            }
+        }
+    }
+
+    public SelectOption<string>? SelectedLogLevelFilterOption
+    {
+        get => FindOption(LogLevelFilters, SelectedLogLevelFilter);
+        set
+        {
+            if (value is not null)
+            {
+                SelectedLogLevelFilter = value.Value;
             }
         }
     }
@@ -520,7 +546,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _selectedProfileSort, value))
             {
+                OnPropertyChanged(nameof(SelectedProfileSortOption));
                 UpdateFilteredProfiles();
+            }
+        }
+    }
+
+    public SelectOption<string>? SelectedProfileSortOption
+    {
+        get => FindOption(ProfileSortOptions, SelectedProfileSort);
+        set
+        {
+            if (value is not null)
+            {
+                SelectedProfileSort = value.Value;
             }
         }
     }
@@ -622,7 +661,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _selectedSubscriptionSort, value))
             {
+                OnPropertyChanged(nameof(SelectedSubscriptionSortOption));
                 UpdateFilteredSubscriptions();
+            }
+        }
+    }
+
+    public SelectOption<string>? SelectedSubscriptionSortOption
+    {
+        get => FindOption(SubscriptionSortOptions, SelectedSubscriptionSort);
+        set
+        {
+            if (value is not null)
+            {
+                SelectedSubscriptionSort = value.Value;
             }
         }
     }
@@ -1019,7 +1071,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 Settings.Theme = value;
                 ApplyTheme(value);
+                OnPropertyChanged(nameof(SelectedThemeOption));
                 OnPropertyChanged();
+            }
+        }
+    }
+
+    public SelectOption<string>? SelectedThemeOption
+    {
+        get => FindOption(ThemeOptions, SelectedTheme);
+        set
+        {
+            if (value is not null)
+            {
+                SelectedTheme = value.Value;
             }
         }
     }
@@ -1053,7 +1118,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (!string.Equals(Settings.UpdateChannel, value, StringComparison.Ordinal))
             {
                 Settings.UpdateChannel = value;
+                OnPropertyChanged(nameof(SelectedUpdateChannelOption));
                 OnPropertyChanged();
+            }
+        }
+    }
+
+    public SelectOption<string>? SelectedUpdateChannelOption
+    {
+        get => FindOption(UpdateChannels, SelectedUpdateChannel);
+        set
+        {
+            if (value is not null)
+            {
+                SelectedUpdateChannel = value.Value;
             }
         }
     }
@@ -2569,6 +2647,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    private static SelectOption<T>? FindOption<T>(IEnumerable<SelectOption<T>> options, T value)
+    {
+        return options.FirstOrDefault(x => EqualityComparer<T>.Default.Equals(x.Value, value));
+    }
+
     private static ulong GetJsonUInt64(JsonElement? element, string propertyName)
     {
         if (element is not { ValueKind: JsonValueKind.Object } obj || !obj.TryGetProperty(propertyName, out var value))
@@ -2682,6 +2765,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             ProxyMode.System => T.ProxyModeSystem,
             ProxyMode.Pac => T.ProxyModePac,
+            ProxyMode.Tun => T.ProxyModeTun,
             _ => T.ProxyModeOff
         };
     }
@@ -3437,6 +3521,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         CultureInfo.CurrentCulture = culture;
         CultureInfo.CurrentUICulture = culture;
         T = AppText.For(Settings.Language);
+        RefreshOptionLists();
         OnPropertyChanged(nameof(SelectedLanguage));
         OnPropertyChanged(nameof(RuntimeStateText));
 
@@ -3453,6 +3538,57 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         UpdateSubscriptionSummary();
         UpdateFilteredLogText();
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+    }
+
+    private void RefreshOptionLists()
+    {
+        ReplaceCollection(ProxyModeOptions,
+        [
+            new SelectOption<ProxyMode>(ProxyMode.Off, T.ProxyModeOff),
+            new SelectOption<ProxyMode>(ProxyMode.System, T.ProxyModeSystem),
+            new SelectOption<ProxyMode>(ProxyMode.Pac, T.ProxyModePac),
+            new SelectOption<ProxyMode>(ProxyMode.Tun, T.ProxyModeTun)
+        ]);
+        ReplaceCollection(ThemeOptions,
+        [
+            new SelectOption<string>("system", T.ThemeSystem),
+            new SelectOption<string>("light", T.ThemeLight),
+            new SelectOption<string>("dark", T.ThemeDark)
+        ]);
+        ReplaceCollection(UpdateChannels,
+        [
+            new SelectOption<string>("stable", T.UpdateChannelStable),
+            new SelectOption<string>("beta", T.UpdateChannelBeta),
+            new SelectOption<string>("disabled", T.UpdateChannelDisabled)
+        ]);
+        ReplaceCollection(LogLevelFilters,
+        [
+            new SelectOption<string>("All", T.FilterAll),
+            new SelectOption<string>("debug", T.FilterDebug),
+            new SelectOption<string>("info", T.FilterInfo),
+            new SelectOption<string>("warn", T.FilterWarn),
+            new SelectOption<string>("error", T.FilterError)
+        ]);
+        ReplaceCollection(ProfileSortOptions,
+        [
+            new SelectOption<string>("Saved", T.SortSaved),
+            new SelectOption<string>("Name", T.SortName),
+            new SelectOption<string>("Endpoint", T.SortEndpoint)
+        ]);
+        ReplaceCollection(SubscriptionSortOptions,
+        [
+            new SelectOption<string>("Saved", T.SortSaved),
+            new SelectOption<string>("Name", T.SortName),
+            new SelectOption<string>("Updated", T.SortUpdated),
+            new SelectOption<string>("Status", T.SortStatus)
+        ]);
+
+        OnPropertyChanged(nameof(SelectedProxyModeOption));
+        OnPropertyChanged(nameof(SelectedThemeOption));
+        OnPropertyChanged(nameof(SelectedUpdateChannelOption));
+        OnPropertyChanged(nameof(SelectedLogLevelFilterOption));
+        OnPropertyChanged(nameof(SelectedProfileSortOption));
+        OnPropertyChanged(nameof(SelectedSubscriptionSortOption));
     }
 
     private static void ApplyTheme(string? theme)

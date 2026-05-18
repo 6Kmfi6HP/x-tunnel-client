@@ -8,6 +8,11 @@ public sealed record LanguageOption(string Code, string DisplayName)
     public override string ToString() => DisplayName;
 }
 
+public sealed record SelectOption<T>(T Value, string DisplayName)
+{
+    public override string ToString() => DisplayName;
+}
+
 public sealed class AppText
 {
     private static readonly IReadOnlyDictionary<string, string> English = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -36,6 +41,7 @@ public sealed class AppText
         [nameof(ProxyModeOff)] = "Off",
         [nameof(ProxyModeSystem)] = "System",
         [nameof(ProxyModePac)] = "PAC",
+        [nameof(ProxyModeTun)] = "TUN",
         [nameof(CorePathPlaceholder)] = "Auto-detect or full path to x-tunnel.exe",
         [nameof(Save)] = "Save",
         [nameof(RestoreProxy)] = "Restore Proxy",
@@ -107,10 +113,16 @@ public sealed class AppText
         [nameof(AutoConnectSelectedProfile)] = "Auto-connect selected profile",
         [nameof(StartupDelaySeconds)] = "Startup delay seconds",
         [nameof(Theme)] = "Theme",
+        [nameof(ThemeSystem)] = "System",
+        [nameof(ThemeLight)] = "Light",
+        [nameof(ThemeDark)] = "Dark",
         [nameof(Language)] = "Language",
         [nameof(PacBypassRules)] = "PAC bypass rules",
         [nameof(LogRetentionDays)] = "Log retention days",
         [nameof(UpdateChannel)] = "Update channel",
+        [nameof(UpdateChannelStable)] = "Stable",
+        [nameof(UpdateChannelBeta)] = "Beta",
+        [nameof(UpdateChannelDisabled)] = "Disabled",
         [nameof(CoreExecutable)] = "Core executable",
         [nameof(UseDetected)] = "Use Detected",
         [nameof(CheckVersion)] = "Check Version",
@@ -153,6 +165,16 @@ public sealed class AppText
         [nameof(Channel)] = "Channel",
         [nameof(SettingsSaved)] = "Settings saved",
         [nameof(LanguageRestartNotRequired)] = "Language switches immediately and is saved for the next launch.",
+        [nameof(FilterAll)] = "All",
+        [nameof(FilterDebug)] = "Debug",
+        [nameof(FilterInfo)] = "Info",
+        [nameof(FilterWarn)] = "Warn",
+        [nameof(FilterError)] = "Error",
+        [nameof(SortSaved)] = "Saved",
+        [nameof(SortName)] = "Name",
+        [nameof(SortEndpoint)] = "Endpoint",
+        [nameof(SortUpdated)] = "Updated",
+        [nameof(SortStatus)] = "Status",
     };
 
     private static readonly IReadOnlyDictionary<string, string> Chinese = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -181,6 +203,7 @@ public sealed class AppText
         [nameof(ProxyModeOff)] = "关闭",
         [nameof(ProxyModeSystem)] = "系统",
         [nameof(ProxyModePac)] = "PAC",
+        [nameof(ProxyModeTun)] = "TUN",
         [nameof(CorePathPlaceholder)] = "自动检测或填写 x-tunnel.exe 完整路径",
         [nameof(Save)] = "保存",
         [nameof(RestoreProxy)] = "恢复代理",
@@ -252,10 +275,16 @@ public sealed class AppText
         [nameof(AutoConnectSelectedProfile)] = "自动连接选中配置",
         [nameof(StartupDelaySeconds)] = "启动延迟秒数",
         [nameof(Theme)] = "主题",
+        [nameof(ThemeSystem)] = "跟随系统",
+        [nameof(ThemeLight)] = "浅色",
+        [nameof(ThemeDark)] = "深色",
         [nameof(Language)] = "语言",
         [nameof(PacBypassRules)] = "PAC 绕过规则",
         [nameof(LogRetentionDays)] = "日志保留天数",
         [nameof(UpdateChannel)] = "更新通道",
+        [nameof(UpdateChannelStable)] = "稳定版",
+        [nameof(UpdateChannelBeta)] = "测试版",
+        [nameof(UpdateChannelDisabled)] = "禁用",
         [nameof(CoreExecutable)] = "内核程序",
         [nameof(UseDetected)] = "使用检测结果",
         [nameof(CheckVersion)] = "检查版本",
@@ -298,6 +327,16 @@ public sealed class AppText
         [nameof(Channel)] = "通道",
         [nameof(SettingsSaved)] = "设置已保存",
         [nameof(LanguageRestartNotRequired)] = "语言会立即切换，并在下次启动时保持。",
+        [nameof(FilterAll)] = "全部",
+        [nameof(FilterDebug)] = "调试",
+        [nameof(FilterInfo)] = "信息",
+        [nameof(FilterWarn)] = "警告",
+        [nameof(FilterError)] = "错误",
+        [nameof(SortSaved)] = "保存顺序",
+        [nameof(SortName)] = "名称",
+        [nameof(SortEndpoint)] = "端点",
+        [nameof(SortUpdated)] = "更新时间",
+        [nameof(SortStatus)] = "状态",
     };
 
     private AppText(string languageCode, IReadOnlyDictionary<string, string> values)
@@ -382,6 +421,7 @@ public sealed class AppText
     public string ProxyModeOff => Get();
     public string ProxyModeSystem => Get();
     public string ProxyModePac => Get();
+    public string ProxyModeTun => Get();
     public string CorePathPlaceholder => Get();
     public string Save => Get();
     public string RestoreProxy => Get();
@@ -453,10 +493,16 @@ public sealed class AppText
     public string AutoConnectSelectedProfile => Get();
     public string StartupDelaySeconds => Get();
     public string Theme => Get();
+    public string ThemeSystem => Get();
+    public string ThemeLight => Get();
+    public string ThemeDark => Get();
     public string Language => Get();
     public string PacBypassRules => Get();
     public string LogRetentionDays => Get();
     public string UpdateChannel => Get();
+    public string UpdateChannelStable => Get();
+    public string UpdateChannelBeta => Get();
+    public string UpdateChannelDisabled => Get();
     public string CoreExecutable => Get();
     public string UseDetected => Get();
     public string CheckVersion => Get();
@@ -499,4 +545,14 @@ public sealed class AppText
     public string Channel => Get();
     public string SettingsSaved => Get();
     public string LanguageRestartNotRequired => Get();
+    public string FilterAll => Get();
+    public string FilterDebug => Get();
+    public string FilterInfo => Get();
+    public string FilterWarn => Get();
+    public string FilterError => Get();
+    public string SortSaved => Get();
+    public string SortName => Get();
+    public string SortEndpoint => Get();
+    public string SortUpdated => Get();
+    public string SortStatus => Get();
 }
