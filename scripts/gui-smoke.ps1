@@ -2112,6 +2112,14 @@ try {
         }
         return $null
     }
+    $localizedProfileBatchTextBlock = Get-ByAutomationId -Root $window -AutomationId "ProfileBatchTestTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $localizedProfileBatchText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile batch endpoint status did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $localizedProfileBatchTextBlock
+        if ($text -eq "端点测试未运行") {
+            return $text
+        }
+        return $null
+    }
     $profileState = Get-ByAutomationId -Root $window -AutomationId "ProfileListItemValidationState" -TimeoutSeconds $TimeoutSeconds
     $localizedProfileState = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile list state did not localize after switching to Chinese." -Condition {
         $text = Get-ElementValue $profileState
@@ -2282,7 +2290,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedProfileSummary / $localizedProfileState / $localizedProfileSubtitle / $($localizedProfileSummaryClipboard.Split([Environment]::NewLine)[1]) / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedProfileKindText / $localizedStatusProfileText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $localizedSubscriptionTrustText / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedProfileSummary / $localizedProfileBatchText / $localizedProfileState / $localizedProfileSubtitle / $($localizedProfileSummaryClipboard.Split([Environment]::NewLine)[1]) / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedProfileKindText / $localizedStatusProfileText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $localizedSubscriptionTrustText / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force

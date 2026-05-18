@@ -2935,6 +2935,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string NetworkNotTestedText => L("Not tested", "未测试");
     private string TestingNetworkText => L("Testing network...", "正在测试网络...");
     private string TestingProfileEndpointText => L("Testing profile forward endpoint...", "正在测试配置转发端点...");
+    private string EndpointTestsNotRunText => L("Endpoint tests not run", "端点测试未运行");
     private string DefaultNetworkTestDetailText => L("Run Test Network to check direct and proxy routes.", "运行网络测试以检查直连和代理路由。");
     private string StoppedText => L("Stopped", "已停止");
 
@@ -3991,6 +3992,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ProfileEndpointTestText = NetworkNotTestedText;
             ProfileEndpointTestLastRunText = L("Forward test not run", "转发测试未运行");
             SetProfileEndpointRouteNotTested();
+        }
+
+        if (IsAnyText(ProfileBatchTestText, "Endpoint tests not run", "端点测试未运行"))
+        {
+            ProfileBatchTestText = EndpointTestsNotRunText;
         }
 
         if (IsAnyText(SubscriptionStatusText, "No subscriptions configured", "未配置订阅"))
