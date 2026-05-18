@@ -52,44 +52,60 @@ public sealed class SidecarSupervisor : IDisposable
         }
 
         SetState(RuntimeState.Starting, null);
-        _paths.Ensure();
-        CleanupRuntimeFiles();
-
-        var corePath = _coreLocator.Resolve(settings)
-            ?? throw new FileNotFoundException("找不到 x-tunnel.exe。请在 Settings 指定 core 路径，或先构建 Go core 到 x-tunnel\\build\\x-tunnel.exe。");
-        _trackedCorePath = Path.GetFullPath(corePath);
-
-        var runtimePath = await _configService.WriteRuntimeConfigAsync(profile, _repository, _paths, cancellationToken);
-        var runtimeJson = await File.ReadAllTextAsync(runtimePath, cancellationToken);
-        var occupied = _portChecker.CheckRuntimeConfig(runtimeJson, _configService).Where(x => !x.Available).ToList();
-        if (occupied.Count > 0)
+        try
         {
-            throw new InvalidOperationException("本地端口占用: " + string.Join(", ", occupied.Select(x => $"{x.Address} {x.Error}")));
+            _paths.Ensure();
+            CleanupRuntimeFiles();
+
+            var corePath = _coreLocator.Resolve(settings)
+                ?? throw new FileNotFoundException("找不到 x-tunnel.exe。请在 Settings 指定 core 路径，或先构建 Go core 到 x-tunnel\\build\\x-tunnel.exe。");
+            _trackedCorePath = Path.GetFullPath(corePath);
+
+            var runtimePath = await _configService.WriteRuntimeConfigAsync(profile, _repository, _paths, cancellationToken);
+            var runtimeJson = await File.ReadAllTextAsync(runtimePath, cancellationToken);
+            var occupied = _portChecker.CheckRuntimeConfig(runtimeJson, _configService).Where(x => !x.Available).ToList();
+            if (occupied.Count > 0)
+            {
+                throw new InvalidOperationException("本地端口占用: " + string.Join(", ", occupied.Select(x => $"{x.Address} {x.Error}")));
+            }
+
+            await _configTool.CheckFileAsync(corePath, runtimePath, cancellationToken);
+
+            var coreLogPath = _paths.CoreLogPath();
+            _process = StartCore(corePath, runtimePath, coreLogPath);
+            _ = PipeProcessOutputAsync(_process, coreLogPath, cancellationToken);
+
+            var ready = await WaitReadyAsync(_paths.ReadyFile, TimeSpan.FromSeconds(10), cancellationToken);
+            var token = (await File.ReadAllTextAsync(_paths.TokenFile, cancellationToken)).Trim();
+            _control = new ControlApiClient(ready.ControlUrl, token);
+
+            var version = await _control.GetVersionAsync(cancellationToken);
+            EnsureCompatible(version);
+            await _control.HealthAsync(cancellationToken);
+            CurrentStatus = await _control.GetStatusAsync(cancellationToken);
+            CurrentStats = await _control.GetStatsAsync(cancellationToken);
+            Logs.Clear();
+            Logs.AddRange(await _control.GetLogsAsync(200, cancellationToken));
+
+            var endpoints = _configService.GetLocalProxyEndpoints(runtimeJson);
+            await _proxyCoordinator.ApplyAsync(settings.DefaultProxyMode, endpoints, settings);
+
+            SetState(CurrentStatus.LastFatalError is null ? RuntimeState.Running : RuntimeState.Degraded, null);
+            StartMonitorLoop();
         }
-
-        await _configTool.CheckFileAsync(corePath, runtimePath, cancellationToken);
-
-        var coreLogPath = _paths.CoreLogPath();
-        _process = StartCore(corePath, runtimePath, coreLogPath);
-        _ = PipeProcessOutputAsync(_process, coreLogPath, cancellationToken);
-
-        var ready = await WaitReadyAsync(_paths.ReadyFile, TimeSpan.FromSeconds(10), cancellationToken);
-        var token = (await File.ReadAllTextAsync(_paths.TokenFile, cancellationToken)).Trim();
-        _control = new ControlApiClient(ready.ControlUrl, token);
-
-        var version = await _control.GetVersionAsync(cancellationToken);
-        EnsureCompatible(version);
-        await _control.HealthAsync(cancellationToken);
-        CurrentStatus = await _control.GetStatusAsync(cancellationToken);
-        CurrentStats = await _control.GetStatsAsync(cancellationToken);
-        Logs.Clear();
-        Logs.AddRange(await _control.GetLogsAsync(200, cancellationToken));
-
-        var endpoints = _configService.GetLocalProxyEndpoints(runtimeJson);
-        await _proxyCoordinator.ApplyAsync(settings.DefaultProxyMode, endpoints, settings);
-
-        SetState(CurrentStatus.LastFatalError is null ? RuntimeState.Running : RuntimeState.Degraded, null);
-        StartMonitorLoop();
+        catch (Exception ex)
+        {
+            _monitorCts?.Cancel();
+            KillTrackedProcess();
+            _control?.Dispose();
+            _control = null;
+            _process?.Dispose();
+            _process = null;
+            CurrentStatus = null;
+            CurrentStats = null;
+            SetState(RuntimeState.Faulted, ex.Message);
+            throw;
+        }
     }
 
     public async Task DisconnectAsync(CancellationToken cancellationToken = default)

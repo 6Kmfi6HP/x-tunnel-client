@@ -97,6 +97,142 @@ function Invoke-Tool {
     }
 }
 
+function Get-FreeTcpPort {
+    $Listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+    $Listener.Start()
+    try {
+        return ([System.Net.IPEndPoint]$Listener.LocalEndpoint).Port
+    }
+    finally {
+        $Listener.Stop()
+    }
+}
+
+function Wait-Until {
+    param(
+        [scriptblock]$Condition,
+        [int]$TimeoutSeconds,
+        [string]$Message
+    )
+
+    $Deadline = [DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
+    $Last = $null
+    while ([DateTimeOffset]::UtcNow -lt $Deadline) {
+        try {
+            $Value = & $Condition
+            if ($Value) {
+                return $Value
+            }
+        }
+        catch {
+            $Last = $_
+        }
+        Start-Sleep -Milliseconds 200
+    }
+
+    if ($Last) {
+        throw "$Message Last error: $($Last.Exception.Message)"
+    }
+    throw $Message
+}
+
+function Test-CanRunRuntime {
+    param([string]$Runtime)
+
+    $Architecture = [System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture
+    switch ($Runtime) {
+        "win-x64" { return $Architecture -eq [System.Runtime.InteropServices.Architecture]::X64 }
+        "win-arm64" { return $Architecture -eq [System.Runtime.InteropServices.Architecture]::Arm64 }
+        default { return $false }
+    }
+}
+
+function Assert-CoreGuiContract {
+    param([string]$CoreExe)
+
+    $Temp = Join-Path ([System.IO.Path]::GetTempPath()) ("xtunnel-core-contract-" + [Guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Force -Path $Temp | Out-Null
+    $Process = $null
+    try {
+        $SocksPort = Get-FreeTcpPort
+        do {
+            $HttpPort = Get-FreeTcpPort
+        } while ($HttpPort -eq $SocksPort)
+
+        $ConfigPath = Join-Path $Temp "client.json"
+        $ReadyPath = Join-Path $Temp "ready.json"
+        $TokenPath = Join-Path $Temp "token"
+        $ConfigJson = @"
+{
+  "listen": "socks5://127.0.0.1:$SocksPort,http://127.0.0.1:$HttpPort",
+  "forward": "ws://127.0.0.1:18080/tunnel",
+  "token": "contract-test-token",
+  "connections": 1,
+  "fallback": true,
+  "metrics": "127.0.0.1:0"
+}
+"@
+        [System.IO.File]::WriteAllText($ConfigPath, $ConfigJson, [System.Text.UTF8Encoding]::new($false))
+
+        Invoke-Tool -File $CoreExe -Arguments @("-version")
+        Invoke-Tool -File $CoreExe -Arguments @("-check-config", $ConfigPath)
+        Invoke-Tool -File $CoreExe -Arguments @("-format-config", $ConfigPath)
+
+        $StartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+        $StartInfo.FileName = $CoreExe
+        $StartInfo.WorkingDirectory = Split-Path -Parent $CoreExe
+        $StartInfo.UseShellExecute = $false
+        $StartInfo.CreateNoWindow = $true
+        $StartInfo.RedirectStandardOutput = $true
+        $StartInfo.RedirectStandardError = $true
+        foreach ($Argument in @("-config", $ConfigPath, "-control", "127.0.0.1:0", "-ready-file", $ReadyPath, "-control-token-file", $TokenPath)) {
+            $StartInfo.ArgumentList.Add($Argument)
+        }
+
+        $Process = [System.Diagnostics.Process]::Start($StartInfo)
+        if ($null -eq $Process) {
+            throw "Failed to start core contract smoke process."
+        }
+
+        $Ready = Wait-Until -TimeoutSeconds 10 -Message "Timed out waiting for bundled core ready file." -Condition {
+            if ($Process.HasExited) {
+                $StdErr = $Process.StandardError.ReadToEnd()
+                $StdOut = $Process.StandardOutput.ReadToEnd()
+                throw "Core exited before ready. stdout=$StdOut stderr=$StdErr"
+            }
+            if (Test-Path -LiteralPath $ReadyPath) {
+                return Get-Content -Raw -LiteralPath $ReadyPath | ConvertFrom-Json
+            }
+            return $null
+        }
+
+        $Token = (Get-Content -Raw -LiteralPath $TokenPath).Trim()
+        $Headers = @{ Authorization = "Bearer $Token" }
+        $VersionInfo = Invoke-RestMethod -Method Get -Uri "$($Ready.control_url)/v1/version" -TimeoutSec 5
+        if ($null -eq $VersionInfo.control_api_version -or [int]$VersionInfo.control_api_version -lt 1) {
+            throw "Core /v1/version is missing control_api_version >= 1."
+        }
+        $Capabilities = @($VersionInfo.capabilities)
+        foreach ($Required in @("status", "logs", "stats", "config_check", "config_format", "runtime_stop")) {
+            if ($Capabilities -notcontains $Required) {
+                throw "Core /v1/version is missing required capability '$Required'."
+            }
+        }
+
+        Invoke-RestMethod -Method Post -Uri "$($Ready.control_url)/v1/runtime/stop" -Headers $Headers -TimeoutSec 5 | Out-Null
+        if (-not $Process.WaitForExit(5000)) {
+            throw "Core did not stop after /v1/runtime/stop."
+        }
+    }
+    finally {
+        if ($null -ne $Process -and -not $Process.HasExited) {
+            $Process.Kill($true)
+            $Process.WaitForExit()
+        }
+        Remove-Item -LiteralPath $Temp -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Get-GitOutput {
     param(
         [string]$WorkingDirectory,
@@ -302,6 +438,8 @@ function New-VersionJson {
         core = [ordered]@{
             repository = $CoreRemote
             commit = $CoreCommit
+            version = $CoreVersion
+            configured_ref = $ReleaseConfig.coreRef
             executable = "core/x-tunnel.exe"
             sha256 = Get-FileSha256 -Path $CoreExe
         }
@@ -462,6 +600,10 @@ $ClientRemote = Get-GitOutput -WorkingDirectory $Repo -Arguments @("config", "--
 $CoreRepoFull = (Resolve-Path -LiteralPath $CoreRepo).Path
 $CoreCommit = Get-GitOutput -WorkingDirectory $CoreRepoFull -Arguments @("rev-parse", "HEAD")
 $CoreCommitShort = Get-GitOutput -WorkingDirectory $CoreRepoFull -Arguments @("rev-parse", "--short=12", "HEAD")
+$CoreVersion = Get-GitOutput -WorkingDirectory $CoreRepoFull -Arguments @("describe", "--tags", "--always", "--dirty")
+if ([string]::IsNullOrWhiteSpace($CoreVersion)) {
+    $CoreVersion = $CoreCommitShort
+}
 $CoreRemote = Get-GitOutput -WorkingDirectory $CoreRepoFull -Arguments @("config", "--get", "remote.origin.url")
 $InformationalVersion = "$PackageVersion+$ClientCommitShort"
 $Dist = [System.IO.Path]::GetFullPath($Output)
@@ -483,6 +625,7 @@ Write-Host "Package version: $PackageVersion"
 Write-Host "MSI version: $MsiVersion"
 Write-Host "Client commit: $ClientCommit"
 Write-Host "Core commit: $CoreCommit"
+Write-Host "Core version: $CoreVersion"
 
 Invoke-Tool -File $DotnetCli -Arguments @("tool", "restore")
 $DotnetSdkVersion = (& $DotnetCli --version).Trim()
@@ -521,7 +664,7 @@ foreach ($Runtime in $Runtimes) {
         Invoke-Tool -File "go" -Arguments @(
             "build",
             "-trimpath",
-            "-ldflags", "-s -w -X main.buildVersion=$ReleaseVersion -X main.buildCommit=$CoreCommitShort -X main.buildDate=$BuildDate",
+            "-ldflags", "-s -w -X main.buildVersion=$CoreVersion -X main.buildCommit=$CoreCommitShort -X main.buildDate=$BuildDate",
             "-o", $CoreOut,
             ".\cmd\x-tunnel"
         ) -WorkingDirectory $CoreRepoFull
@@ -533,6 +676,12 @@ foreach ($Runtime in $Runtimes) {
     }
 
     $CoreBuilds[$Runtime] = $CoreOut
+    if (Test-CanRunRuntime -Runtime $Runtime) {
+        Assert-CoreGuiContract -CoreExe $CoreOut
+    }
+    else {
+        Write-Host "Skipping executable core GUI contract smoke for $Runtime on $([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)."
+    }
 }
 
 foreach ($Runtime in $Runtimes) {

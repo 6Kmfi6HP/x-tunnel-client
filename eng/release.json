@@ -4,7 +4,7 @@
   "goVersion": "1.24.4",
   "wixVersion": "6.0.2",
   "coreRepository": "6Kmfi6HP/x-tunnel",
-  "coreRef": "v0.4.1",
+  "coreRef": "f7c5980b0f3a6d0d596d83a66c3642a27e6cd8d5",
   "runtimes": [
     "win-x64",
     "win-arm64"

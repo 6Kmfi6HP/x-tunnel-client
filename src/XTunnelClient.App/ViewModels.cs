@@ -1741,6 +1741,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             RuntimeState = RuntimeState.Faulted;
             ErrorText = ex.Message;
             StatusText = "Faulted";
+            RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
         }
     }
 
