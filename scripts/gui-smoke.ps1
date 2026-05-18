@@ -1924,6 +1924,35 @@ try {
         }
         return $null
     }
+    $profilesTab = Get-ByAutomationId -Root $window -AutomationId "ProfilesTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $profilesTab
+    $profileSummary = Get-ByAutomationId -Root $window -AutomationId "ProfileSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $localizedProfileSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile summary did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $profileSummary
+        if ($text -match "^配置 ") {
+            return $text
+        }
+        return $null
+    }
+    $profileState = Get-ByAutomationId -Root $window -AutomationId "ProfileListItemValidationState" -TimeoutSeconds $TimeoutSeconds
+    $localizedProfileState = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile list state did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $profileState
+        if ($text -match "^(就绪|问题|未检查)$") {
+            return $text
+        }
+        return $null
+    }
+    $subscriptionsTab = Get-ByAutomationId -Root $window -AutomationId "SubscriptionsTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $subscriptionsTab
+    $subscriptionSummary = Get-ByAutomationId -Root $window -AutomationId "SubscriptionSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $localizedSubscriptionSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Subscription summary did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $subscriptionSummary
+        if ($text -match "^订阅 ") {
+            return $text
+        }
+        return $null
+    }
+    Select-Element $settingsTab
     $saveSettingsButton = Get-ByAutomationId -Root $window -AutomationId "SaveSettingsButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $saveSettingsButton
     $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
@@ -1934,7 +1963,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedProfileSummary / $localizedProfileState / $localizedSubscriptionSummary / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force

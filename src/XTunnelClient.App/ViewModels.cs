@@ -111,6 +111,32 @@ public sealed class ProfileIssue
     public string Message { get; init; } = "";
 }
 
+public sealed class ProfileListRow
+{
+    public Profile Profile { get; init; } = new();
+    public string Name { get; init; } = "";
+    public string ListSubtitle { get; init; } = "";
+    public string ValidationState { get; init; } = "";
+    public string ValidationDetail { get; init; } = "";
+    public string ValidationBadgeBackground { get; init; } = "";
+    public string ValidationBadgeForeground { get; init; } = "";
+    public string EndpointTestState { get; init; } = "";
+    public string EndpointTestDetail { get; init; } = "";
+    public string EndpointBadgeBackground { get; init; } = "";
+    public string EndpointBadgeForeground { get; init; } = "";
+}
+
+public sealed class SubscriptionListRow
+{
+    public Subscription Subscription { get; init; } = new();
+    public string DisplayName { get; init; } = "";
+    public string ListSubtitle { get; init; } = "";
+    public string UpdateState { get; init; } = "";
+    public string UpdateDetail { get; init; } = "";
+    public string UpdateBadgeBackground { get; init; } = "";
+    public string UpdateBadgeForeground { get; init; } = "";
+}
+
 public sealed record SubscriptionUpdateResult(int Added, int Updated, int Unchanged, bool NotModified, bool Success, string Message);
 
 public sealed class MainViewModel : ObservableObject, IDisposable
@@ -129,7 +155,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private AppText _text = AppText.For("en-US");
     private Profile? _selectedProfile;
+    private ProfileListRow? _selectedProfileRow;
     private Subscription? _selectedSubscription;
+    private SubscriptionListRow? _selectedSubscriptionRow;
     private AppSettings _settings;
     private RuntimeState _runtimeState = RuntimeState.Stopped;
     private string _statusText = "Stopped";
@@ -207,6 +235,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _validationSummary = "Not validated";
     private string _recentIssueSummary = "-";
     private string _trayToolTipText = "x-tunnel Client\nDisconnected";
+    private bool _syncingProfileRowSelection;
+    private bool _syncingSubscriptionRowSelection;
 
     public MainViewModel()
     {
@@ -313,12 +343,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<Profile> Profiles { get; } = [];
     public ObservableCollection<Profile> FilteredProfiles { get; } = [];
+    public ObservableCollection<ProfileListRow> FilteredProfileRows { get; } = [];
     public ObservableCollection<DashboardMetric> OverviewMetrics { get; } = [];
     public ObservableCollection<SummaryRow> ListenerRows { get; } = [];
     public ObservableCollection<SummaryRow> ChannelRows { get; } = [];
     public ObservableCollection<ProfileIssue> ProfileIssues { get; } = [];
     public ObservableCollection<Subscription> Subscriptions { get; } = [];
     public ObservableCollection<Subscription> FilteredSubscriptions { get; } = [];
+    public ObservableCollection<SubscriptionListRow> FilteredSubscriptionRows { get; } = [];
     public ObservableCollection<SelectOption<ProxyMode>> ProxyModeOptions { get; } = [];
     public IReadOnlyList<string> ProfileKinds { get; } = ["client", "server"];
     public ObservableCollection<SelectOption<string>> ThemeOptions { get; } = [];
@@ -350,6 +382,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 OnPropertyChanged(nameof(StartupProfileSummary));
                 RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
                 RaiseCommandState();
+                SyncSelectedProfileRow();
             }
         }
     }
@@ -369,6 +402,31 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             {
                 SubscriptionStatusText = value is null ? NoSubscriptionSelectedText : BuildSubscriptionStatus(value);
                 RaiseSubscriptionCommandState();
+                SyncSelectedSubscriptionRow();
+            }
+        }
+    }
+
+    public ProfileListRow? SelectedProfileRow
+    {
+        get => _selectedProfileRow;
+        set
+        {
+            if (SetProperty(ref _selectedProfileRow, value) && !_syncingProfileRowSelection)
+            {
+                SelectedProfile = value?.Profile;
+            }
+        }
+    }
+
+    public SubscriptionListRow? SelectedSubscriptionRow
+    {
+        get => _selectedSubscriptionRow;
+        set
+        {
+            if (SetProperty(ref _selectedSubscriptionRow, value) && !_syncingSubscriptionRowSelection)
+            {
+                SelectedSubscription = value?.Subscription;
             }
         }
     }
@@ -2112,11 +2170,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var profiles = FilteredProfiles.ToList();
         if (profiles.Count == 0)
         {
-            ProfileBatchTestText = "No visible profiles to test";
+            ProfileBatchTestText = L("No visible profiles to test", "没有可见配置可测试");
             return;
         }
 
-        ProfileBatchTestText = $"Testing {profiles.Count} visible profile(s)...";
+        ProfileBatchTestText = IsChinese
+            ? $"正在测试 {profiles.Count} 个可见配置..."
+            : $"Testing {profiles.Count} visible profile(s)...";
         var ok = 0;
         var failed = 0;
         foreach (var profile in profiles)
@@ -2132,7 +2192,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
         }
 
-        ProfileBatchTestText = $"Endpoint tests: {ok} ok, {failed} failed";
+        ProfileBatchTestText = IsChinese
+            ? $"端点测试: {ok} 正常，{failed} 失败"
+            : $"Endpoint tests: {ok} ok, {failed} failed";
         ErrorText = failed == 0 ? "" : ProfileBatchTestText;
         SelectFastestProfileCommand.RaiseCanExecuteChanged();
         ClearVisibleProfileEndpointTestsCommand.RaiseCanExecuteChanged();
@@ -2143,23 +2205,29 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (SelectedProfile is null)
         {
-            ProfileBatchTestText = "No selected profile to test";
+            ProfileBatchTestText = L("No selected profile to test", "没有选中的配置可测试");
             ErrorText = ProfileBatchTestText;
             return;
         }
 
         var profile = SelectedProfile;
-        ProfileBatchTestText = $"Testing selected profile: {profile.Name}...";
+        ProfileBatchTestText = IsChinese
+            ? $"正在测试选中配置: {profile.Name}..."
+            : $"Testing selected profile: {profile.Name}...";
         var result = await TestAndStoreProfileEndpointAsync(profile);
         if (result.Success)
         {
-            ProfileBatchTestText = $"Selected endpoint ok: {profile.Name} ({result.DurationMs}ms)";
+            ProfileBatchTestText = IsChinese
+                ? $"选中端点正常: {profile.Name} ({result.DurationMs}ms)"
+                : $"Selected endpoint ok: {profile.Name} ({result.DurationMs}ms)";
             ErrorText = "";
         }
         else
         {
-            var error = FirstNonEmpty(result.Error, "Endpoint test failed");
-            ProfileBatchTestText = $"Selected endpoint failed: {profile.Name} - {error}";
+            var error = FirstNonEmpty(result.Error, L("Endpoint test failed", "端点测试失败"));
+            ProfileBatchTestText = IsChinese
+                ? $"选中端点失败: {profile.Name} - {error}"
+                : $"Selected endpoint failed: {profile.Name} - {error}";
             ErrorText = ProfileBatchTestText;
         }
 
@@ -2215,13 +2283,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             .FirstOrDefault();
         if (fastest is null)
         {
-            ProfileBatchTestText = "No successful endpoint test result; run Test Visible first.";
+            ProfileBatchTestText = L("No successful endpoint test result; run Test Visible first.", "没有成功的端点测试结果；请先运行测试可见配置。");
             ErrorText = ProfileBatchTestText;
             return;
         }
 
         SelectedProfile = fastest;
-        ProfileBatchTestText = $"Selected fastest: {fastest.Name} ({fastest.LastEndpointTestDurationMs ?? 0}ms)";
+        ProfileBatchTestText = IsChinese
+            ? $"已选择最快: {fastest.Name} ({fastest.LastEndpointTestDurationMs ?? 0}ms)"
+            : $"Selected fastest: {fastest.Name} ({fastest.LastEndpointTestDurationMs ?? 0}ms)";
         ErrorText = "";
     }
 
@@ -2238,7 +2308,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             RefreshProfileListItem(profile);
         }
 
-        ProfileBatchTestText = $"Cleared endpoint results for {profiles.Count} visible profile(s)";
+        ProfileBatchTestText = IsChinese
+            ? $"已清除 {profiles.Count} 个可见配置的端点结果"
+            : $"Cleared endpoint results for {profiles.Count} visible profile(s)";
         ErrorText = "";
         SelectFastestProfileCommand.RaiseCanExecuteChanged();
         ClearVisibleProfileEndpointTestsCommand.RaiseCanExecuteChanged();
@@ -2848,9 +2920,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             return "未保存";
         }
+        if (string.Equals(result, "never", StringComparison.OrdinalIgnoreCase))
+        {
+            return "从未更新";
+        }
+        if (string.Equals(result, "saved", StringComparison.OrdinalIgnoreCase))
+        {
+            return "已保存";
+        }
         if (string.Equals(result, "not modified", StringComparison.OrdinalIgnoreCase))
         {
             return "未修改";
+        }
+        if (result.StartsWith("fetched ", StringComparison.OrdinalIgnoreCase))
+        {
+            return result
+                .Replace("fetched", "已获取", StringComparison.OrdinalIgnoreCase)
+                .Replace("profile(s)", "个配置", StringComparison.OrdinalIgnoreCase);
         }
         if (result.StartsWith("failed:", StringComparison.OrdinalIgnoreCase))
         {
@@ -3033,6 +3119,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var selectedId = preferredProfileId ?? SelectedProfile?.Id;
         var matches = ApplyProfileSort(Profiles.Where(MatchesProfileSearch)).ToList();
         ReplaceCollection(FilteredProfiles, matches);
+        ReplaceCollection(FilteredProfileRows, matches.Select(BuildProfileListRow));
         UpdateProfileSummary();
         TestVisibleProfilesCommand.RaiseCanExecuteChanged();
         TestAndSelectFastestProfileCommand.RaiseCanExecuteChanged();
@@ -3049,6 +3136,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ? FilteredProfiles.FirstOrDefault(x => x.Id == selectedId.Value)
             : null;
         SelectedProfile = preferred ?? FilteredProfiles.First();
+        SyncSelectedProfileRow();
     }
 
     private bool MatchesProfileSearch(Profile profile)
@@ -3065,13 +3153,106 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             || ProfileFieldContains(profile.ValidationState, filter)
             || ProfileFieldContains(profile.ValidationDetail, filter)
             || ProfileFieldContains(profile.EndpointTestState, filter)
-            || ProfileFieldContains(profile.EndpointTestDetail, filter);
+            || ProfileFieldContains(profile.EndpointTestDetail, filter)
+            || ProfileFieldContains(LocalizeValidationState(profile), filter)
+            || ProfileFieldContains(LocalizeValidationDetail(profile), filter)
+            || ProfileFieldContains(LocalizeEndpointTestState(profile), filter)
+            || ProfileFieldContains(LocalizeEndpointTestDetail(profile), filter);
     }
 
     private static bool ProfileFieldContains(string? value, string filter)
     {
         return !string.IsNullOrWhiteSpace(value)
             && value.Contains(filter, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private ProfileListRow BuildProfileListRow(Profile profile)
+    {
+        return new ProfileListRow
+        {
+            Profile = profile,
+            Name = profile.Name,
+            ListSubtitle = profile.ListSubtitle,
+            ValidationState = LocalizeValidationState(profile),
+            ValidationDetail = LocalizeValidationDetail(profile),
+            ValidationBadgeBackground = profile.ValidationBadgeBackground,
+            ValidationBadgeForeground = profile.ValidationBadgeForeground,
+            EndpointTestState = LocalizeEndpointTestState(profile),
+            EndpointTestDetail = LocalizeEndpointTestDetail(profile),
+            EndpointBadgeBackground = profile.EndpointBadgeBackground,
+            EndpointBadgeForeground = profile.EndpointBadgeForeground
+        };
+    }
+
+    private string LocalizeValidationState(Profile profile)
+    {
+        return profile.ValidationState switch
+        {
+            "Ready" => L("Ready", "就绪"),
+            "Issue" => L("Issue", "问题"),
+            "Unchecked" => L("Unchecked", "未检查"),
+            _ => profile.ValidationState
+        };
+    }
+
+    private string LocalizeValidationDetail(Profile profile)
+    {
+        if (!string.IsNullOrWhiteSpace(profile.LastValidationError))
+        {
+            return profile.LastValidationError;
+        }
+
+        return profile.LastValidatedAt.HasValue
+            ? $"{L("Checked", "已检查")} {profile.LastValidatedAt.Value.LocalDateTime:g}"
+            : T.NotValidated;
+    }
+
+    private string LocalizeEndpointTestState(Profile profile)
+    {
+        if (!profile.LastEndpointTestAt.HasValue)
+        {
+            return L("TCP ?", "TCP ?");
+        }
+
+        return string.IsNullOrWhiteSpace(profile.LastEndpointTestError)
+            ? $"TCP {profile.LastEndpointTestDurationMs ?? 0}ms"
+            : L("TCP Fail", "TCP 失败");
+    }
+
+    private string LocalizeEndpointTestDetail(Profile profile)
+    {
+        if (!profile.LastEndpointTestAt.HasValue)
+        {
+            return L("Endpoint not tested", "端点未测试");
+        }
+        if (!string.IsNullOrWhiteSpace(profile.LastEndpointTestError))
+        {
+            return IsChinese
+                ? $"端点失败: {profile.LastEndpointTestError}"
+                : $"Endpoint failed: {profile.LastEndpointTestError}";
+        }
+
+        var target = string.IsNullOrWhiteSpace(profile.LastEndpointTestTarget)
+            ? L("forward endpoint", "转发端点")
+            : profile.LastEndpointTestTarget;
+        return IsChinese
+            ? $"端点正常 {profile.LastEndpointTestDurationMs ?? 0}ms -> {target}"
+            : $"Endpoint ok {profile.LastEndpointTestDurationMs ?? 0}ms -> {target}";
+    }
+
+    private void SyncSelectedProfileRow()
+    {
+        _syncingProfileRowSelection = true;
+        try
+        {
+            SelectedProfileRow = SelectedProfile is null
+                ? null
+                : FilteredProfileRows.FirstOrDefault(x => x.Profile.Id == SelectedProfile.Id);
+        }
+        finally
+        {
+            _syncingProfileRowSelection = false;
+        }
     }
 
     private bool HasSuccessfulVisibleEndpointTest()
@@ -3444,6 +3625,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var selectedId = preferredSubscriptionId ?? SelectedSubscription?.Id;
         var matches = ApplySubscriptionSort(Subscriptions.Where(MatchesSubscriptionSearch)).ToList();
         ReplaceCollection(FilteredSubscriptions, matches);
+        ReplaceCollection(FilteredSubscriptionRows, matches.Select(BuildSubscriptionListRow));
         UpdateSubscriptionSummary();
 
         if (FilteredSubscriptions.Count == 0)
@@ -3457,6 +3639,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ? FilteredSubscriptions.FirstOrDefault(x => x.Id == selectedId.Value)
             : null;
         SelectedSubscription = preferred ?? FilteredSubscriptions.First();
+        SyncSelectedSubscriptionRow();
     }
 
     private bool MatchesSubscriptionSearch(Subscription subscription)
@@ -3472,13 +3655,63 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             || SubscriptionFieldContains(subscription.LastResult, filter)
             || SubscriptionFieldContains(subscription.UpdateState, filter)
             || SubscriptionFieldContains(subscription.UpdateDetail, filter)
-            || SubscriptionFieldContains(subscription.TrustPolicy, filter);
+            || SubscriptionFieldContains(subscription.TrustPolicy, filter)
+            || SubscriptionFieldContains(LocalizeSubscriptionResult(subscription.LastResult), filter)
+            || SubscriptionFieldContains(LocalizeSubscriptionUpdateState(subscription), filter)
+            || SubscriptionFieldContains(LocalizeSubscriptionUpdateDetail(subscription), filter);
     }
 
     private static bool SubscriptionFieldContains(string? value, string filter)
     {
         return !string.IsNullOrWhiteSpace(value)
             && value.Contains(filter, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private SubscriptionListRow BuildSubscriptionListRow(Subscription subscription)
+    {
+        return new SubscriptionListRow
+        {
+            Subscription = subscription,
+            DisplayName = subscription.DisplayName,
+            ListSubtitle = $"{L("Last result", "上次结果")}: {LocalizeSubscriptionResult(subscription.LastResult)}",
+            UpdateState = LocalizeSubscriptionUpdateState(subscription),
+            UpdateDetail = LocalizeSubscriptionUpdateDetail(subscription),
+            UpdateBadgeBackground = subscription.UpdateBadgeBackground,
+            UpdateBadgeForeground = subscription.UpdateBadgeForeground
+        };
+    }
+
+    private string LocalizeSubscriptionUpdateState(Subscription subscription)
+    {
+        return subscription.UpdateState switch
+        {
+            "Failed" => L("Failed", "失败"),
+            "Updated" => L("Updated", "已更新"),
+            "New" => L("New", "新建"),
+            _ => subscription.UpdateState
+        };
+    }
+
+    private string LocalizeSubscriptionUpdateDetail(Subscription subscription)
+    {
+        return subscription.LastUpdatedAt.HasValue
+            ? $"{L("Updated", "已更新")} {subscription.LastUpdatedAt.Value.LocalDateTime:g}"
+            : L("Not updated", "未更新");
+    }
+
+    private void SyncSelectedSubscriptionRow()
+    {
+        _syncingSubscriptionRowSelection = true;
+        try
+        {
+            SelectedSubscriptionRow = SelectedSubscription is null
+                ? null
+                : FilteredSubscriptionRows.FirstOrDefault(x => x.Subscription.Id == SelectedSubscription.Id);
+        }
+        finally
+        {
+            _syncingSubscriptionRowSelection = false;
+        }
     }
 
     private IEnumerable<Subscription> ApplySubscriptionSort(IEnumerable<Subscription> subscriptions)
@@ -3638,8 +3871,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(StartupProfileSummary));
         RefreshTransientLocalizedUi();
-        UpdateProfileSummary();
-        UpdateSubscriptionSummary();
+        UpdateFilteredProfiles(SelectedProfile?.Id);
+        UpdateFilteredSubscriptions(SelectedSubscription?.Id);
         UpdateFilteredLogText();
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
