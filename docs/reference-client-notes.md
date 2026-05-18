@@ -132,4 +132,5 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Localized the profile endpoint batch default status during live language switching so the Profiles page does not keep English feedback after switching to Chinese.
 - Localized profile issue field/severity display labels and copied issue reports while preserving raw issue keys for validation logic.
 - Extended GUI smoke language-switch coverage to the Logs page log-level option, filter badge, and filter summary so localized log controls are verified with real UI Automation.
+- Extended GUI smoke language-switch coverage to Subscriptions update-all and copied aggregate results using the local subscription feed in Chinese mode.
 - Localized generated default profile/subscription names and the duplicate-profile suffix so new rows created after a language switch match the active UI language.

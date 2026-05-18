@@ -425,7 +425,7 @@ $coreForwardUrl = "ws://127.0.0.1:$coreServerPort/tunnel"
 $profileListen = "socks5://127.0.0.1:$socksPort,http://127.0.0.1:$httpPort"
 $subscriptionUrl = "http://127.0.0.1:$subscriptionPort/subscription.json"
 $serverRequestCount = 6
-$subscriptionRequestCount = 2
+$subscriptionRequestCount = 3
 $serverJob = Start-Job -ScriptBlock {
     param([int]$Port, [int]$RequestCount)
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
@@ -2299,6 +2299,39 @@ try {
         return $null
     }
     $localizedSubscriptionStatusCopyText = Wait-AutomationTextMatch -Root $window -AutomationId "AppErrorTextBlock" -Pattern "订阅结果已复制" -TimeoutSeconds $TimeoutSeconds -Message "Localized subscription result copy feedback did not appear after switching to Chinese."
+    $localizedSubscriptionUrlBox = Get-ByAutomationId -Root $window -AutomationId "SubscriptionUrlTextBox" -TimeoutSeconds $TimeoutSeconds
+    Set-ElementValue -Element $localizedSubscriptionUrlBox -Value $subscriptionUrl
+    $localizedSaveSubscriptionDetailsButton = Get-ByAutomationId -Root $window -AutomationId "SaveSubscriptionDetailsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $localizedSaveSubscriptionDetailsButton
+    $localizedSubscriptionSavedText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized subscription save did not report success." -Condition {
+        $text = Get-ElementValue $localizedSubscriptionStatusBox
+        if ($text -match "订阅已保存") {
+            return $text
+        }
+        return $null
+    }
+    $localizedUpdateAllSubscriptionsButton = Get-ByAutomationId -Root $window -AutomationId "UpdateAllSubscriptionsNowButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $localizedUpdateAllSubscriptionsButton
+    $localizedUpdateAllSubscriptionsText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized Update All subscriptions did not report the aggregate result." -Condition {
+        $text = Get-ElementValue $localizedSubscriptionStatusBox
+        if ($text -match "已更新全部 1 个订阅" -and
+            $text -match "成功: 1，失败: 0" -and
+            $text -match "未变更: 1") {
+            return $text
+        }
+        return $null
+    }
+    Clear-SmokeClipboard
+    Invoke-Element $copyLocalizedSubscriptionStatusButton
+    $localizedUpdateAllSubscriptionStatusClipboard = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized aggregate subscription result was not copied after switching to Chinese." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "已更新全部 1 个订阅" -and
+            $text -match "成功: 1，失败: 0" -and
+            $text -match "未变更: 1") {
+            return $text
+        }
+        return $null
+    }
     Select-Element $settingsTab
     $localizedCorePathStatusText = Get-ByAutomationId -Root $window -AutomationId "CorePathStatusText" -TimeoutSeconds $TimeoutSeconds
     $localizedCorePathStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Core path status did not localize after switching to Chinese." -Condition {
@@ -2333,7 +2366,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedLogLevelText / $localizedLogFilterBadge / $localizedLogFilterSummary / $localizedProfileSummary / $localizedProfileBatchText / $localizedProfileState / $localizedProfileSubtitle / $($localizedProfileSummaryClipboard.Split([Environment]::NewLine)[1]) / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedProfileKindText / $localizedStatusProfileText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $localizedSubscriptionTrustText / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedLogLevelText / $localizedLogFilterBadge / $localizedLogFilterSummary / $localizedProfileSummary / $localizedProfileBatchText / $localizedProfileState / $localizedProfileSubtitle / $($localizedProfileSummaryClipboard.Split([Environment]::NewLine)[1]) / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedProfileKindText / $localizedStatusProfileText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $localizedSubscriptionTrustText / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedSubscriptionSavedText / $($localizedUpdateAllSubscriptionsText.Split([Environment]::NewLine)[0]) / $($localizedUpdateAllSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force
