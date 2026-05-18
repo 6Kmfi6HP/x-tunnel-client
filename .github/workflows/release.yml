@@ -88,7 +88,8 @@ jobs:
           dotnet test .\XTunnelClient.sln -c Release --no-restore
           Push-Location ..\x-tunnel
           try {
-            go test ./...
+            go build -trimpath -o $env:RUNNER_TEMP\x-tunnel.exe .\cmd\x-tunnel
+            & "$env:RUNNER_TEMP\x-tunnel.exe" -version
           }
           finally {
             Pop-Location

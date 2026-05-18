@@ -58,8 +58,22 @@ jobs:
           cache: true
           cache-dependency-path: x-tunnel/go.sum
 
+      - name: Test client
+        run: dotnet test .\XTunnelClient.sln -c Release
+
+      - name: Build x-tunnel core smoke
+        run: |
+          Push-Location ..\x-tunnel
+          try {
+            go build -trimpath -o $env:RUNNER_TEMP\x-tunnel.exe .\cmd\x-tunnel
+            & "$env:RUNNER_TEMP\x-tunnel.exe" -version
+          }
+          finally {
+            Pop-Location
+          }
+
       - name: Package smoke with MSI
-        run: .\scripts\package.ps1 -Configuration Release -Runtimes win-x64 -CoreRepo ..\x-tunnel -Output artifacts\ci-dist
+        run: .\scripts\package.ps1 -Configuration Release -Runtimes win-x64 -CoreRepo ..\x-tunnel -Output artifacts\ci-dist -SkipTests
 
       - name: Verify package manifest and payloads
         run: .\scripts\verify-release.ps1 -Dist artifacts\ci-dist
