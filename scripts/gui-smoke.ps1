@@ -2063,6 +2063,29 @@ try {
         return $null
     }
     Select-Element $settingsTab
+    $localizedCorePathStatusText = Get-ByAutomationId -Root $window -AutomationId "CorePathStatusText" -TimeoutSeconds $TimeoutSeconds
+    $localizedCorePathStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Core path status did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $localizedCorePathStatusText
+        if ($text -eq "已配置") {
+            return $text
+        }
+        return $null
+    }
+    $copySettingsFoldersButton = Get-ByAutomationId -Root $window -AutomationId "CopySettingsFoldersButton" -TimeoutSeconds $TimeoutSeconds
+    Clear-SmokeClipboard
+    Invoke-Element $copySettingsFoldersButton
+    $localizedSettingsFoldersClipboard = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized settings folders summary was not copied after switching to Chinese." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "应用数据:" -and
+            $text -match "配置:" -and
+            $text -match "日志:" -and
+            $text -match "运行状态:" -and
+            $text -match "内核状态: 已配置" -and
+            $text -match [Regex]::Escape($AppHome)) {
+            return $text
+        }
+        return $null
+    }
     $saveSettingsButton = Get-ByAutomationId -Root $window -AutomationId "SaveSettingsButton" -TimeoutSeconds $TimeoutSeconds
     Invoke-Element $saveSettingsButton
     $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
@@ -2073,7 +2096,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedSubscriptionSummary / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedSubscriptionSummary / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force

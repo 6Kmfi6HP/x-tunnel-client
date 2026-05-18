@@ -1481,13 +1481,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public string BuildSettingsFoldersSummary()
     {
         var summary = new StringBuilder();
-        summary.AppendLine($"App data: {_paths.Root}");
-        summary.AppendLine($"Profiles: {_paths.Profiles}");
-        summary.AppendLine($"Logs: {_paths.Logs}");
-        summary.AppendLine($"Runtime: {_paths.Runtime}");
-        summary.AppendLine($"Core: {FirstNonEmpty(CorePath, DetectedCorePath, "-")}");
-        summary.AppendLine($"Core status: {CorePathStatus}");
-        summary.AppendLine($"Core detail: {CorePathStatusDetail}");
+        summary.AppendLine($"{L("App data", "应用数据")}: {_paths.Root}");
+        summary.AppendLine($"{T.Profiles}: {_paths.Profiles}");
+        summary.AppendLine($"{T.Logs}: {_paths.Logs}");
+        summary.AppendLine($"{T.Runtime}: {_paths.Runtime}");
+        summary.AppendLine($"{T.Core}: {FirstNonEmpty(CorePath, DetectedCorePath, "-")}");
+        summary.AppendLine($"{L("Core status", "内核状态")}: {CorePathStatus}");
+        summary.AppendLine($"{L("Core detail", "内核详情")}: {CorePathStatusDetail}");
         return summary.ToString().TrimEnd();
     }
 
@@ -2337,7 +2337,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         SelectedProxyMode = mode;
         SaveSettings();
-        ErrorText = $"Proxy mode: {mode}";
+        ErrorText = IsChinese ? $"代理模式：{FormatProxyMode(mode)}" : $"Proxy mode: {FormatProxyMode(mode)}";
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
@@ -2347,13 +2347,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (string.IsNullOrWhiteSpace(DetectedCorePath))
         {
             UpdateCorePathStatus();
-            ErrorText = "No x-tunnel.exe was auto-detected";
+            ErrorText = L("No x-tunnel.exe was auto-detected", "未自动检测到 x-tunnel.exe");
             return;
         }
         Settings.CorePath = DetectedCorePath;
         OnPropertyChanged(nameof(CorePath));
         UpdateCorePathStatus();
-        ErrorText = "Core path set from auto-detect";
+        ErrorText = L("Core path set from auto-detect", "已使用自动检测的内核路径");
     }
 
     private async Task CheckCoreVersionAsync()
@@ -2361,21 +2361,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var path = FirstNonEmpty(CorePath, DetectedCorePath, _coreLocator.Resolve(new AppSettings())).Trim();
         if (string.IsNullOrWhiteSpace(path))
         {
-            SetCorePathStatus("Core missing", "Set or auto-detect x-tunnel.exe before checking the version.", "#7F1D1D", "#FECACA");
-            ErrorText = "No x-tunnel.exe was auto-detected";
+            SetCorePathStatus(L("Core missing", "内核缺失"), L("Set or auto-detect x-tunnel.exe before checking the version.", "检查版本前请设置或自动检测 x-tunnel.exe。"), "#7F1D1D", "#FECACA");
+            ErrorText = L("No x-tunnel.exe was auto-detected", "未自动检测到 x-tunnel.exe");
             return;
         }
 
         try
         {
             var version = await _coreConfigTool.GetVersionAsync(path);
-            SetCorePathStatus("Version OK", $"{version} | {path}", "#065F46", "#D1FAE5");
-            ErrorText = "Core version checked";
+            SetCorePathStatus(L("Version OK", "版本正常"), $"{version} | {path}", "#065F46", "#D1FAE5");
+            ErrorText = L("Core version checked", "内核版本已检查");
         }
         catch (Exception ex)
         {
-            SetCorePathStatus("Version failed", RuntimeConfigService.Redact(ex.Message), "#7F1D1D", "#FECACA");
-            ErrorText = $"Core version check failed: {ex.Message}";
+            SetCorePathStatus(L("Version failed", "版本检查失败"), RuntimeConfigService.Redact(ex.Message), "#7F1D1D", "#FECACA");
+            ErrorText = IsChinese ? $"内核版本检查失败: {ex.Message}" : $"Core version check failed: {ex.Message}";
         }
     }
 
@@ -2388,13 +2388,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, path);
-        ErrorText = "Core path copied";
+        ErrorText = L("Core path copied", "内核路径已复制");
     }
 
     private void CopySettingsFolders()
     {
         CopyTextRequested?.Invoke(this, BuildSettingsFoldersSummary());
-        ErrorText = "Settings folders copied";
+        ErrorText = L("Settings folders copied", "设置目录已复制");
     }
 
     private async Task AutoConnectOnStartupAsync()
@@ -2657,7 +2657,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         };
         ConnectionDetail = status is null
             ? T.SidecarNotRunning
-            : $"{status.Mode} mode, uptime {FormatDuration(status.UptimeSeconds)}";
+            : IsChinese ? $"{status.Mode} 模式，已运行 {FormatDuration(status.UptimeSeconds)}" : $"{status.Mode} mode, uptime {FormatDuration(status.UptimeSeconds)}";
         ActiveProfileSummary = SelectedProfile is null
             ? "-"
             : $"{SelectedProfile.Name} ({SelectedProfile.Kind}, {SelectedProfile.Source})";
@@ -3922,6 +3922,44 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             DiagnosticsPortStatus = L("Ports: not checked", "端口：未检查");
             DiagnosticsPortDetail = L("Run checks to inspect selected profile listen ports.", "运行检查以检查选中配置的监听端口。");
+        }
+
+        RefreshCorePathStatusLanguage();
+    }
+
+    private void RefreshCorePathStatusLanguage()
+    {
+        if (IsAnyText(CorePathStatus, "Version OK", "版本正常"))
+        {
+            CorePathStatus = L("Version OK", "版本正常");
+        }
+        else if (IsAnyText(CorePathStatus, "Version failed", "版本检查失败"))
+        {
+            CorePathStatus = L("Version failed", "版本检查失败");
+        }
+        else if (IsAnyText(CorePathStatus, "Core missing", "内核缺失"))
+        {
+            CorePathStatus = L("Core missing", "内核缺失");
+            if (ContainsAny(CorePathStatusDetail, "Set or auto-detect x-tunnel.exe before checking the version.", "检查版本前请设置或自动检测 x-tunnel.exe。"))
+            {
+                CorePathStatusDetail = L("Set or auto-detect x-tunnel.exe before checking the version.", "检查版本前请设置或自动检测 x-tunnel.exe。");
+            }
+        }
+        else if (IsAnyText(CorePathStatus, "Configured", "已配置"))
+        {
+            CorePathStatus = L("Configured", "已配置");
+        }
+        else if (IsAnyText(CorePathStatus, "Auto-detected", "已自动检测"))
+        {
+            CorePathStatus = L("Auto-detected", "已自动检测");
+        }
+        else if (IsAnyText(CorePathStatus, "Path missing", "路径缺失"))
+        {
+            CorePathStatus = L("Path missing", "路径缺失");
+        }
+        else if (IsAnyText(CorePathStatus, "Check executable", "检查程序"))
+        {
+            CorePathStatus = L("Check executable", "检查程序");
         }
     }
 
