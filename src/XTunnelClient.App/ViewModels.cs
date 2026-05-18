@@ -1515,7 +1515,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         var profile = new Profile
         {
-            Name = "Profile " + (Profiles.Count + 1),
+            Name = $"{T.Profile} {Profiles.Count + 1}",
             SortOrder = Profiles.Count * 100
         };
         Profiles.Add(profile);
@@ -1564,7 +1564,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         var subscription = new Subscription
         {
-            DisplayName = "Subscription " + (Subscriptions.Count + 1),
+            DisplayName = $"{L("Subscription", "订阅")} {Subscriptions.Count + 1}",
             Url = "https://",
             LastResult = "not saved"
         };

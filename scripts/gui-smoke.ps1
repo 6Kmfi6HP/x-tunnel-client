@@ -2112,6 +2112,16 @@ try {
         }
         return $null
     }
+    $newLocalizedProfileButton = Get-ByAutomationId -Root $window -AutomationId "NewProfileButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $newLocalizedProfileButton
+    $localizedProfileNameBox = Get-ByAutomationId -Root $window -AutomationId "ProfileNameTextBox" -TimeoutSeconds $TimeoutSeconds
+    $localizedNewProfileName = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "New profile default name did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $localizedProfileNameBox
+        if ($text -match "^配置 \d+$") {
+            return $text
+        }
+        return $null
+    }
     $subscriptionsTab = Get-ByAutomationId -Root $window -AutomationId "SubscriptionsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $subscriptionsTab
     $subscriptionSummary = Get-ByAutomationId -Root $window -AutomationId "SubscriptionSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
@@ -2143,7 +2153,7 @@ try {
     Invoke-Element $copyLocalizedSubscriptionSourceButton
     $localizedSubscriptionSourceClipboard = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized subscription source was not copied after switching to Chinese." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
-        if ($text -match "^订阅:" -and
+        if ($text -match "^订阅: 订阅 1" -and
             $text -match "间隔:" -and
             $text -match "上次结果: 未保存") {
             return $text
@@ -2203,7 +2213,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedNewProfileName / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force
