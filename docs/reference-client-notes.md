@@ -130,4 +130,5 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Localized profile metadata summaries, profile list subtitles, active-profile status text, and subscription trust summaries so visible/copyable UI text no longer exposes raw `client`, `local`, or `confirm` keys after a language switch.
 - Localized profile structured-field placeholders and runtime-mode display text while preserving the underlying core config field names and status keys.
 - Localized the profile endpoint batch default status during live language switching so the Profiles page does not keep English feedback after switching to Chinese.
+- Extended GUI smoke language-switch coverage to the Logs page log-level option, filter badge, and filter summary so localized log controls are verified with real UI Automation.
 - Localized generated default profile/subscription names and the duplicate-profile suffix so new rows created after a language switch match the active UI language.

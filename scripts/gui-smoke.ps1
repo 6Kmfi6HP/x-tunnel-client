@@ -2102,6 +2102,32 @@ try {
         }
         return $null
     }
+    $logsTab = Get-ByAutomationId -Root $window -AutomationId "LogsTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $logsTab
+    $localizedLogLevelCombo = Get-ByAutomationId -Root $window -AutomationId "LogLevelFilterComboBox" -TimeoutSeconds $TimeoutSeconds
+    $localizedLogLevelText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Log level option did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $localizedLogLevelCombo
+        if ($text -eq "全部") {
+            return $text
+        }
+        return $null
+    }
+    $localizedLogFilterBadgeText = Get-ByAutomationId -Root $window -AutomationId "LogFilterBadgeText" -TimeoutSeconds $TimeoutSeconds
+    $localizedLogFilterBadge = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Log filter badge did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $localizedLogFilterBadgeText
+        if ($text -eq "全部日志") {
+            return $text
+        }
+        return $null
+    }
+    $localizedLogFilterSummaryText = Get-ByAutomationId -Root $window -AutomationId "LogFilterSummaryText" -TimeoutSeconds $TimeoutSeconds
+    $localizedLogFilterSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Log filter summary did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $localizedLogFilterSummaryText
+        if ($text -match "^显示 \d+ 条日志$") {
+            return $text
+        }
+        return $null
+    }
     $profilesTab = Get-ByAutomationId -Root $window -AutomationId "ProfilesTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $profilesTab
     $profileSummary = Get-ByAutomationId -Root $window -AutomationId "ProfileSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
@@ -2290,7 +2316,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedProfileSummary / $localizedProfileBatchText / $localizedProfileState / $localizedProfileSubtitle / $($localizedProfileSummaryClipboard.Split([Environment]::NewLine)[1]) / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedProfileKindText / $localizedStatusProfileText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $localizedSubscriptionTrustText / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedLogLevelText / $localizedLogFilterBadge / $localizedLogFilterSummary / $localizedProfileSummary / $localizedProfileBatchText / $localizedProfileState / $localizedProfileSubtitle / $($localizedProfileSummaryClipboard.Split([Environment]::NewLine)[1]) / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedProfileKindText / $localizedStatusProfileText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $localizedSubscriptionTrustText / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force
