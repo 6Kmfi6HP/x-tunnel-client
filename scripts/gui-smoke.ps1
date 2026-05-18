@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$AppExe = (Join-Path $PSScriptRoot "..\src\XTunnelClient.App\bin\Debug\net8.0-windows\XTunnelClient.App.exe"),
     [string]$CoreRepo = (Join-Path $PSScriptRoot "..\..\x-tunnel"),
     [string]$CoreExe = (Join-Path $PSScriptRoot "..\..\x-tunnel\build\x-tunnel.exe"),
@@ -24,6 +24,7 @@ $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -70,6 +71,91 @@ function Wait-Tcp {
     } | Out-Null
 }
 
+function Send-DummyHttpRequest {
+    param(
+        [string]$HostName,
+        [int]$Port
+    )
+    $client = [System.Net.Sockets.TcpClient]::new()
+    try {
+        $task = $client.ConnectAsync($HostName, $Port)
+        if (!$task.Wait(250) -or !$client.Connected) {
+            return
+        }
+        $request = [System.Text.Encoding]::ASCII.GetBytes("GET /__shutdown HTTP/1.1`r`nHost: $HostName`r`nConnection: close`r`n`r`n")
+        $stream = $client.GetStream()
+        $stream.Write($request, 0, $request.Length)
+    }
+    catch {
+    }
+    finally {
+        $client.Dispose()
+    }
+}
+
+function Stop-ChildPowerShellJobs {
+    param([int]$ParentProcessId)
+    try {
+        Get-CimInstance Win32_Process |
+            Where-Object {
+                $_.ParentProcessId -eq $ParentProcessId -and
+                $_.Name -in @("powershell.exe", "pwsh.exe") -and
+                $_.CommandLine -match " -s "
+            } |
+            ForEach-Object {
+                Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+            }
+    }
+    catch {
+    }
+}
+
+function Stop-ListenerJob {
+    param(
+        [object]$Job,
+        [int]$Port,
+        [int]$RequestCount
+    )
+    if (!$Job) {
+        return
+    }
+    if ($Job.State -eq "Running") {
+        for ($i = 0; $i -lt $RequestCount; $i++) {
+            Send-DummyHttpRequest -HostName "127.0.0.1" -Port $Port
+        }
+        Wait-Job -Job $Job -Timeout 2 -ErrorAction SilentlyContinue | Out-Null
+    }
+    if ($Job.State -eq "Running") {
+        Stop-ChildPowerShellJobs -ParentProcessId $PID
+        Wait-Job -Job $Job -Timeout 2 -ErrorAction SilentlyContinue | Out-Null
+    }
+    Remove-Job $Job -Force -ErrorAction SilentlyContinue
+}
+
+function Set-SmokeClipboardText {
+    param([AllowNull()][AllowEmptyString()][string]$Value)
+    $text = $Value
+    if ([string]::IsNullOrEmpty($Value)) {
+        $text = " "
+    }
+    $last = $null
+    for ($i = 0; $i -lt 10; $i++) {
+        try {
+            Set-Clipboard -Value $text
+            return
+        }
+        catch {
+            $last = $_
+            Start-Sleep -Milliseconds 100
+        }
+    }
+    throw $last
+}
+
+function Clear-SmokeClipboard {
+    Set-SmokeClipboardText -Value "__xtunnel_client_smoke_clipboard_marker__"
+}
+
 function Wait-Until {
     param(
         [scriptblock]$Condition,
@@ -94,6 +180,17 @@ function Wait-Until {
         throw "$Message Last error: $($last.Exception.Message)"
     }
     throw $Message
+}
+
+function Set-Utf8NoBomContent {
+    param(
+        [string]$Path,
+        [string]$Value
+    )
+    # Windows PowerShell 5 writes a BOM for -Encoding UTF8, and the Go core
+    # rejects a BOM-prefixed JSON config.
+    $encoding = New-Object System.Text.UTF8Encoding -ArgumentList $false
+    [System.IO.File]::WriteAllText([System.IO.Path]::GetFullPath($Path), $Value, $encoding)
 }
 
 function Find-ByAutomationId {
@@ -293,6 +390,8 @@ $testUrl = "http://127.0.0.1:$port/generate_204"
 $coreForwardUrl = "ws://127.0.0.1:$coreServerPort/tunnel"
 $profileListen = "socks5://127.0.0.1:$socksPort,http://127.0.0.1:$httpPort"
 $subscriptionUrl = "http://127.0.0.1:$subscriptionPort/subscription.json"
+$serverRequestCount = 6
+$subscriptionRequestCount = 2
 $serverJob = Start-Job -ScriptBlock {
     param([int]$Port, [int]$RequestCount)
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
@@ -315,7 +414,7 @@ $serverJob = Start-Job -ScriptBlock {
     finally {
         $listener.Stop()
     }
-} -ArgumentList $port, 6
+} -ArgumentList $port, $serverRequestCount
 
 $subscriptionJob = Start-Job -ScriptBlock {
     param([int]$Port, [int]$RequestCount)
@@ -343,7 +442,7 @@ $subscriptionJob = Start-Job -ScriptBlock {
     finally {
         $listener.Stop()
     }
-} -ArgumentList $subscriptionPort, 2
+} -ArgumentList $subscriptionPort, $subscriptionRequestCount
 
 $oldHome = $env:XTUNNEL_CLIENT_HOME
 $oldInstance = $env:XTUNNEL_CLIENT_INSTANCE
@@ -358,7 +457,7 @@ $serverProcess = $null
 try {
     New-Item -ItemType Directory -Force -Path $AppHome | Out-Null
     $serverConfig = Join-Path $AppHome "gui-smoke-server.json"
-    @"
+    $serverConfigJson = @"
 {
   "listen": "ws://127.0.0.1:$coreServerPort/tunnel",
   "token": "smoke-token",
@@ -367,7 +466,8 @@ try {
   "fallback": true,
   "shutdown_timeout": "2s"
 }
-"@ | Set-Content -Encoding UTF8 $serverConfig
+"@
+    Set-Utf8NoBomContent -Path $serverConfig -Value $serverConfigJson
     $serverProcess = Start-Process -FilePath (Resolve-Path $CoreExe).Path -ArgumentList "-config `"$serverConfig`"" -PassThru -WindowStyle Hidden
     Wait-Tcp -HostName "127.0.0.1" -Port $coreServerPort -TimeoutSeconds $TimeoutSeconds
 
@@ -540,7 +640,7 @@ try {
     Write-Host "Profile format: $profileFormatText"
 
     $copyProfileSummaryButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileSummaryButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyProfileSummaryButton
     $profileSummaryClipboardText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy profile summary did not place a redacted summary on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -558,7 +658,7 @@ try {
     Write-Host "Copied profile summary: $($profileSummaryClipboardText.Split([Environment]::NewLine)[0])"
 
     $copyProfileConfigButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileConfigButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyProfileConfigButton
     $profileConfigClipboardText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy profile config did not place the core JSON on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -683,7 +783,7 @@ try {
     }
     Write-Host "Diagnostics ports: $diagnosticsPortStatus / $diagnosticsPortDetail"
     $copyDiagnosticsPortsButton = Get-ByAutomationId -Root $window -AutomationId "CopyDiagnosticsPortsButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyDiagnosticsPortsButton
     $clipboardDiagnosticsPorts = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy diagnostics ports did not place port details on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -747,7 +847,7 @@ try {
     $overviewTab = Get-ByAutomationId -Root $window -AutomationId "OverviewTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $overviewTab
     $copyProxyAddressButton = Get-ByAutomationId -Root $window -AutomationId "CopyProxyAddressButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyProxyAddressButton
     $clipboardProxyAddress = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy proxy address did not place local HTTP and SOCKS endpoints on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -807,7 +907,7 @@ try {
     }
     Write-Host "Overview network summary: $overviewNetworkText / $(Get-ElementValue $overviewNetworkDetailText) / $overviewNetworkLastRun"
     $copyOverviewStatusButton = Get-ByAutomationId -Root $window -AutomationId "CopyOverviewStatusButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyOverviewStatusButton
     $clipboardOverviewStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy overview status did not place the summary on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -823,7 +923,7 @@ try {
     $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $diagnosticsTab
     $copyNetworkResultButton = Get-ByAutomationId -Root $window -AutomationId "CopyNetworkTestResultButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyNetworkResultButton
     $clipboardNetworkText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy network result did not place the result on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -900,7 +1000,7 @@ try {
     Write-Host $endpointText
     Write-Host "Forward route chip: $forwardRouteText / $forwardLastRun"
     $copyEndpointResultButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileEndpointTestResultButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyEndpointResultButton
     $clipboardEndpointText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy profile endpoint result did not place the result on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -976,7 +1076,7 @@ try {
     Write-Host "Run All diagnostics: $($runAllNetworkText.Split([Environment]::NewLine)[0]) / $($runAllForwardText.Split([Environment]::NewLine)[0]) / $runAllDirectRouteText / $runAllForwardRouteText / $runAllForwardLastRun"
 
     $copyDiagnosticsSummaryButton = Get-ByAutomationId -Root $window -AutomationId "CopyDiagnosticsSummaryButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyDiagnosticsSummaryButton
     $clipboardDiagnosticsSummary = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy diagnostics summary did not place the summary on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -988,7 +1088,7 @@ try {
     Write-Host "Copied diagnostics summary: $($clipboardDiagnosticsSummary.Split([Environment]::NewLine)[0])"
 
     $copyDiagnosticsReportButton = Get-ByAutomationId -Root $window -AutomationId "CopyDiagnosticsReportButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyDiagnosticsReportButton
     $clipboardDiagnosticsReport = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy diagnostics report did not place the JSON report on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -1152,7 +1252,7 @@ try {
     }
     Write-Host "Overview connected details: $($overviewRecentLogs.Split([Environment]::NewLine)[0]) / $($overviewRuntimeDetails.Split([Environment]::NewLine)[0])"
     $copyOverviewRecentLogsButton = Get-ByAutomationId -Root $window -AutomationId "CopyOverviewRecentLogsButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyOverviewRecentLogsButton
     $clipboardOverviewLogs = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy overview recent logs did not place logs on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -1162,7 +1262,7 @@ try {
         return $null
     }
     $copyOverviewRuntimeDetailsButton = Get-ByAutomationId -Root $window -AutomationId "CopyOverviewRuntimeDetailsButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyOverviewRuntimeDetailsButton
     $clipboardOverviewRuntime = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy overview runtime details did not place status JSON on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -1172,7 +1272,7 @@ try {
         return $null
     }
     $copyRuntimeMetricsButton = Get-ByAutomationId -Root $window -AutomationId "CopyRuntimeMetricsButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyRuntimeMetricsButton
     $clipboardRuntimeMetrics = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy runtime metrics did not place Prometheus metrics on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -1231,7 +1331,7 @@ try {
     Write-Host "Connected network test: $connectedNetworkText"
     Write-Host "Connected proxy route chip: $connectedProxyRouteText"
     $copyConnectedNetworkResultButton = Get-ByAutomationId -Root $window -AutomationId "CopyNetworkTestResultButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyConnectedNetworkResultButton
     $connectedNetworkClipboardText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy network result did not include the connected proxy success." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -1303,7 +1403,7 @@ try {
     }
     Write-Host "Core version status: $coreVersionDetail"
     $copyCorePathButton = Get-ByAutomationId -Root $window -AutomationId "CopyCorePathButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyCorePathButton
     $clipboardCorePath = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy core path did not place x-tunnel.exe on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -1315,7 +1415,7 @@ try {
     Write-Host "Copied core path: $clipboardCorePath"
 
     $copySettingsFoldersButton = Get-ByAutomationId -Root $window -AutomationId "CopySettingsFoldersButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copySettingsFoldersButton
     $clipboardSettingsFolders = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy settings folders did not place local folder paths on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -1455,7 +1555,7 @@ try {
     } | Out-Null
     $copyFilteredLogsButton = Get-ByAutomationId -Root $window -AutomationId "CopyFilteredLogsButton" -TimeoutSeconds $TimeoutSeconds
     $restoredFirstLogLine = $restoredLogText.Split([Environment]::NewLine)[0]
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyFilteredLogsButton
     $clipboardLogText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy filtered logs did not place the restored log output on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -1547,7 +1647,7 @@ try {
     }
     Write-Host $updateAllText
     $copySubscriptionSourceButton = Get-ByAutomationId -Root $window -AutomationId "CopySubscriptionSourceButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copySubscriptionSourceButton
     $clipboardSubscriptionSource = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy subscription source did not place the source summary on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -1558,7 +1658,7 @@ try {
     }
     Write-Host "Copied subscription source: $($clipboardSubscriptionSource.Split([Environment]::NewLine)[0])"
     $copySubscriptionStatusButton = Get-ByAutomationId -Root $window -AutomationId "CopySubscriptionStatusButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copySubscriptionStatusButton
     $clipboardSubscriptionStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy subscription result did not place the aggregate result on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -1759,7 +1859,7 @@ try {
     Write-Host "Profile summary: $profileSummaryText"
 
     $copyProfileIssuesButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileIssuesButton" -TimeoutSeconds $TimeoutSeconds
-    Set-Clipboard -Value ""
+    Clear-SmokeClipboard
     Invoke-Element $copyProfileIssuesButton
     $profileIssuesClipboardText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Copy profile issues did not place the validation issue report on the clipboard." -Condition {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
@@ -2026,20 +2126,14 @@ finally {
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force
     }
-    if ($serverJob) {
-        Stop-Job $serverJob -ErrorAction SilentlyContinue | Out-Null
-        Remove-Job $serverJob -Force -ErrorAction SilentlyContinue
-    }
-    if ($subscriptionJob) {
-        Stop-Job $subscriptionJob -ErrorAction SilentlyContinue | Out-Null
-        Remove-Job $subscriptionJob -Force -ErrorAction SilentlyContinue
-    }
+    Stop-ListenerJob -Job $serverJob -Port $port -RequestCount $serverRequestCount
+    Stop-ListenerJob -Job $subscriptionJob -Port $subscriptionPort -RequestCount $subscriptionRequestCount
     if ($serverProcess -and !$serverProcess.HasExited) {
         Stop-Process -Id $serverProcess.Id -Force
     }
     if ($null -ne $oldClipboard) {
         try {
-            Set-Clipboard -Value $oldClipboard
+            Set-SmokeClipboardText -Value $oldClipboard
         }
         catch {
         }
