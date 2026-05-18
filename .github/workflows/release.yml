@@ -166,18 +166,20 @@ jobs:
           WINDOWS_SIGNING_CERT_BASE64: ${{ secrets.WINDOWS_SIGNING_CERT_BASE64 }}
           WINDOWS_SIGNING_CERT_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERT_PASSWORD }}
         run: |
-          $packageArgs = @(
-            "-Configuration", "Release",
-            "-CoreRepo", "..\x-tunnel",
-            "-Output", "artifacts\dist",
-            "-Version", $env:RELEASE_TAG,
-            "-SkipTests"
-          )
+          $packageArgs = @{
+            Configuration = "Release"
+            CoreRepo = "..\x-tunnel"
+            Output = "artifacts\dist"
+            Version = $env:RELEASE_TAG
+            SkipTests = $true
+          }
 
           if (-not [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERT_BASE64)) {
             $certPath = Join-Path $env:RUNNER_TEMP "windows-signing.pfx"
             [System.IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_SIGNING_CERT_BASE64))
-            $packageArgs += @("-Sign", "-SignCertificatePath", $certPath, "-SignCertificatePasswordEnv", "WINDOWS_SIGNING_CERT_PASSWORD")
+            $packageArgs["Sign"] = $true
+            $packageArgs["SignCertificatePath"] = $certPath
+            $packageArgs["SignCertificatePasswordEnv"] = "WINDOWS_SIGNING_CERT_PASSWORD"
           }
 
           .\scripts\package.ps1 @packageArgs
