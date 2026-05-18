@@ -367,7 +367,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _selectedSubscription, value))
             {
-                SubscriptionStatusText = value is null ? "No subscription selected" : BuildSubscriptionStatus(value);
+                SubscriptionStatusText = value is null ? NoSubscriptionSelectedText : BuildSubscriptionStatus(value);
                 RaiseSubscriptionCommandState();
             }
         }
@@ -692,9 +692,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             var trimmed = value.Trim();
             Settings.NetworkTestUrl = trimmed;
-            NetworkTestSummary = "Ready to test";
+            NetworkTestSummary = L("Ready to test", "准备测试");
             NetworkTestDetail = trimmed;
-            NetworkTestLastRunText = "Target changed; run test";
+            NetworkTestLastRunText = L("Target changed; run test", "目标已更改，请运行测试");
             SetNetworkRouteReady(trimmed);
             if (!_applyingNetworkTestTarget)
             {
@@ -1239,7 +1239,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         DetectedCorePath = _coreLocator.Resolve(new AppSettings()) ?? "";
         LoadProfiles(Settings.AutoConnectProfileId);
         LoadSubscriptions();
-        StatusText = "Stopped";
+        StatusText = StoppedText;
+        RefreshTransientLocalizedUi();
         UpdateCorePathStatus();
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
@@ -1286,7 +1287,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (Subscriptions.Count == 0)
         {
             SelectedSubscription = null;
-            SubscriptionStatusText = "No subscriptions configured";
+            SubscriptionStatusText = NoSubscriptionsConfiguredText;
             RaiseSubscriptionCommandState();
             return;
         }
@@ -1438,7 +1439,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         DiagnosticsSummaryText = BuildDiagnosticsSummary(report);
         DiagnosticsText = JsonSerializer.Serialize(report, JsonDefaults.Pretty);
         UpdateDiagnosticsPortStatus(report);
-        DiagnosticsLastRunText = $"Checks refreshed {DateTimeOffset.Now.LocalDateTime:T}";
+        DiagnosticsLastRunText = TimeStatus("Checks refreshed", "检查已刷新");
         return await _diagnostics.ExportAsync(report);
     }
 
@@ -1524,8 +1525,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _repository.SaveSubscription(SelectedSubscription);
         var id = SelectedSubscription.Id;
         LoadSubscriptions(id);
-        SubscriptionStatusText = "Subscription saved";
-        ErrorText = "Subscription saved";
+        SubscriptionStatusText = L("Subscription saved", "订阅已保存");
+        ErrorText = SubscriptionStatusText;
     }
 
     private void DeleteSelectedSubscription()
@@ -1538,7 +1539,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _repository.DeleteSubscription(subscription.Id);
         Subscriptions.Remove(subscription);
         UpdateFilteredSubscriptions();
-        SubscriptionStatusText = "Subscription deleted";
+        SubscriptionStatusText = L("Subscription deleted", "订阅已删除");
         RaiseSubscriptionCommandState();
     }
 
@@ -1550,13 +1551,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         var subscription = SelectedSubscription;
-        SubscriptionStatusText = "Fetching subscription...";
+        SubscriptionStatusText = L("Fetching subscription...", "正在获取订阅...");
         var result = await UpdateSubscriptionAsync(subscription);
         LoadProfiles(SelectedProfile?.Id);
         LoadSubscriptions(subscription.Id);
         SubscriptionStatusText = BuildSubscriptionStatus(SelectedSubscription ?? subscription);
         ErrorText = result.Success
-            ? result.NotModified ? "" : "Subscription updated"
+            ? result.NotModified ? "" : L("Subscription updated", "订阅已更新")
             : result.Message;
     }
 
@@ -1564,13 +1565,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (Subscriptions.Count == 0)
         {
-            SubscriptionStatusText = "No subscriptions configured";
+            SubscriptionStatusText = NoSubscriptionsConfiguredText;
             ErrorText = SubscriptionStatusText;
             return;
         }
 
         var selectedId = SelectedSubscription?.Id;
-        SubscriptionStatusText = $"Updating {Subscriptions.Count} subscription(s)...";
+        SubscriptionStatusText = IsChinese
+            ? $"正在更新 {Subscriptions.Count} 个订阅..."
+            : $"Updating {Subscriptions.Count} subscription(s)...";
         var total = 0;
         var succeeded = 0;
         var failed = 0;
@@ -1606,13 +1609,20 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         LoadProfiles(SelectedProfile?.Id);
         LoadSubscriptions(selectedId);
-        SubscriptionStatusText = string.Join(Environment.NewLine,
-        [
-            $"Updated all {total} subscription(s)",
-            $"Succeeded: {succeeded}, failed: {failed}",
-            $"Added: {added}, updated: {updated}, unchanged: {unchanged}, not modified: {notModified}"
-        ]);
-        ErrorText = failed == 0 ? "All subscriptions updated" : "Some subscriptions failed";
+        SubscriptionStatusText = IsChinese
+            ? string.Join(Environment.NewLine,
+            [
+                $"已更新全部 {total} 个订阅",
+                $"成功: {succeeded}，失败: {failed}",
+                $"新增: {added}，更新: {updated}，未变更: {unchanged}，未修改: {notModified}"
+            ])
+            : string.Join(Environment.NewLine,
+            [
+                $"Updated all {total} subscription(s)",
+                $"Succeeded: {succeeded}, failed: {failed}",
+                $"Added: {added}, updated: {updated}, unchanged: {unchanged}, not modified: {notModified}"
+            ]);
+        ErrorText = failed == 0 ? L("All subscriptions updated", "全部订阅已更新") : L("Some subscriptions failed", "部分订阅更新失败");
     }
 
     private async Task<SubscriptionUpdateResult> UpdateSubscriptionAsync(Subscription subscription)
@@ -1864,7 +1874,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             RuntimeState = RuntimeState.Faulted;
             ErrorText = ex.Message;
-            StatusText = "Faulted";
+            StatusText = T.Faulted;
             RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
         }
     }
@@ -1899,8 +1909,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         DiagnosticsSummaryText = BuildDiagnosticsSummary(report);
         DiagnosticsText = JsonSerializer.Serialize(report, JsonDefaults.Pretty);
         UpdateDiagnosticsPortStatus(report);
-        DiagnosticsLastRunText = $"Checks refreshed {DateTimeOffset.Now.LocalDateTime:T}";
-        ErrorText = "Diagnostics refreshed";
+        DiagnosticsLastRunText = TimeStatus("Checks refreshed", "检查已刷新");
+        ErrorText = L("Diagnostics refreshed", "诊断已刷新");
     }
 
     private async Task OpenDiagnosticsAsync()
@@ -1912,11 +1922,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private async Task RunAllDiagnosticsAsync()
     {
         SelectedMainTabIndex = 4;
-        ErrorText = "Running diagnostics...";
+        ErrorText = L("Running diagnostics...", "正在运行诊断...");
         await RefreshDiagnosticsAsync();
         await TestNetworkAsync();
         await TestProfileEndpointAsync();
-        ErrorText = "Diagnostics run complete";
+        ErrorText = L("Diagnostics run complete", "诊断运行完成");
     }
 
     private void CopyDiagnosticsSummary()
@@ -1927,7 +1937,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, BuildDiagnosticsShareSummary());
-        ErrorText = "Diagnostics summary copied";
+        ErrorText = L("Diagnostics summary copied", "诊断摘要已复制");
     }
 
     private string BuildDiagnosticsShareSummary()
@@ -1940,14 +1950,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         if (HasNetworkTestResult())
         {
-            lines.Add($"Network: {NetworkTestSummary} ({NetworkTestLastRunText})");
-            lines.Add($"Network detail: {NetworkTestDetail}");
+            lines.Add($"{T.Network}: {NetworkTestSummary} ({NetworkTestLastRunText})");
+            lines.Add($"{L("Network detail", "网络详情")}: {NetworkTestDetail}");
         }
 
         if (HasProfileEndpointTestResult())
         {
-            lines.Add($"Forward: {ProfileEndpointRouteStatus} ({ProfileEndpointTestLastRunText})");
-            lines.Add($"Forward detail: {ProfileEndpointRouteDetail}");
+            lines.Add($"{L("Forward", "转发")}: {ProfileEndpointRouteStatus} ({ProfileEndpointTestLastRunText})");
+            lines.Add($"{L("Forward detail", "转发详情")}: {ProfileEndpointRouteDetail}");
         }
 
         return string.Join(Environment.NewLine, lines);
@@ -1961,7 +1971,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, DiagnosticsText);
-        ErrorText = "Diagnostics report copied";
+        ErrorText = L("Diagnostics report copied", "诊断报告已复制");
     }
 
     private void CopyDiagnosticsPorts()
@@ -1972,7 +1982,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, $"{DiagnosticsPortStatus}{Environment.NewLine}{DiagnosticsPortDetail}");
-        ErrorText = "Diagnostics ports copied";
+        ErrorText = L("Diagnostics ports copied", "诊断端口结果已复制");
     }
 
     private async Task RunOverviewNetworkTestAsync()
@@ -1986,10 +1996,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (!Uri.TryCreate(NetworkTestUrl.Trim(), UriKind.Absolute, out var target)
             || (target.Scheme != Uri.UriSchemeHttp && target.Scheme != Uri.UriSchemeHttps))
         {
-            NetworkTestText = "Target URL must be an absolute http or https URL";
-            NetworkTestSummary = "Invalid target";
+            NetworkTestText = L("Target URL must be an absolute http or https URL", "目标 URL 必须是绝对 http 或 https URL");
+            NetworkTestSummary = L("Invalid target", "无效目标");
             NetworkTestDetail = NetworkTestText;
-            NetworkTestLastRunText = $"Last attempted {DateTimeOffset.Now.LocalDateTime:T}";
+            NetworkTestLastRunText = TimeStatus("Last attempted", "上次尝试");
             SetNetworkRouteInvalid(NetworkTestText);
             ErrorText = NetworkTestText;
             return;
@@ -1998,24 +2008,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             var endpoints = TryGetSelectedLocalProxyEndpoints(out var endpointError);
-            NetworkTestText = "Testing network...";
-            NetworkTestSummary = "Testing network...";
+            NetworkTestText = TestingNetworkText;
+            NetworkTestSummary = TestingNetworkText;
             NetworkTestDetail = target.ToString();
-            NetworkTestLastRunText = $"Testing started {DateTimeOffset.Now.LocalDateTime:T}";
+            NetworkTestLastRunText = TimeStatus("Testing started", "测试开始");
             SetNetworkRouteTesting(target, endpoints, endpointError);
             var results = await _networkTester.TestAsync(target, endpoints);
             NetworkTestText = FormatNetworkTestResults(results, endpointError);
             UpdateNetworkRouteStatus(results, endpointError);
             UpdateNetworkTestSummary(results, endpointError);
-            NetworkTestLastRunText = $"Last tested {DateTimeOffset.Now.LocalDateTime:T}";
-            ErrorText = results.Any(x => x.Success) ? "" : "Network test failed";
+            NetworkTestLastRunText = TimeStatus("Last tested", "上次测试");
+            ErrorText = results.Any(x => x.Success) ? "" : L("Network test failed", "网络测试失败");
         }
         catch (Exception ex)
         {
-            NetworkTestText = $"Network test failed: {ex.Message}";
-            NetworkTestSummary = "Network failed";
+            NetworkTestText = IsChinese ? $"网络测试失败: {ex.Message}" : $"Network test failed: {ex.Message}";
+            NetworkTestSummary = L("Network failed", "网络失败");
             NetworkTestDetail = ex.Message;
-            NetworkTestLastRunText = $"Last failed {DateTimeOffset.Now.LocalDateTime:T}";
+            NetworkTestLastRunText = TimeStatus("Last failed", "上次失败");
             SetNetworkRouteFailed(ex.Message);
             ErrorText = ex.Message;
         }
@@ -2028,24 +2038,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
         CopyTextRequested?.Invoke(this, NetworkTestText);
-        ErrorText = "Network test result copied";
+        ErrorText = L("Network test result copied", "网络测试结果已复制");
     }
 
     private void ClearNetworkTest()
     {
-        NetworkTestText = "Not tested";
-        NetworkTestSummary = "Not tested";
-        NetworkTestDetail = "Run Test Network to check direct and proxy routes.";
-        NetworkTestLastRunText = "Network test not run";
+        NetworkTestText = NetworkNotTestedText;
+        NetworkTestSummary = NetworkNotTestedText;
+        NetworkTestDetail = DefaultNetworkTestDetailText;
+        NetworkTestLastRunText = L("Network test not run", "网络测试未运行");
         SetNetworkRouteNotTested();
-        ErrorText = "Network test result cleared";
+        ErrorText = L("Network test result cleared", "网络测试结果已清除");
     }
 
     private void ClearDiagnosticsTests()
     {
         ClearNetworkTest();
         ClearProfileEndpointTest();
-        ErrorText = "Diagnostics test results cleared";
+        ErrorText = L("Diagnostics test results cleared", "诊断测试结果已清除");
     }
 
     private void CopyProfileEndpointTestResult()
@@ -2055,44 +2065,44 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
         CopyTextRequested?.Invoke(this, ProfileEndpointTestText);
-        ErrorText = "Profile endpoint test result copied";
+        ErrorText = L("Profile endpoint test result copied", "配置端点测试结果已复制");
     }
 
     private void ClearProfileEndpointTest()
     {
-        ProfileEndpointTestText = "Not tested";
-        ProfileEndpointTestLastRunText = "Forward test not run";
+        ProfileEndpointTestText = NetworkNotTestedText;
+        ProfileEndpointTestLastRunText = L("Forward test not run", "转发测试未运行");
         SetProfileEndpointRouteNotTested();
-        ErrorText = "Profile endpoint test result cleared";
+        ErrorText = L("Profile endpoint test result cleared", "配置端点测试结果已清除");
     }
 
     private async Task TestProfileEndpointAsync()
     {
         if (SelectedProfile is null)
         {
-            ProfileEndpointTestText = "No selected profile";
-            ProfileEndpointTestLastRunText = $"Last attempted {DateTimeOffset.Now.LocalDateTime:T}";
-            SetProfileEndpointRoute("Forward TCP: unavailable", "No selected profile", RouteVisual.Warning);
+            ProfileEndpointTestText = L("No selected profile", "未选择配置");
+            ProfileEndpointTestLastRunText = TimeStatus("Last attempted", "上次尝试");
+            SetProfileEndpointRoute(L("Forward TCP: unavailable", "转发 TCP：不可用"), ProfileEndpointTestText, RouteVisual.Warning);
             return;
         }
 
         try
         {
-            ProfileEndpointTestText = "Testing profile forward endpoint...";
-            ProfileEndpointTestLastRunText = $"Testing started {DateTimeOffset.Now.LocalDateTime:T}";
+            ProfileEndpointTestText = TestingProfileEndpointText;
+            ProfileEndpointTestLastRunText = TimeStatus("Testing started", "测试开始");
             var endpoint = _configService.GetForwardEndpoint(SelectedProfile.CoreConfigJson);
-            SetProfileEndpointRoute("Forward TCP: testing", endpoint.Display, RouteVisual.Busy);
+            SetProfileEndpointRoute(L("Forward TCP: testing", "转发 TCP：测试中"), endpoint.Display, RouteVisual.Busy);
             var result = await _networkTester.TestEndpointAsync(endpoint);
             ProfileEndpointTestText = FormatNetworkTestResults([result], note: null);
             UpdateProfileEndpointRoute(result);
-            ProfileEndpointTestLastRunText = $"Last tested {DateTimeOffset.Now.LocalDateTime:T}";
-            ErrorText = result.Success ? "" : "Profile endpoint test failed";
+            ProfileEndpointTestLastRunText = TimeStatus("Last tested", "上次测试");
+            ErrorText = result.Success ? "" : L("Profile endpoint test failed", "配置端点测试失败");
         }
         catch (Exception ex)
         {
-            ProfileEndpointTestText = $"Profile endpoint test failed: {ex.Message}";
-            ProfileEndpointTestLastRunText = $"Last failed {DateTimeOffset.Now.LocalDateTime:T}";
-            SetProfileEndpointRoute("Forward TCP: failed", ex.Message, RouteVisual.Failed);
+            ProfileEndpointTestText = IsChinese ? $"配置端点测试失败: {ex.Message}" : $"Profile endpoint test failed: {ex.Message}";
+            ProfileEndpointTestLastRunText = TimeStatus("Last failed", "上次失败");
+            SetProfileEndpointRoute(L("Forward TCP: failed", "转发 TCP：失败"), ex.Message, RouteVisual.Failed);
             ErrorText = ex.Message;
         }
     }
@@ -2793,6 +2803,69 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return values.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x)) ?? "";
     }
 
+    private bool IsChinese => string.Equals(T.LanguageCode, "zh-CN", StringComparison.Ordinal);
+
+    private string L(string english, string chinese) => IsChinese ? chinese : english;
+
+    private string TimeStatus(string englishPrefix, string chinesePrefix)
+    {
+        return $"{L(englishPrefix, chinesePrefix)} {DateTimeOffset.Now.LocalDateTime:T}";
+    }
+
+    private string NoSubscriptionSelectedText => L("No subscription selected", "未选择订阅");
+    private string NoSubscriptionsConfiguredText => L("No subscriptions configured", "未配置订阅");
+    private string NetworkNotTestedText => L("Not tested", "未测试");
+    private string TestingNetworkText => L("Testing network...", "正在测试网络...");
+    private string TestingProfileEndpointText => L("Testing profile forward endpoint...", "正在测试配置转发端点...");
+    private string DefaultNetworkTestDetailText => L("Run Test Network to check direct and proxy routes.", "运行网络测试以检查直连和代理路由。");
+    private string StoppedText => L("Stopped", "已停止");
+
+    private string LocalizeRouteName(string route)
+    {
+        if (!IsChinese)
+        {
+            return route;
+        }
+
+        return route switch
+        {
+            "Direct" => "直连",
+            "Proxy" => "代理",
+            "Forward TCP" => "转发 TCP",
+            _ when route.Contains("proxy", StringComparison.OrdinalIgnoreCase) => route.Replace("Proxy", "代理", StringComparison.OrdinalIgnoreCase),
+            _ => route
+        };
+    }
+
+    private string LocalizeSubscriptionResult(string result)
+    {
+        if (!IsChinese || string.IsNullOrWhiteSpace(result))
+        {
+            return result;
+        }
+
+        if (string.Equals(result, "not saved", StringComparison.OrdinalIgnoreCase))
+        {
+            return "未保存";
+        }
+        if (string.Equals(result, "not modified", StringComparison.OrdinalIgnoreCase))
+        {
+            return "未修改";
+        }
+        if (result.StartsWith("failed:", StringComparison.OrdinalIgnoreCase))
+        {
+            return "失败:" + result["failed:".Length..];
+        }
+        if (result.StartsWith("added ", StringComparison.OrdinalIgnoreCase))
+        {
+            return result
+                .Replace("added", "新增", StringComparison.OrdinalIgnoreCase)
+                .Replace("updated", "更新", StringComparison.OrdinalIgnoreCase)
+                .Replace("unchanged", "未变更", StringComparison.OrdinalIgnoreCase);
+        }
+        return result;
+    }
+
     private static string ClassifyAppMessageForeground(string message)
     {
         if (string.IsNullOrWhiteSpace(message))
@@ -2815,6 +2888,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return terms.Any(term => value.Contains(term, StringComparison.OrdinalIgnoreCase));
     }
 
+    private static bool IsAnyText(string value, params string[] candidates)
+    {
+        return candidates.Any(candidate => string.Equals(value, candidate, StringComparison.OrdinalIgnoreCase));
+    }
+
     private void UpdateFilteredLogText()
     {
         var filter = LogFilterText.Trim();
@@ -2822,8 +2900,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (!TryBuildLogRegex(filter, out var regex, out var regexError))
         {
             FilteredLogText = "";
-            LogFilterSummary = $"Invalid regex: {regexError}";
-            SetLogFilterBadge("Invalid regex", "#7F1D1D", "#FECACA");
+            LogFilterSummary = IsChinese ? $"无效正则: {regexError}" : $"Invalid regex: {regexError}";
+            SetLogFilterBadge(IsChinese ? "无效正则" : "Invalid regex", "#7F1D1D", "#FECACA");
             return;
         }
 
@@ -2902,20 +2980,29 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (string.IsNullOrWhiteSpace(filter) && string.Equals(SelectedLogLevelFilter, "All", StringComparison.OrdinalIgnoreCase))
         {
-            LogFilterSummary = $"Showing {shown} log line(s)";
-            SetLogFilterBadge("All logs", "#374151", "#E5E7EB");
+            LogFilterSummary = IsChinese ? $"显示 {shown} 条日志" : $"Showing {shown} log line(s)";
+            SetLogFilterBadge(IsChinese ? "全部日志" : "All logs", "#374151", "#E5E7EB");
             return;
         }
 
-        var mode = regex is null ? "text" : "regex";
-        LogFilterSummary = $"Showing {shown}/{total} log line(s), {mode} filter";
+        var mode = regex is null
+            ? IsChinese ? "文本" : "text"
+            : IsChinese ? "正则" : "regex";
+        LogFilterSummary = IsChinese
+            ? $"显示 {shown}/{total} 条日志，{mode}过滤"
+            : $"Showing {shown}/{total} log line(s), {mode} filter";
         if (shown == 0 && total > 0)
         {
-            SetLogFilterBadge("No matches", "#92400E", "#FEF3C7");
+            SetLogFilterBadge(IsChinese ? "无匹配" : "No matches", "#92400E", "#FEF3C7");
             return;
         }
 
-        SetLogFilterBadge(regex is null ? "Text filter" : "Regex filter", "#1E3A8A", "#BFDBFE");
+        SetLogFilterBadge(
+            regex is null
+                ? IsChinese ? "文本过滤" : "Text filter"
+                : IsChinese ? "正则过滤" : "Regex filter",
+            "#1E3A8A",
+            "#BFDBFE");
     }
 
     private void SetLogFilterBadge(string text, string background, string foreground)
@@ -3002,7 +3089,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var ready = Profiles.Count(x => string.Equals(x.ValidationState, "Ready", StringComparison.Ordinal));
         var issues = Profiles.Count(x => string.Equals(x.ValidationState, "Issue", StringComparison.Ordinal));
         var endpointOk = Profiles.Count(HasSuccessfulEndpointTest);
-        ProfileSummaryText = $"Profiles {FilteredProfiles.Count}/{Profiles.Count} visible, {ready} ready, {issues} issues, {endpointOk} endpoint ok";
+        ProfileSummaryText = IsChinese
+            ? $"配置 {FilteredProfiles.Count}/{Profiles.Count} 可见，{ready} 就绪，{issues} 问题，{endpointOk} 端点正常"
+            : $"Profiles {FilteredProfiles.Count}/{Profiles.Count} visible, {ready} ready, {issues} issues, {endpointOk} endpoint ok";
     }
 
     private static bool HasSuccessfulEndpointTest(Profile profile)
@@ -3065,39 +3154,39 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void SetNetworkRouteNotTested()
     {
-        SetDirectRoute("Direct: not tested", "Run Test Network", RouteVisual.Neutral);
-        SetProxyRoute("Proxy: not tested", "Uses selected profile local proxy", RouteVisual.Neutral);
+        SetDirectRoute(L("Direct: not tested", "直连：未测试"), L("Run Test Network", "运行网络测试"), RouteVisual.Neutral);
+        SetProxyRoute(L("Proxy: not tested", "代理：未测试"), L("Uses selected profile local proxy", "使用选中配置的本地代理"), RouteVisual.Neutral);
     }
 
     private void SetNetworkRouteReady(string target)
     {
-        var detail = string.IsNullOrWhiteSpace(target) ? "Enter an http or https URL" : target;
-        SetDirectRoute("Direct: ready", detail, RouteVisual.Neutral);
-        SetProxyRoute("Proxy: ready", "Uses selected profile local proxy", RouteVisual.Neutral);
+        var detail = string.IsNullOrWhiteSpace(target) ? L("Enter an http or https URL", "输入 http 或 https URL") : target;
+        SetDirectRoute(L("Direct: ready", "直连：就绪"), detail, RouteVisual.Neutral);
+        SetProxyRoute(L("Proxy: ready", "代理：就绪"), L("Uses selected profile local proxy", "使用选中配置的本地代理"), RouteVisual.Neutral);
     }
 
     private void SetNetworkRouteInvalid(string detail)
     {
-        SetDirectRoute("Direct: invalid target", detail, RouteVisual.Failed);
-        SetProxyRoute("Proxy: invalid target", detail, RouteVisual.Failed);
+        SetDirectRoute(L("Direct: invalid target", "直连：目标无效"), detail, RouteVisual.Failed);
+        SetProxyRoute(L("Proxy: invalid target", "代理：目标无效"), detail, RouteVisual.Failed);
     }
 
     private void SetNetworkRouteTesting(Uri target, LocalProxyEndpoints? endpoints, string? endpointError)
     {
-        SetDirectRoute("Direct: testing", target.ToString(), RouteVisual.Busy);
+        SetDirectRoute(L("Direct: testing", "直连：测试中"), target.ToString(), RouteVisual.Busy);
         if (endpoints is null)
         {
-            SetProxyRoute("Proxy: skipped", FirstNonEmpty(endpointError, "No selected proxy endpoint"), RouteVisual.Warning);
+            SetProxyRoute(L("Proxy: skipped", "代理：已跳过"), FirstNonEmpty(endpointError, L("No selected proxy endpoint", "没有选中的代理端点")), RouteVisual.Warning);
             return;
         }
 
-        SetProxyRoute("Proxy: testing", BuildProxyEndpointSummary(endpoints), RouteVisual.Busy);
+        SetProxyRoute(L("Proxy: testing", "代理：测试中"), BuildProxyEndpointSummary(endpoints), RouteVisual.Busy);
     }
 
     private void SetNetworkRouteFailed(string detail)
     {
-        SetDirectRoute("Direct: failed", detail, RouteVisual.Failed);
-        SetProxyRoute("Proxy: failed", detail, RouteVisual.Failed);
+        SetDirectRoute(L("Direct: failed", "直连：失败"), detail, RouteVisual.Failed);
+        SetProxyRoute(L("Proxy: failed", "代理：失败"), detail, RouteVisual.Failed);
     }
 
     private void UpdateNetworkRouteStatus(IEnumerable<NetworkTestResult> results, string? note)
@@ -3108,7 +3197,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         if (direct is null)
         {
-            SetDirectRoute("Direct: skipped", "No direct route result", RouteVisual.Warning);
+            SetDirectRoute(L("Direct: skipped", "直连：已跳过"), L("No direct route result", "没有直连路由结果"), RouteVisual.Warning);
         }
         else
         {
@@ -3117,7 +3206,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         if (proxy is null)
         {
-            SetProxyRoute("Proxy: skipped", FirstNonEmpty(note, "No local proxy endpoint available"), RouteVisual.Warning);
+            SetProxyRoute(L("Proxy: skipped", "代理：已跳过"), FirstNonEmpty(note, L("No local proxy endpoint available", "没有可用的本地代理端点")), RouteVisual.Warning);
             return;
         }
 
@@ -3131,7 +3220,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void SetProfileEndpointRouteNotTested()
     {
-        SetProfileEndpointRoute("Forward TCP: not tested", "Uses selected profile forward endpoint", RouteVisual.Neutral);
+        SetProfileEndpointRoute(L("Forward TCP: not tested", "转发 TCP：未测试"), L("Uses selected profile forward endpoint", "使用选中配置的转发端点"), RouteVisual.Neutral);
     }
 
     private void SetDirectRoute(string status, string detail, RouteVisual visual)
@@ -3155,21 +3244,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         (ProfileEndpointRouteBackground, ProfileEndpointRouteForeground) = RouteColors(visual);
     }
 
-    private static string BuildRouteStatus(NetworkTestResult result)
+    private string BuildRouteStatus(NetworkTestResult result)
     {
-        var status = result.Success ? "ok" : "failed";
-        return $"{result.Route}: {status} {result.DurationMs}ms";
+        var status = result.Success ? L("ok", "正常") : L("failed", "失败");
+        return $"{LocalizeRouteName(result.Route)}: {status} {result.DurationMs}ms";
     }
 
-    private static string BuildRouteDetail(NetworkTestResult result)
+    private string BuildRouteDetail(NetworkTestResult result)
     {
         if (!string.IsNullOrWhiteSpace(result.Error))
         {
             return result.Error;
         }
 
-        var status = result.StatusCode.HasValue ? $"status {result.StatusCode}; " : "";
-        var proxy = string.IsNullOrWhiteSpace(result.Proxy) ? "" : $" via {result.Proxy}";
+        var status = result.StatusCode.HasValue ? $"{L("status", "状态")} {result.StatusCode}; " : "";
+        var proxy = string.IsNullOrWhiteSpace(result.Proxy) ? "" : $" {L("via", "经由")} {result.Proxy}";
         return $"{status}{result.Target}{proxy}";
     }
 
@@ -3185,7 +3274,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         };
     }
 
-    private static string FormatNetworkTestResults(IEnumerable<NetworkTestResult> results, string? note)
+    private string FormatNetworkTestResults(IEnumerable<NetworkTestResult> results, string? note)
     {
         var lines = new List<string>();
         if (!string.IsNullOrWhiteSpace(note))
@@ -3194,11 +3283,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         foreach (var result in results)
         {
-            var status = result.Success ? "ok" : "failed";
-            var code = result.StatusCode.HasValue ? $" status={result.StatusCode}" : "";
-            var proxy = string.IsNullOrWhiteSpace(result.Proxy) ? "" : $" proxy={result.Proxy}";
-            var error = string.IsNullOrWhiteSpace(result.Error) ? "" : $" error={result.Error}";
-            lines.Add($"{result.Route}: {status}{code} time={result.DurationMs}ms target={result.Target}{proxy}{error}");
+            var status = result.Success ? L("ok", "正常") : L("failed", "失败");
+            var code = result.StatusCode.HasValue ? $" {L("status", "状态")}={result.StatusCode}" : "";
+            var proxy = string.IsNullOrWhiteSpace(result.Proxy) ? "" : $" {L("proxy", "代理")}={result.Proxy}";
+            var error = string.IsNullOrWhiteSpace(result.Error) ? "" : $" {L("error", "错误")}={result.Error}";
+            lines.Add($"{LocalizeRouteName(result.Route)}: {status}{code} {L("time", "耗时")}={result.DurationMs}ms {L("target", "目标")}={result.Target}{proxy}{error}");
         }
         return string.Join(Environment.NewLine, lines);
     }
@@ -3211,63 +3300,73 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         if (direct?.Success == true && proxy?.Success == true)
         {
-            NetworkTestSummary = "Direct + proxy ok";
-            NetworkTestDetail = $"Direct {FormatResultDuration(direct)}, {proxy.Route} {FormatResultDuration(proxy)}";
+            NetworkTestSummary = L("Direct + proxy ok", "直连和代理正常");
+            NetworkTestDetail = IsChinese
+                ? $"直连 {FormatResultDuration(direct)}，{LocalizeRouteName(proxy.Route)} {FormatResultDuration(proxy)}"
+                : $"Direct {FormatResultDuration(direct)}, {proxy.Route} {FormatResultDuration(proxy)}";
             return;
         }
 
         if (direct?.Success == true && proxy is null)
         {
-            NetworkTestSummary = "Direct ok";
-            NetworkTestDetail = AppendNote($"Direct {FormatResultDuration(direct)}; proxy route skipped", note);
+            NetworkTestSummary = L("Direct ok", "直连正常");
+            NetworkTestDetail = AppendNote(
+                IsChinese
+                    ? $"直连 {FormatResultDuration(direct)}；代理路由已跳过"
+                    : $"Direct {FormatResultDuration(direct)}; proxy route skipped",
+                note);
             return;
         }
 
         if (direct?.Success == true)
         {
-            NetworkTestSummary = "Direct ok, proxy failed";
-            NetworkTestDetail = AppendNote($"Direct {FormatResultDuration(direct)}; {proxy?.Route ?? "proxy"} failed", note);
+            NetworkTestSummary = L("Direct ok, proxy failed", "直连正常，代理失败");
+            NetworkTestDetail = AppendNote(
+                IsChinese
+                    ? $"直连 {FormatResultDuration(direct)}；{LocalizeRouteName(proxy?.Route ?? "proxy")} 失败"
+                    : $"Direct {FormatResultDuration(direct)}; {proxy?.Route ?? "proxy"} failed",
+                note);
             return;
         }
 
         if (proxy?.Success == true)
         {
-            NetworkTestSummary = "Proxy ok, direct failed";
-            NetworkTestDetail = $"{proxy.Route} {FormatResultDuration(proxy)}; direct failed";
+            NetworkTestSummary = L("Proxy ok, direct failed", "代理正常，直连失败");
+            NetworkTestDetail = IsChinese
+                ? $"{LocalizeRouteName(proxy.Route)} {FormatResultDuration(proxy)}；直连失败"
+                : $"{proxy.Route} {FormatResultDuration(proxy)}; direct failed";
             return;
         }
 
-        NetworkTestSummary = "Network failed";
-        NetworkTestDetail = AppendNote(FirstNonEmpty(direct?.Error, proxy?.Error, "No route succeeded"), note);
+        NetworkTestSummary = L("Network failed", "网络失败");
+        NetworkTestDetail = AppendNote(FirstNonEmpty(direct?.Error, proxy?.Error, L("No route succeeded", "没有路由成功")), note);
     }
 
     private void UpdateNetworkTestBadge()
     {
-        if (NetworkTestSummary.Contains("failed", StringComparison.OrdinalIgnoreCase)
-            && NetworkTestSummary.Contains("ok", StringComparison.OrdinalIgnoreCase))
+        if (ContainsAny(NetworkTestSummary, "failed", "失败")
+            && ContainsAny(NetworkTestSummary, "ok", "正常"))
         {
             NetworkTestBadgeBackground = "#92400E";
             NetworkTestBadgeForeground = "#FEF3C7";
             return;
         }
 
-        if (NetworkTestSummary.Contains("ok", StringComparison.OrdinalIgnoreCase))
+        if (ContainsAny(NetworkTestSummary, "ok", "正常"))
         {
             NetworkTestBadgeBackground = "#065F46";
             NetworkTestBadgeForeground = "#D1FAE5";
             return;
         }
 
-        if (NetworkTestSummary.Contains("failed", StringComparison.OrdinalIgnoreCase)
-            || NetworkTestSummary.Contains("invalid", StringComparison.OrdinalIgnoreCase))
+        if (ContainsAny(NetworkTestSummary, "failed", "invalid", "失败", "无效"))
         {
             NetworkTestBadgeBackground = "#7F1D1D";
             NetworkTestBadgeForeground = "#FECACA";
             return;
         }
 
-        if (NetworkTestSummary.Contains("testing", StringComparison.OrdinalIgnoreCase)
-            || NetworkTestSummary.Contains("ready", StringComparison.OrdinalIgnoreCase))
+        if (ContainsAny(NetworkTestSummary, "testing", "ready", "正在", "准备", "就绪"))
         {
             NetworkTestBadgeBackground = "#1E3A8A";
             NetworkTestBadgeForeground = "#BFDBFE";
@@ -3295,48 +3394,48 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         subscription.Url = subscription.Url.Trim();
         if (string.IsNullOrWhiteSpace(subscription.DisplayName))
         {
-            SubscriptionStatusText = "Subscription name is required";
+            SubscriptionStatusText = L("Subscription name is required", "订阅名称必填");
             ErrorText = SubscriptionStatusText;
             return false;
         }
         if (!Uri.TryCreate(subscription.Url, UriKind.Absolute, out var uri)
             || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
         {
-            SubscriptionStatusText = "Subscription URL must be an absolute http or https URL";
+            SubscriptionStatusText = L("Subscription URL must be an absolute http or https URL", "订阅 URL 必须是绝对 http 或 https URL");
             ErrorText = SubscriptionStatusText;
             return false;
         }
         if (subscription.UpdateIntervalMinutes <= 0)
         {
-            SubscriptionStatusText = "Update interval must be greater than zero";
+            SubscriptionStatusText = L("Update interval must be greater than zero", "更新间隔必须大于 0");
             ErrorText = SubscriptionStatusText;
             return false;
         }
         return true;
     }
 
-    private static string BuildSubscriptionStatus(Subscription subscription)
+    private string BuildSubscriptionStatus(Subscription subscription)
     {
         var updated = subscription.LastUpdatedAt?.LocalDateTime.ToString("g", CultureInfo.CurrentCulture) ?? "-";
         return string.Join(Environment.NewLine, new[]
         {
-            $"Last result: {subscription.LastResult}",
-            $"Updated: {updated}",
-            $"Cache: etag={subscription.ETag ?? "-"} modified={subscription.LastModified ?? "-"}"
+            $"{L("Last result", "上次结果")}: {LocalizeSubscriptionResult(subscription.LastResult)}",
+            $"{L("Updated", "更新时间")}: {updated}",
+            $"{L("Cache", "缓存")}: etag={subscription.ETag ?? "-"} modified={subscription.LastModified ?? "-"}"
         });
     }
 
-    private static string BuildSubscriptionSourceSummary(Subscription subscription)
+    private string BuildSubscriptionSourceSummary(Subscription subscription)
     {
         var updated = subscription.LastUpdatedAt?.LocalDateTime.ToString("g", CultureInfo.CurrentCulture) ?? "-";
         return string.Join(Environment.NewLine, new[]
         {
-            $"Subscription: {subscription.DisplayName}",
+            $"{L("Subscription", "订阅")}: {subscription.DisplayName}",
             $"URL: {subscription.Url}",
-            $"Interval: {subscription.UpdateIntervalMinutes} minute(s)",
-            $"Trust: {subscription.TrustPolicy}",
-            $"Last result: {subscription.LastResult}",
-            $"Updated: {updated}"
+            $"{L("Interval", "间隔")}: {subscription.UpdateIntervalMinutes} {L("minute(s)", "分钟")}",
+            $"{L("Trust", "信任策略")}: {subscription.TrustPolicy}",
+            $"{L("Last result", "上次结果")}: {LocalizeSubscriptionResult(subscription.LastResult)}",
+            $"{L("Updated", "更新时间")}: {updated}"
         });
     }
 
@@ -3411,13 +3510,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (Subscriptions.Count == 0)
         {
-            SubscriptionSummaryText = "Subscriptions 0/0 visible, 0 updated, 0 failed";
+            SubscriptionSummaryText = IsChinese
+                ? "订阅 0/0 可见，0 已更新，0 失败"
+                : "Subscriptions 0/0 visible, 0 updated, 0 failed";
             return;
         }
 
         var updated = Subscriptions.Count(x => x.LastUpdatedAt.HasValue);
         var failed = Subscriptions.Count(x => x.LastResult.StartsWith("failed:", StringComparison.OrdinalIgnoreCase));
-        SubscriptionSummaryText = $"Subscriptions {FilteredSubscriptions.Count}/{Subscriptions.Count} visible, {updated} updated, {failed} failed";
+        SubscriptionSummaryText = IsChinese
+            ? $"订阅 {FilteredSubscriptions.Count}/{Subscriptions.Count} 可见，{updated} 已更新，{failed} 失败"
+            : $"Subscriptions {FilteredSubscriptions.Count}/{Subscriptions.Count} visible, {updated} updated, {failed} failed";
     }
 
     private static bool TryGetNetworkTestTargetUrl(string target, out string url)
@@ -3450,7 +3553,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (report.ActiveProfile is null)
         {
-            SetDiagnosticsPortStatus("Ports: no profile", "Select a profile before running diagnostics.", "#92400E", "#FEF3C7");
+            SetDiagnosticsPortStatus(L("Ports: no profile", "端口：未选择配置"), L("Select a profile before running diagnostics.", "运行诊断前请选择配置。"), "#92400E", "#FEF3C7");
             return;
         }
 
@@ -3459,22 +3562,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var warning = report.Warnings.FirstOrDefault(x => x.Contains("port check failed", StringComparison.OrdinalIgnoreCase));
             if (!string.IsNullOrWhiteSpace(warning))
             {
-                SetDiagnosticsPortStatus("Ports: check failed", warning, "#7F1D1D", "#FECACA");
+                SetDiagnosticsPortStatus(L("Ports: check failed", "端口：检查失败"), warning, "#7F1D1D", "#FECACA");
                 return;
             }
 
-            SetDiagnosticsPortStatus("Ports: none", "Selected profile has no local listen endpoint.", "#374151", "#E5E7EB");
+            SetDiagnosticsPortStatus(L("Ports: none", "端口：无监听"), L("Selected profile has no local listen endpoint.", "选中配置没有本地监听端点。"), "#374151", "#E5E7EB");
             return;
         }
 
         var detail = string.Join("; ", report.PortChecks.Select(FormatPortCheck));
         if (report.PortChecks.Any(x => !x.Available))
         {
-            SetDiagnosticsPortStatus("Ports: blocked", detail, "#7F1D1D", "#FECACA");
+            SetDiagnosticsPortStatus(L("Ports: blocked", "端口：被占用"), detail, "#7F1D1D", "#FECACA");
             return;
         }
 
-        SetDiagnosticsPortStatus("Ports: available", detail, "#065F46", "#D1FAE5");
+        SetDiagnosticsPortStatus(L("Ports: available", "端口：可用"), detail, "#065F46", "#D1FAE5");
     }
 
     private void SetDiagnosticsPortStatus(string status, string detail, string background, string foreground)
@@ -3485,31 +3588,31 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         DiagnosticsPortForeground = foreground;
     }
 
-    private static string FormatPortCheck(PortCheckResult result)
+    private string FormatPortCheck(PortCheckResult result)
     {
         return result.Available
-            ? $"{result.Address} ok"
-            : $"{result.Address} blocked ({result.Error})";
+            ? $"{result.Address} {L("ok", "正常")}"
+            : $"{result.Address} {L("blocked", "被占用")} ({result.Error})";
     }
 
-    private static string BuildDiagnosticsSummary(DiagnosticReport report)
+    private string BuildDiagnosticsSummary(DiagnosticReport report)
     {
         var lines = new List<string>
         {
-            $"Created: {report.CreatedAt.LocalDateTime:g}",
+            $"{L("Created", "创建时间")}: {report.CreatedAt.LocalDateTime:g}",
             $"OS: {report.OsVersion} / {report.Architecture}",
             $"GUI: {report.GuiVersion}",
-            $"Profile: {report.ActiveProfile?.Name ?? "-"}",
-            $"Core: {report.Status?.Version ?? "-"} {report.Status?.Mode ?? ""}".Trim(),
-            $"Proxy: enable={report.CurrentProxy?.ProxyEnable ?? 0} server={report.CurrentProxy?.ProxyServer ?? "-"} pac={report.CurrentProxy?.AutoConfigUrl ?? "-"}"
+            $"{T.Profile}: {report.ActiveProfile?.Name ?? "-"}",
+            $"{T.Core}: {report.Status?.Version ?? "-"} {report.Status?.Mode ?? ""}".Trim(),
+            $"{T.Proxy}: enable={report.CurrentProxy?.ProxyEnable ?? 0} server={report.CurrentProxy?.ProxyServer ?? "-"} pac={report.CurrentProxy?.AutoConfigUrl ?? "-"}"
         };
         if (report.PortChecks.Count > 0)
         {
-            lines.Add("Ports: " + string.Join("; ", report.PortChecks.Select(FormatPortCheck)));
+            lines.Add(L("Ports", "端口") + ": " + string.Join("; ", report.PortChecks.Select(FormatPortCheck)));
         }
         if (report.Warnings.Count > 0)
         {
-            lines.Add("Warnings: " + string.Join("; ", report.Warnings));
+            lines.Add(L("Warnings", "警告") + ": " + string.Join("; ", report.Warnings));
         }
         return string.Join(Environment.NewLine, lines);
     }
@@ -3534,10 +3637,59 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private void RefreshLocalizedUi()
     {
         OnPropertyChanged(nameof(StartupProfileSummary));
+        RefreshTransientLocalizedUi();
         UpdateProfileSummary();
         UpdateSubscriptionSummary();
         UpdateFilteredLogText();
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+    }
+
+    private void RefreshTransientLocalizedUi()
+    {
+        if (IsAnyText(StatusText, "Stopped", "已停止"))
+        {
+            StatusText = StoppedText;
+        }
+
+        if (IsAnyText(NetworkTestText, "Not tested", "未测试"))
+        {
+            NetworkTestText = NetworkNotTestedText;
+            NetworkTestSummary = NetworkNotTestedText;
+            NetworkTestDetail = DefaultNetworkTestDetailText;
+            NetworkTestLastRunText = L("Network test not run", "网络测试未运行");
+            SetNetworkRouteNotTested();
+        }
+
+        if (IsAnyText(ProfileEndpointTestText, "Not tested", "未测试"))
+        {
+            ProfileEndpointTestText = NetworkNotTestedText;
+            ProfileEndpointTestLastRunText = L("Forward test not run", "转发测试未运行");
+            SetProfileEndpointRouteNotTested();
+        }
+
+        if (IsAnyText(SubscriptionStatusText, "No subscriptions configured", "未配置订阅"))
+        {
+            SubscriptionStatusText = NoSubscriptionsConfiguredText;
+        }
+        else if (IsAnyText(SubscriptionStatusText, "No subscription selected", "未选择订阅"))
+        {
+            SubscriptionStatusText = NoSubscriptionSelectedText;
+        }
+        else if (SelectedSubscription is { } subscription && ContainsAny(SubscriptionStatusText, "Last result", "上次结果"))
+        {
+            SubscriptionStatusText = BuildSubscriptionStatus(subscription);
+        }
+
+        if (IsAnyText(DiagnosticsLastRunText, "Diagnostics not run", "诊断未运行"))
+        {
+            DiagnosticsLastRunText = L("Diagnostics not run", "诊断未运行");
+        }
+
+        if (IsAnyText(DiagnosticsPortStatus, "Ports: not checked", "端口：未检查"))
+        {
+            DiagnosticsPortStatus = L("Ports: not checked", "端口：未检查");
+            DiagnosticsPortDetail = L("Run checks to inspect selected profile listen ports.", "运行检查以检查选中配置的监听端口。");
+        }
     }
 
     private void RefreshOptionLists()
@@ -3741,16 +3893,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool HasNetworkTestResult()
     {
         return !string.IsNullOrWhiteSpace(NetworkTestText)
-            && !string.Equals(NetworkTestText, "Not tested", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(NetworkTestText, "Testing network...", StringComparison.OrdinalIgnoreCase);
+            && !IsAnyText(NetworkTestText, "Not tested", "未测试", "Testing network...", "正在测试网络...");
     }
 
     private bool HasProfileEndpointTestResult()
     {
         return !string.IsNullOrWhiteSpace(ProfileEndpointTestText)
-            && !string.Equals(ProfileEndpointTestText, "Not tested", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(ProfileEndpointTestText, "Testing profile forward endpoint...", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(ProfileEndpointTestText, "No selected profile", StringComparison.OrdinalIgnoreCase);
+            && !IsAnyText(ProfileEndpointTestText, "Not tested", "未测试", "Testing profile forward endpoint...", "正在测试配置转发端点...", "No selected profile", "未选择配置");
     }
 
     private bool HasFilteredLogs()
@@ -3786,7 +3935,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool HasOverviewRuntimeDetails()
     {
         return !string.IsNullOrWhiteSpace(StatusText)
-            && !string.Equals(StatusText, "Stopped", StringComparison.OrdinalIgnoreCase);
+            && !IsAnyText(StatusText, "Stopped", "已停止");
     }
 
     private bool HasRuntimeControl()
@@ -3807,10 +3956,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool HasSubscriptionStatusResult()
     {
         return !string.IsNullOrWhiteSpace(SubscriptionStatusText)
-            && !string.Equals(SubscriptionStatusText, "No subscriptions configured", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(SubscriptionStatusText, "No subscription selected", StringComparison.OrdinalIgnoreCase)
+            && !IsAnyText(SubscriptionStatusText, "No subscriptions configured", "未配置订阅", "No subscription selected", "未选择订阅")
             && !SubscriptionStatusText.StartsWith("Fetching subscription", StringComparison.OrdinalIgnoreCase)
-            && !SubscriptionStatusText.StartsWith("Updating ", StringComparison.OrdinalIgnoreCase);
+            && !SubscriptionStatusText.StartsWith("正在获取订阅", StringComparison.OrdinalIgnoreCase)
+            && !SubscriptionStatusText.StartsWith("Updating ", StringComparison.OrdinalIgnoreCase)
+            && !SubscriptionStatusText.StartsWith("正在更新 ", StringComparison.OrdinalIgnoreCase);
     }
 
     private void RaiseCommandState()

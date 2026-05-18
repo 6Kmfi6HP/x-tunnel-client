@@ -83,7 +83,7 @@
 
     <TabControl SelectedIndex="{Binding SelectedMainTabIndex}">
       <TabItem Header="{Binding T.Overview}" automation:AutomationProperties.AutomationId="OverviewTab">
-        <ScrollViewer>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
         <Grid Margin="16" RowDefinitions="Auto,Auto,Auto" RowSpacing="12">
           <Border Classes="panel">
             <Grid ColumnDefinitions="*,360" ColumnSpacing="18">
@@ -305,7 +305,7 @@
             <Border Grid.Row="5" Classes="panel">
               <Grid RowDefinitions="Auto,*">
                 <TextBlock Classes="section" Text="{Binding T.ProfileChecks}"/>
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                   <ItemsControl ItemsSource="{Binding ProfileIssues}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
@@ -475,7 +475,7 @@
       </TabItem>
 
       <TabItem Header="{Binding T.Settings}" automation:AutomationProperties.AutomationId="SettingsTab">
-        <ScrollViewer>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
           <Grid Margin="16" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="12">
             <TextBlock Text="{Binding T.LaunchAtLogin}" VerticalAlignment="Center"/>
             <CheckBox Grid.Column="1" IsChecked="{Binding Settings.LaunchAtLogin}"/>
