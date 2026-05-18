@@ -2084,6 +2084,16 @@ try {
         }
         return $null
     }
+    $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $diagnosticsTab
+    $localizedNetworkTargetCombo = Get-ByAutomationId -Root $window -AutomationId "NetworkTestTargetComboBox" -TimeoutSeconds $TimeoutSeconds
+    $localizedNetworkTargetText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Network target option did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $localizedNetworkTargetCombo
+        if ($text -eq "自定义") {
+            return $text
+        }
+        return $null
+    }
     $profilesTab = Get-ByAutomationId -Root $window -AutomationId "ProfilesTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $profilesTab
     $profileSummary = Get-ByAutomationId -Root $window -AutomationId "ProfileSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
@@ -2222,7 +2232,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force
@@ -2266,7 +2276,17 @@ try {
         }
         return $null
     }
-    Write-Host "Language persisted after restart: $persistedLanguage / $persistedLanguageLabel / $persistedThemeText"
+    $diagnosticsTab = Get-ByAutomationId -Root $window -AutomationId "DiagnosticsTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $diagnosticsTab
+    $persistedNetworkTargetCombo = Get-ByAutomationId -Root $window -AutomationId "NetworkTestTargetComboBox" -TimeoutSeconds $TimeoutSeconds
+    $persistedNetworkTargetText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Persisted Chinese network target option was not visible after restart." -Condition {
+        $text = Get-ElementValue $persistedNetworkTargetCombo
+        if ($text -eq "自定义") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Language persisted after restart: $persistedLanguage / $persistedLanguageLabel / $persistedThemeText / $persistedNetworkTargetText"
     Write-Host "GUI smoke passed"
 }
 finally {

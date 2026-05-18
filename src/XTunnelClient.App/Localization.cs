@@ -116,6 +116,8 @@ public sealed class AppText
         [nameof(ThemeSystem)] = "System",
         [nameof(ThemeLight)] = "Light",
         [nameof(ThemeDark)] = "Dark",
+        [nameof(NetworkTargetFirefoxSuccess)] = "Firefox Success",
+        [nameof(NetworkTargetCustom)] = "Custom",
         [nameof(Language)] = "Language",
         [nameof(PacBypassRules)] = "PAC bypass rules",
         [nameof(LogRetentionDays)] = "Log retention days",
@@ -278,6 +280,8 @@ public sealed class AppText
         [nameof(ThemeSystem)] = "跟随系统",
         [nameof(ThemeLight)] = "浅色",
         [nameof(ThemeDark)] = "深色",
+        [nameof(NetworkTargetFirefoxSuccess)] = "Firefox 成功页",
+        [nameof(NetworkTargetCustom)] = "自定义",
         [nameof(Language)] = "语言",
         [nameof(PacBypassRules)] = "PAC 绕过规则",
         [nameof(LogRetentionDays)] = "日志保留天数",
@@ -496,6 +500,8 @@ public sealed class AppText
     public string ThemeSystem => Get();
     public string ThemeLight => Get();
     public string ThemeDark => Get();
+    public string NetworkTargetFirefoxSuccess => Get();
+    public string NetworkTargetCustom => Get();
     public string Language => Get();
     public string PacBypassRules => Get();
     public string LogRetentionDays => Get();

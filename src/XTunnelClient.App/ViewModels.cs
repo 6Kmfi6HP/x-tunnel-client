@@ -359,7 +359,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<SelectOption<string>> LogLevelFilters { get; } = [];
     public ObservableCollection<SelectOption<string>> ProfileSortOptions { get; } = [];
     public ObservableCollection<SelectOption<string>> SubscriptionSortOptions { get; } = [];
-    public IReadOnlyList<string> NetworkTestTargets { get; } = ["Google 204", "Microsoft NCSI", "Cloudflare Trace", "Firefox Success", "Custom"];
+    public ObservableCollection<SelectOption<string>> NetworkTestTargets { get; } = [];
     public IReadOnlyList<LanguageOption> LanguageOptions { get; } = AppText.LanguageOptions;
 
     public int SelectedMainTabIndex
@@ -762,6 +762,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 {
                     _selectedNetworkTestTarget = target;
                     OnPropertyChanged(nameof(SelectedNetworkTestTarget));
+                    OnPropertyChanged(nameof(SelectedNetworkTestTargetOption));
                 }
             }
         }
@@ -778,6 +779,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 return;
             }
 
+            OnPropertyChanged(nameof(SelectedNetworkTestTargetOption));
             Settings.NetworkTestTarget = value;
             if (TryGetNetworkTestTargetUrl(value, out var url))
             {
@@ -790,6 +792,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 {
                     _applyingNetworkTestTarget = false;
                 }
+            }
+        }
+    }
+
+    public SelectOption<string>? SelectedNetworkTestTargetOption
+    {
+        get => FindOption(NetworkTestTargets, SelectedNetworkTestTarget);
+        set
+        {
+            if (value is not null)
+            {
+                SelectedNetworkTestTarget = value.Value;
             }
         }
     }
@@ -3984,6 +3998,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             new SelectOption<string>("beta", T.UpdateChannelBeta),
             new SelectOption<string>("disabled", T.UpdateChannelDisabled)
         ]);
+        ReplaceCollection(NetworkTestTargets,
+        [
+            new SelectOption<string>("Google 204", "Google 204"),
+            new SelectOption<string>("Microsoft NCSI", "Microsoft NCSI"),
+            new SelectOption<string>("Cloudflare Trace", "Cloudflare Trace"),
+            new SelectOption<string>("Firefox Success", T.NetworkTargetFirefoxSuccess),
+            new SelectOption<string>("Custom", T.NetworkTargetCustom)
+        ]);
         ReplaceCollection(LogLevelFilters,
         [
             new SelectOption<string>("All", T.FilterAll),
@@ -4009,6 +4031,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(SelectedProxyModeOption));
         OnPropertyChanged(nameof(SelectedThemeOption));
         OnPropertyChanged(nameof(SelectedUpdateChannelOption));
+        OnPropertyChanged(nameof(SelectedNetworkTestTargetOption));
         OnPropertyChanged(nameof(SelectedLogLevelFilterOption));
         OnPropertyChanged(nameof(SelectedProfileSortOption));
         OnPropertyChanged(nameof(SelectedSubscriptionSortOption));

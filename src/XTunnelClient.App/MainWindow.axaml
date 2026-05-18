@@ -430,7 +430,7 @@
           </StackPanel>
           <Grid Grid.Row="1" ColumnDefinitions="90,*" ColumnSpacing="8">
             <TextBlock Text="{Binding T.Target}" VerticalAlignment="Center"/>
-            <ComboBox Grid.Column="1" ItemsSource="{Binding NetworkTestTargets}" SelectedItem="{Binding SelectedNetworkTestTarget}" MinHeight="30" automation:AutomationProperties.AutomationId="NetworkTestTargetComboBox"/>
+            <ComboBox Grid.Column="1" ItemsSource="{Binding NetworkTestTargets}" SelectedItem="{Binding SelectedNetworkTestTargetOption}" DisplayMemberBinding="{Binding DisplayName}" MinHeight="30" automation:AutomationProperties.AutomationId="NetworkTestTargetComboBox"/>
           </Grid>
           <Grid Grid.Row="2" ColumnDefinitions="90,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
             <TextBlock Text="{Binding T.TestUrl}" VerticalAlignment="Center"/>
