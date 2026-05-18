@@ -93,8 +93,6 @@ public partial class MainWindow : Window
     private async void ExportDiagnostics_OnClick(object? sender, RoutedEventArgs e)
     {
         var path = await _viewModel.ExportDiagnosticsAsync();
-        _viewModel.ErrorText = _viewModel.T.LanguageCode == "zh-CN"
-            ? $"诊断已导出: {path}"
-            : $"Diagnostics exported: {path}";
+        _viewModel.ErrorText = $"{_viewModel.T.DiagnosticsExported}: {path}";
     }
 }

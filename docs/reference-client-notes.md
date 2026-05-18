@@ -133,4 +133,5 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Localized profile issue field/severity display labels and copied issue reports while preserving raw issue keys for validation logic.
 - Extended GUI smoke language-switch coverage to the Logs page log-level option, filter badge, and filter summary so localized log controls are verified with real UI Automation.
 - Extended GUI smoke language-switch coverage to Subscriptions update-all and copied aggregate results using the local subscription feed in Chinese mode.
+- Moved diagnostics export feedback into `AppText` and extended GUI smoke to verify localized Diagnostics export feedback plus `report.json` in the exported zip after a live language switch.
 - Localized generated default profile/subscription names and the duplicate-profile suffix so new rows created after a language switch match the active UI language.

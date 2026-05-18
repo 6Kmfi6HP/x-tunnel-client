@@ -100,6 +100,7 @@ public sealed class AppText
         [nameof(CopyResult)] = "Copy Result",
         [nameof(RefreshDiagnostics)] = "Refresh Diagnostics",
         [nameof(ExportDiagnostics)] = "Export Diagnostics",
+        [nameof(DiagnosticsExported)] = "Diagnostics exported",
         [nameof(FilterLogsPlaceholder)] = "Filter logs, /regex/",
         [nameof(ClearFilters)] = "Clear Filters",
         [nameof(CopyLogs)] = "Copy Logs",
@@ -271,6 +272,7 @@ public sealed class AppText
         [nameof(CopyResult)] = "复制结果",
         [nameof(RefreshDiagnostics)] = "刷新诊断",
         [nameof(ExportDiagnostics)] = "导出诊断",
+        [nameof(DiagnosticsExported)] = "诊断已导出",
         [nameof(FilterLogsPlaceholder)] = "过滤日志，/正则/",
         [nameof(ClearFilters)] = "清除过滤",
         [nameof(CopyLogs)] = "复制日志",
@@ -498,6 +500,7 @@ public sealed class AppText
     public string CopyResult => Get();
     public string RefreshDiagnostics => Get();
     public string ExportDiagnostics => Get();
+    public string DiagnosticsExported => Get();
     public string FilterLogsPlaceholder => Get();
     public string ClearFilters => Get();
     public string CopyLogs => Get();

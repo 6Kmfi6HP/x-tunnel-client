@@ -2119,6 +2119,29 @@ try {
         }
         return $null
     }
+    $localizedAppErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $localizedExportDiagnosticsZipButton = Get-ByAutomationId -Root $window -AutomationId "ExportDiagnosticsZipButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $localizedExportDiagnosticsZipButton
+    $localizedExportedDiagnosticsText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized diagnostics export did not report an exported zip path." -Condition {
+        $text = Get-ElementValue $localizedAppErrorText
+        if ($text -match "诊断已导出: .*\.zip") {
+            return $text
+        }
+        return $null
+    }
+    $localizedExportedDiagnosticsPath = $localizedExportedDiagnosticsText -replace '^诊断已导出:\s*', ''
+    if (!(Test-Path $localizedExportedDiagnosticsPath)) {
+        throw "Localized exported diagnostics zip was not created: '$localizedExportedDiagnosticsPath'"
+    }
+    $localizedZip = [System.IO.Compression.ZipFile]::OpenRead($localizedExportedDiagnosticsPath)
+    try {
+        if (!($localizedZip.Entries | Where-Object { $_.FullName -eq "report.json" })) {
+            throw "Localized exported diagnostics zip did not contain report.json: '$localizedExportedDiagnosticsPath'"
+        }
+    }
+    finally {
+        $localizedZip.Dispose()
+    }
     $logsTab = Get-ByAutomationId -Root $window -AutomationId "LogsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $logsTab
     $localizedLogLevelCombo = Get-ByAutomationId -Root $window -AutomationId "LogLevelFilterComboBox" -TimeoutSeconds $TimeoutSeconds
@@ -2366,7 +2389,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedLogLevelText / $localizedLogFilterBadge / $localizedLogFilterSummary / $localizedProfileSummary / $localizedProfileBatchText / $localizedProfileState / $localizedProfileSubtitle / $($localizedProfileSummaryClipboard.Split([Environment]::NewLine)[1]) / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedProfileKindText / $localizedStatusProfileText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $localizedSubscriptionTrustText / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedSubscriptionSavedText / $($localizedUpdateAllSubscriptionsText.Split([Environment]::NewLine)[0]) / $($localizedUpdateAllSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $($localizedExportedDiagnosticsText -replace ':.*$', '') / $localizedLogLevelText / $localizedLogFilterBadge / $localizedLogFilterSummary / $localizedProfileSummary / $localizedProfileBatchText / $localizedProfileState / $localizedProfileSubtitle / $($localizedProfileSummaryClipboard.Split([Environment]::NewLine)[1]) / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedProfileKindText / $localizedStatusProfileText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $localizedSubscriptionTrustText / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedSubscriptionSavedText / $($localizedUpdateAllSubscriptionsText.Split([Environment]::NewLine)[0]) / $($localizedUpdateAllSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force
