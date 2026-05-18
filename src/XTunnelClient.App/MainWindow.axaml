@@ -89,7 +89,7 @@
             <Grid ColumnDefinitions="*,360" ColumnSpacing="18">
               <StackPanel Spacing="6">
                 <TextBlock Text="{Binding ConnectionHeading}" FontSize="26" FontWeight="SemiBold"/>
-                <TextBlock Text="{Binding ConnectionDetail}" Classes="caption"/>
+                <TextBlock Text="{Binding ConnectionDetail}" Classes="caption" automation:AutomationProperties.AutomationId="OverviewConnectionDetailText"/>
                 <Grid Margin="0,10,0,0" ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
                   <TextBlock Text="{Binding T.Profile}" Classes="caption"/>
                   <TextBlock Grid.Column="1" Text="{Binding ActiveProfileSummary}" TextTrimming="CharacterEllipsis"/>
@@ -278,13 +278,13 @@
               <TextBox Grid.Column="2" Text="{Binding SelectedProfile.Source}" PlaceholderText="{Binding T.SourcePlaceholder}"/>
             </Grid>
             <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8">
-              <TextBox Text="{Binding ProfileListen}" PlaceholderText="listen" automation:AutomationProperties.AutomationId="ProfileListenTextBox"/>
-              <TextBox Grid.Column="1" Text="{Binding ProfileForward}" PlaceholderText="forward" automation:AutomationProperties.AutomationId="ProfileForwardTextBox"/>
+              <TextBox Text="{Binding ProfileListen}" PlaceholderText="{Binding T.ProfileListenPlaceholder}" automation:AutomationProperties.AutomationId="ProfileListenTextBox"/>
+              <TextBox Grid.Column="1" Text="{Binding ProfileForward}" PlaceholderText="{Binding T.ProfileForwardPlaceholder}" automation:AutomationProperties.AutomationId="ProfileForwardTextBox"/>
             </Grid>
             <Grid Grid.Row="2" ColumnDefinitions="120,120,*" ColumnSpacing="8">
               <NumericUpDown Value="{Binding ProfileConnections}" Minimum="1" Maximum="32"/>
               <CheckBox Grid.Column="1" IsChecked="{Binding ProfileFallback}" Content="{Binding T.Fallback}" VerticalAlignment="Center"/>
-              <TextBox Grid.Column="2" Text="{Binding ProfileMetrics}" PlaceholderText="metrics"/>
+              <TextBox Grid.Column="2" Text="{Binding ProfileMetrics}" PlaceholderText="{Binding T.ProfileMetricsPlaceholder}"/>
             </Grid>
             <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
               <TextBox Text="{Binding SelectedProfile.SecretRef}" PlaceholderText="{Binding T.SecretRefPlaceholder}"/>

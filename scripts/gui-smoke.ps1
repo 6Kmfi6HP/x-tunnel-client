@@ -1268,6 +1268,14 @@ try {
     Write-Host "Connected status bar: $connectedCoreStatus / $connectedLocalProxy / $connectedTrafficStatus / $connectedChannelsStatus"
 
     Select-Element $overviewTab
+    $overviewConnectionDetailText = Get-ByAutomationId -Root $window -AutomationId "OverviewConnectionDetailText" -TimeoutSeconds $TimeoutSeconds
+    $connectedConnectionDetail = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Overview connection detail did not show localized runtime mode while connected." -Condition {
+        $text = Get-ElementValue $overviewConnectionDetailText
+        if ($text -match "Client mode, uptime") {
+            return $text
+        }
+        return $null
+    }
     $overviewRecentLogsBox = Get-ByAutomationId -Root $window -AutomationId "OverviewRecentLogsTextBox" -TimeoutSeconds $TimeoutSeconds
     $overviewRuntimeDetailsBox = Get-ByAutomationId -Root $window -AutomationId "OverviewRuntimeDetailsTextBox" -TimeoutSeconds $TimeoutSeconds
     $overviewRecentLogs = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Overview recent logs did not show runtime log output after connect." -Condition {
@@ -1284,7 +1292,7 @@ try {
         }
         return $null
     }
-    Write-Host "Overview connected details: $($overviewRecentLogs.Split([Environment]::NewLine)[0]) / $($overviewRuntimeDetails.Split([Environment]::NewLine)[0])"
+    Write-Host "Overview connected details: $connectedConnectionDetail / $($overviewRecentLogs.Split([Environment]::NewLine)[0]) / $($overviewRuntimeDetails.Split([Environment]::NewLine)[0])"
     $copyOverviewRecentLogsButton = Get-ByAutomationId -Root $window -AutomationId "CopyOverviewRecentLogsButton" -TimeoutSeconds $TimeoutSeconds
     Clear-SmokeClipboard
     Invoke-Element $copyOverviewRecentLogsButton

@@ -128,4 +128,5 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Localized the Diagnostics network-test target combo labels while keeping stored target keys and preset URLs unchanged.
 - Localized the Profiles kind combo and Subscriptions trust-policy combo labels while keeping stored profile kind and trust-policy keys unchanged.
 - Localized profile metadata summaries, profile list subtitles, active-profile status text, and subscription trust summaries so visible/copyable UI text no longer exposes raw `client`, `local`, or `confirm` keys after a language switch.
+- Localized profile structured-field placeholders and runtime-mode display text while preserving the underlying core config field names and status keys.
 - Localized generated default profile/subscription names and the duplicate-profile suffix so new rows created after a language switch match the active UI language.

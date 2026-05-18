@@ -68,6 +68,9 @@ public sealed class AppText
         [nameof(ClearStartup)] = "Clear Startup",
         [nameof(ProfileNamePlaceholder)] = "Profile name",
         [nameof(SourcePlaceholder)] = "source",
+        [nameof(ProfileListenPlaceholder)] = "listen endpoint",
+        [nameof(ProfileForwardPlaceholder)] = "forward endpoint",
+        [nameof(ProfileMetricsPlaceholder)] = "metrics endpoint",
         [nameof(ProfileKindClient)] = "Client",
         [nameof(ProfileKindServer)] = "Server",
         [nameof(Fallback)] = "fallback",
@@ -236,6 +239,9 @@ public sealed class AppText
         [nameof(ClearStartup)] = "清除启动项",
         [nameof(ProfileNamePlaceholder)] = "配置名称",
         [nameof(SourcePlaceholder)] = "来源",
+        [nameof(ProfileListenPlaceholder)] = "监听地址",
+        [nameof(ProfileForwardPlaceholder)] = "转发地址",
+        [nameof(ProfileMetricsPlaceholder)] = "指标地址",
         [nameof(ProfileKindClient)] = "客户端",
         [nameof(ProfileKindServer)] = "服务端",
         [nameof(Fallback)] = "回退",
@@ -460,6 +466,9 @@ public sealed class AppText
     public string ClearStartup => Get();
     public string ProfileNamePlaceholder => Get();
     public string SourcePlaceholder => Get();
+    public string ProfileListenPlaceholder => Get();
+    public string ProfileForwardPlaceholder => Get();
+    public string ProfileMetricsPlaceholder => Get();
     public string ProfileKindClient => Get();
     public string ProfileKindServer => Get();
     public string Fallback => Get();

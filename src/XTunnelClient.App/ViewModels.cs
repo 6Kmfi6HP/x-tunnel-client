@@ -2703,7 +2703,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         };
         ConnectionDetail = status is null
             ? T.SidecarNotRunning
-            : IsChinese ? $"{status.Mode} 模式，已运行 {FormatDuration(status.UptimeSeconds)}" : $"{status.Mode} mode, uptime {FormatDuration(status.UptimeSeconds)}";
+            : IsChinese ? $"{LocalizeRuntimeMode(status.Mode)} 模式，已运行 {FormatDuration(status.UptimeSeconds)}" : $"{LocalizeRuntimeMode(status.Mode)} mode, uptime {FormatDuration(status.UptimeSeconds)}";
         ActiveProfileSummary = SelectedProfile is null
             ? "-"
             : $"{SelectedProfile.Name} ({FormatProfileSubtitle(SelectedProfile)})";
@@ -3022,6 +3022,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string LocalizeTrustPolicy(string policy)
     {
         return FindOption(SubscriptionTrustPolicies, policy)?.DisplayName ?? policy;
+    }
+
+    private string LocalizeRuntimeMode(string? mode)
+    {
+        if (string.IsNullOrWhiteSpace(mode))
+        {
+            return "-";
+        }
+        if (string.Equals(mode, "client", StringComparison.OrdinalIgnoreCase))
+        {
+            return T.ProfileKindClient;
+        }
+        if (string.Equals(mode, "server", StringComparison.OrdinalIgnoreCase))
+        {
+            return T.ProfileKindServer;
+        }
+        return mode;
     }
 
     private static string ClassifyAppMessageForeground(string message)
@@ -3905,13 +3922,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private string BuildDiagnosticsSummary(DiagnosticReport report)
     {
+        var coreMode = report.Status is null ? "" : " " + LocalizeRuntimeMode(report.Status.Mode);
         var lines = new List<string>
         {
             $"{L("Created", "创建时间")}: {report.CreatedAt.LocalDateTime:g}",
             $"OS: {report.OsVersion} / {report.Architecture}",
             $"GUI: {report.GuiVersion}",
             $"{T.Profile}: {report.ActiveProfile?.Name ?? "-"}",
-            $"{T.Core}: {report.Status?.Version ?? "-"} {report.Status?.Mode ?? ""}".Trim(),
+            $"{T.Core}: {report.Status?.Version ?? "-"}{coreMode}",
             $"{T.Proxy}: enable={report.CurrentProxy?.ProxyEnable ?? 0} server={report.CurrentProxy?.ProxyServer ?? "-"} pac={report.CurrentProxy?.AutoConfigUrl ?? "-"}"
         };
         if (report.PortChecks.Count > 0)
