@@ -125,4 +125,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Added GUI smoke coverage for deleting a subscription through a stable AutomationId.
 - Added immediate English / Simplified Chinese language switching in Settings, with GUI smoke coverage for the live switch, localized saved feedback, and persistence after restart.
 - Localized option labels for theme, update channel, proxy mode, log-level filter, and profile/subscription sort combos while keeping the stored internal values unchanged.
-- Localized generated default profile and subscription names so new rows created after a language switch match the active UI language.
+- Localized generated default profile/subscription names and the duplicate-profile suffix so new rows created after a language switch match the active UI language.

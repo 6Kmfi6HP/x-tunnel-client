@@ -1530,7 +1530,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         var copy = new Profile
         {
-            Name = SelectedProfile.Name + " Copy",
+            Name = IsChinese ? $"{SelectedProfile.Name} 副本" : SelectedProfile.Name + " Copy",
             Kind = SelectedProfile.Kind,
             Enabled = SelectedProfile.Enabled,
             Source = "local",
