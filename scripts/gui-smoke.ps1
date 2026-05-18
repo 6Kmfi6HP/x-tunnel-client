@@ -1899,6 +1899,23 @@ try {
         return $null
     }
     Write-Host "Profile summary: $profileSummaryText"
+    $profileIssueFieldText = Get-ByAutomationId -Root $window -AutomationId "ProfileIssueFieldText" -TimeoutSeconds $TimeoutSeconds
+    $profileIssueField = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile issue field did not display a localized label." -Condition {
+        $text = Get-ElementValue $profileIssueFieldText
+        if ($text -eq "Profile") {
+            return $text
+        }
+        return $null
+    }
+    $profileIssueSeverityText = Get-ByAutomationId -Root $window -AutomationId "ProfileIssueSeverityText" -TimeoutSeconds $TimeoutSeconds
+    $profileIssueSeverity = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile issue severity did not display a localized label." -Condition {
+        $text = Get-ElementValue $profileIssueSeverityText
+        if ($text -eq "Error") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Profile issue labels: $profileIssueField / $profileIssueSeverity"
 
     $copyProfileIssuesButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileIssuesButton" -TimeoutSeconds $TimeoutSeconds
     Clear-SmokeClipboard
@@ -1907,7 +1924,7 @@ try {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
         if ($text -match "Profile: Local x-tunnel" -and
             $text -match "Validation: Issue" -and
-            ($text -match "配置 JSON 无效" -or $text -match "Expected depth" -or $text -match "profile \[error\]")) {
+            ($text -match "配置 JSON 无效" -or $text -match "Expected depth" -or $text -match "Profile \[Error\]")) {
             return $text
         }
         return $null

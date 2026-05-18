@@ -310,8 +310,8 @@
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
                         <Grid Margin="0,0,0,6" ColumnDefinitions="90,80,*">
-                          <TextBlock Text="{Binding Field}" Classes="caption"/>
-                          <TextBlock Grid.Column="1" Text="{Binding Severity}" Classes="caption"/>
+                          <TextBlock Text="{Binding DisplayField}" Classes="caption" automation:AutomationProperties.AutomationId="ProfileIssueFieldText"/>
+                          <TextBlock Grid.Column="1" Text="{Binding DisplaySeverity}" Classes="caption" automation:AutomationProperties.AutomationId="ProfileIssueSeverityText"/>
                           <TextBlock Grid.Column="2" Text="{Binding Message}" TextWrapping="Wrap"/>
                         </Grid>
                       </DataTemplate>

@@ -109,6 +109,8 @@ public sealed class ProfileIssue
     public string Field { get; init; } = "";
     public string Severity { get; init; } = "error";
     public string Message { get; init; } = "";
+    public string DisplayField { get; init; } = "";
+    public string DisplaySeverity { get; init; } = "";
 }
 
 public sealed class ProfileListRow
@@ -1497,7 +1499,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             summary.AppendLine($"{T.Issue}:");
             foreach (var issue in ProfileIssues)
             {
-                summary.AppendLine($"- {issue.Field} [{issue.Severity}]: {issue.Message}");
+                summary.AppendLine($"- {issue.DisplayField} [{issue.DisplaySeverity}]: {issue.Message}");
             }
         }
 
@@ -1901,7 +1903,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SelectedProfile.LastValidationError = issues.FirstOrDefault(x => x.Severity == "error")?.Message;
             _repository.SaveProfile(SelectedProfile);
             RefreshProfileListItem(SelectedProfile);
-            ReplaceCollection(ProfileIssues, issues.Count == 0
+            SetProfileIssues(issues.Count == 0
                 ? [new ProfileIssue { Field = "profile", Severity = "ok", Message = L("Core config check and local port checks passed.", "内核配置检查和本地端口检查已通过。") }]
                 : issues);
             ErrorText = hasErrors
@@ -1913,7 +1915,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var issue = BuildProfileIssue(ex);
             SelectedProfile.LastValidationError = issue.Message;
             RefreshProfileListItem(SelectedProfile);
-            ReplaceCollection(ProfileIssues, [issue]);
+            SetProfileIssues([issue]);
             ErrorText = issue.Message;
         }
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
@@ -1953,7 +1955,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var issue = BuildProfileIssue(ex);
             SelectedProfile.LastValidationError = issue.Message;
             RefreshProfileListItem(SelectedProfile);
-            ReplaceCollection(ProfileIssues, [issue]);
+            SetProfileIssues([issue]);
             ErrorText = issue.Message;
         }
         RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
@@ -3042,6 +3044,49 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return mode;
     }
 
+    private ProfileIssue LocalizeProfileIssue(ProfileIssue issue)
+    {
+        return new ProfileIssue
+        {
+            Field = issue.Field,
+            Severity = issue.Severity,
+            Message = issue.Message,
+            DisplayField = LocalizeIssueField(issue.Field),
+            DisplaySeverity = LocalizeIssueSeverity(issue.Severity)
+        };
+    }
+
+    private string LocalizeIssueField(string field)
+    {
+        return field switch
+        {
+            "core" => T.Core,
+            "profile" => T.Profile,
+            "listen" => L("Listen", "监听"),
+            "forward" => L("Forward", "转发"),
+            "metrics" => L("Metrics", "指标"),
+            "token" => L("Token", "令牌"),
+            "json" => "JSON",
+            _ => field
+        };
+    }
+
+    private string LocalizeIssueSeverity(string severity)
+    {
+        return severity switch
+        {
+            "ok" => L("OK", "正常"),
+            "warning" => L("Warning", "警告"),
+            "error" => L("Error", "错误"),
+            _ => severity
+        };
+    }
+
+    private void SetProfileIssues(IEnumerable<ProfileIssue> issues)
+    {
+        ReplaceCollection(ProfileIssues, issues.Select(LocalizeProfileIssue));
+    }
+
     private static string ClassifyAppMessageForeground(string message)
     {
         if (string.IsNullOrWhiteSpace(message))
@@ -3965,6 +4010,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(StartupProfileSummary));
         RefreshTransientLocalizedUi();
+        if (ProfileIssues.Count > 0)
+        {
+            SetProfileIssues(ProfileIssues.ToList());
+        }
         UpdateFilteredProfiles(SelectedProfile?.Id);
         UpdateFilteredSubscriptions(SelectedSubscription?.Id);
         UpdateFilteredLogText();
@@ -4191,7 +4240,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var issue = BuildProfileIssue(ex);
         SelectedProfile.LastValidationError = issue.Message;
         RefreshProfileListItem(SelectedProfile);
-        ReplaceCollection(ProfileIssues, [issue]);
+        SetProfileIssues([issue]);
         ErrorText = issue.Message;
     }
 
