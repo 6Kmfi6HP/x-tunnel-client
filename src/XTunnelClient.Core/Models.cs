@@ -142,7 +142,7 @@ public sealed class Profile
 
 public sealed class AppSettings
 {
-    public string Language { get; set; } = "zh-CN";
+    public string Language { get; set; } = "en-US";
     public string Theme { get; set; } = "system";
     public bool LaunchAtLogin { get; set; }
     public bool StartMinimized { get; set; }

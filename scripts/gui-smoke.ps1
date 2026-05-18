@@ -1887,6 +1887,74 @@ try {
         return $null
     }
     Write-Host "Network target persisted after restart: $persistedTarget / $persistedUrl"
+
+    $settingsTab = Get-ByAutomationId -Root $window -AutomationId "SettingsTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $settingsTab
+    $languageCombo = Get-ByAutomationId -Root $window -AutomationId "LanguageComboBox" -TimeoutSeconds $TimeoutSeconds
+    $initialLanguage = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Language selector did not default to English." -Condition {
+        $text = Get-ElementValue $languageCombo
+        if ($text -match "English") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Initial language: $initialLanguage"
+    Select-ComboBoxItem -Element $languageCombo -Name "中文 (简体)" -TimeoutSeconds $TimeoutSeconds
+    $languageLabel = Get-ByAutomationId -Root $window -AutomationId "SettingsLanguageLabel" -TimeoutSeconds $TimeoutSeconds
+    $languageLabelText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Language switch did not update Settings label to Chinese." -Condition {
+        $text = Get-ElementValue $languageLabel
+        if ($text -eq "语言") {
+            return $text
+        }
+        return $null
+    }
+    $saveSettingsButton = Get-ByAutomationId -Root $window -AutomationId "SaveSettingsButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $saveSettingsButton
+    $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
+    $languageSavedText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Saving Chinese language did not surface localized saved feedback." -Condition {
+        $text = Get-ElementValue $appErrorText
+        if ($text -match "设置已保存") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Language switched: $languageLabelText / $languageSavedText"
+
+    if ($process -and !$process.HasExited) {
+        Stop-Process -Id $process.Id -Force
+        Wait-Process -Id $process.Id -Timeout 5 -ErrorAction SilentlyContinue | Out-Null
+    }
+    $env:XTUNNEL_CLIENT_HOME = $AppHome
+    $env:XTUNNEL_CLIENT_INSTANCE = "$InstanceName-language-restart"
+    $process = Start-Process -FilePath (Resolve-Path $AppExe).Path -PassThru
+    $env:XTUNNEL_CLIENT_HOME = $oldHome
+    $env:XTUNNEL_CLIENT_INSTANCE = $oldInstance
+
+    $window = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Timed out waiting for language-persisted x-tunnel Client window." -Condition {
+        $condition = [System.Windows.Automation.PropertyCondition]::new(
+            [System.Windows.Automation.AutomationElement]::ProcessIdProperty,
+            $process.Id)
+        $root.FindFirst([System.Windows.Automation.TreeScope]::Children, $condition)
+    }
+    $settingsTab = Get-ByAutomationId -Root $window -AutomationId "SettingsTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $settingsTab
+    $languageCombo = Get-ByAutomationId -Root $window -AutomationId "LanguageComboBox" -TimeoutSeconds $TimeoutSeconds
+    $persistedLanguage = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Chinese language did not persist after restart." -Condition {
+        $text = Get-ElementValue $languageCombo
+        if ($text -match "中文") {
+            return $text
+        }
+        return $null
+    }
+    $languageLabel = Get-ByAutomationId -Root $window -AutomationId "SettingsLanguageLabel" -TimeoutSeconds $TimeoutSeconds
+    $persistedLanguageLabel = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Persisted Chinese UI label was not visible after restart." -Condition {
+        $text = Get-ElementValue $languageLabel
+        if ($text -eq "语言") {
+            return $text
+        }
+        return $null
+    }
+    Write-Host "Language persisted after restart: $persistedLanguage / $persistedLanguageLabel"
     Write-Host "GUI smoke passed"
 }
 finally {

@@ -47,10 +47,10 @@ public partial class MainWindow : Window
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             AllowMultiple = false,
-            Title = "Import x-tunnel profile",
+            Title = _viewModel.T.ImportXTunnelProfile,
             FileTypeFilter =
             [
-                new FilePickerFileType("JSON") { Patterns = ["*.json"] },
+                new FilePickerFileType(_viewModel.T.JsonFileType) { Patterns = ["*.json"] },
                 FilePickerFileTypes.All
             ]
         });
@@ -69,7 +69,7 @@ public partial class MainWindow : Window
         var text = await Clipboard!.TryGetTextAsync();
         if (!string.IsNullOrWhiteSpace(text))
         {
-            await _viewModel.ImportProfileJsonAsync(text, "Clipboard profile");
+            await _viewModel.ImportProfileJsonAsync(text, _viewModel.T.ClipboardProfile);
         }
     }
 
@@ -77,9 +77,9 @@ public partial class MainWindow : Window
     {
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Export profile",
+            Title = _viewModel.T.ExportProfile,
             SuggestedFileName = "x-tunnel-profile.json",
-            FileTypeChoices = [new FilePickerFileType("JSON") { Patterns = ["*.json"] }]
+            FileTypeChoices = [new FilePickerFileType(_viewModel.T.JsonFileType) { Patterns = ["*.json"] }]
         });
         if (file is null)
         {

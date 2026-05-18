@@ -127,11 +127,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly CoreLocator _coreLocator;
     private readonly PortChecker _portChecker;
 
+    private AppText _text = AppText.For("en-US");
     private Profile? _selectedProfile;
     private Subscription? _selectedSubscription;
     private AppSettings _settings;
     private RuntimeState _runtimeState = RuntimeState.Stopped;
-    private string _statusText = "未连接";
+    private string _statusText = "Stopped";
     private string _statsText = "";
     private string _logText = "";
     private List<ControlLogEntry> _logEntries = [];
@@ -211,6 +212,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         _repository = new ProfileRepository(_paths);
         _settings = _repository.GetSettings();
+        ApplyLanguage(_settings.Language, refresh: false);
         _selectedProxyMode = _settings.DefaultProxyMode;
         _networkTestUrl = string.IsNullOrWhiteSpace(_settings.NetworkTestUrl)
             ? "https://www.gstatic.com/generate_204"
@@ -303,6 +305,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public event EventHandler<string>? CopyTextRequested;
 
+    public AppText T
+    {
+        get => _text;
+        private set => SetProperty(ref _text, value);
+    }
+
     public ObservableCollection<Profile> Profiles { get; } = [];
     public ObservableCollection<Profile> FilteredProfiles { get; } = [];
     public ObservableCollection<DashboardMetric> OverviewMetrics { get; } = [];
@@ -320,6 +328,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public IReadOnlyList<string> ProfileSortOptions { get; } = ["Saved", "Name", "Endpoint"];
     public IReadOnlyList<string> SubscriptionSortOptions { get; } = ["Saved", "Name", "Updated", "Status"];
     public IReadOnlyList<string> NetworkTestTargets { get; } = ["Google 204", "Microsoft NCSI", "Cloudflare Trace", "Firefox Success", "Custom"];
+    public IReadOnlyList<LanguageOption> LanguageOptions { get; } = AppText.LanguageOptions;
 
     public int SelectedMainTabIndex
     {
@@ -384,10 +393,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _runtimeState, value))
             {
+                OnPropertyChanged(nameof(RuntimeStateText));
                 RaiseCommandState();
             }
         }
     }
+
+    public string RuntimeStateText => RuntimeState switch
+    {
+        RuntimeState.Running => T.Connected,
+        RuntimeState.Degraded => T.Degraded,
+        RuntimeState.Starting => T.Starting,
+        RuntimeState.Stopping => T.Stopping,
+        RuntimeState.Faulted => T.Faulted,
+        RuntimeState.Recovering => T.Recovering,
+        _ => T.Disconnected
+    };
 
     public string StatusText
     {
@@ -1003,6 +1024,27 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    public LanguageOption SelectedLanguage
+    {
+        get
+        {
+            var language = AppText.NormalizeLanguage(Settings.Language);
+            return LanguageOptions.FirstOrDefault(x => string.Equals(x.Code, language, StringComparison.OrdinalIgnoreCase))
+                ?? LanguageOptions[0];
+        }
+        set
+        {
+            if (value is null)
+            {
+                return;
+            }
+            if (!string.Equals(AppText.NormalizeLanguage(Settings.Language), value.Code, StringComparison.OrdinalIgnoreCase))
+            {
+                ApplyLanguage(value.Code);
+            }
+        }
+    }
+
     public string SelectedUpdateChannel
     {
         get => Settings.UpdateChannel;
@@ -1034,11 +1076,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             if (Settings.AutoConnectProfileId is null)
             {
-                return "Startup: not set";
+                return T.LanguageCode == "zh-CN" ? "启动：未设置" : "Startup: not set";
             }
 
             var profile = Profiles.FirstOrDefault(x => x.Id == Settings.AutoConnectProfileId.Value);
-            return profile is null ? "Startup: saved profile missing" : $"Startup: {profile.Name}";
+            if (profile is null)
+            {
+                return T.LanguageCode == "zh-CN" ? "启动：已保存配置缺失" : "Startup: saved profile missing";
+            }
+            return T.LanguageCode == "zh-CN" ? $"启动：{profile.Name}" : $"Startup: {profile.Name}";
         }
     }
 
@@ -2118,11 +2164,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             Settings.AutoConnectProfileId = SelectedProfile.Id;
         }
         Settings.DefaultProxyMode = SelectedProxyMode;
+        Settings.Language = AppText.NormalizeLanguage(Settings.Language);
         _repository.SaveSettings(Settings);
+        ApplyLanguage(Settings.Language);
         ApplyTheme(Settings.Theme);
         var exe = Environment.ProcessPath ?? AppContext.BaseDirectory;
         _startupService.SetEnabled(Settings.LaunchAtLogin, exe, Settings.StartMinimized);
-        ErrorText = "Settings saved";
+        ErrorText = T.SettingsSaved;
     }
 
     private void SetProxyMode(ProxyMode mode)
@@ -2439,28 +2487,28 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         ConnectionHeading = RuntimeState switch
         {
-            RuntimeState.Running => "Connected",
-            RuntimeState.Degraded => "Degraded",
-            RuntimeState.Starting => "Starting",
-            RuntimeState.Stopping => "Stopping",
-            RuntimeState.Faulted => "Faulted",
-            RuntimeState.Recovering => "Recovering",
-            _ => "Disconnected"
+            RuntimeState.Running => T.Connected,
+            RuntimeState.Degraded => T.Degraded,
+            RuntimeState.Starting => T.Starting,
+            RuntimeState.Stopping => T.Stopping,
+            RuntimeState.Faulted => T.Faulted,
+            RuntimeState.Recovering => T.Recovering,
+            _ => T.Disconnected
         };
         ConnectionDetail = status is null
-            ? "Sidecar is not running."
+            ? T.SidecarNotRunning
             : $"{status.Mode} mode, uptime {FormatDuration(status.UptimeSeconds)}";
         ActiveProfileSummary = SelectedProfile is null
             ? "-"
             : $"{SelectedProfile.Name} ({SelectedProfile.Kind}, {SelectedProfile.Source})";
-        ProxySummary = SelectedProxyMode.ToString();
-        CoreSummary = status is null ? "Core not running" : $"{status.Version} / {ShortCommit(status.Commit)}";
+        ProxySummary = FormatProxyMode(SelectedProxyMode);
+        CoreSummary = status is null ? T.CoreNotRunning : $"{status.Version} / {ShortCommit(status.Commit)}";
         RecentIssueSummary = FirstNonEmpty(ErrorText, status?.LastFatalError, SelectedProfile?.LastValidationError, "-");
         ValidationSummary = SelectedProfile?.LastValidationError is { Length: > 0 } validationError
             ? validationError
             : SelectedProfile?.LastValidatedAt is { } validatedAt
-                ? $"Last checked {validatedAt.LocalDateTime:g}"
-                : "Not validated";
+                ? $"{T.LastChecked} {validatedAt.LocalDateTime:g}"
+                : T.NotValidated;
         try
         {
             LocalProxySummary = SelectedProfile is null
@@ -2482,19 +2530,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var totalListeners = status?.Listeners.Count ?? 0;
         var reconnects = GetJsonUInt64(stats?.Counters, "client_reconnects_total");
         var activeStreams = stats?.Server?.ActiveStreams ?? status?.Server?.ActiveStreams ?? 0;
-        StatusBarTrafficSummary = $"{FormatBytes(sent)} up / {FormatBytes(received)} down";
+        StatusBarTrafficSummary = $"{FormatBytes(sent)} {T.Up} / {FormatBytes(received)} {T.Down}";
         StatusBarChannelSummary = avgRtt > 0
-            ? $"{upChannels}/{totalChannels} up, {avgRtt * 1000:0} ms RTT"
-            : $"{upChannels}/{totalChannels} up, RTT waiting";
+            ? $"{upChannels}/{totalChannels} {T.Up}, {avgRtt * 1000:0} ms RTT"
+            : $"{upChannels}/{totalChannels} {T.Up}, {T.RttWaiting}";
 
         ReplaceCollection(OverviewMetrics,
         [
-            new DashboardMetric { Label = "Runtime", Value = ConnectionHeading, Detail = ConnectionDetail },
-            new DashboardMetric { Label = "Traffic", Value = $"{FormatBytes(sent)} up", Detail = $"{FormatBytes(received)} down" },
-            new DashboardMetric { Label = "Channels", Value = $"{upChannels}/{totalChannels} up", Detail = avgRtt > 0 ? $"{avgRtt * 1000:0} ms avg RTT" : "waiting for RTT" },
-            new DashboardMetric { Label = "Listeners", Value = $"{runningListeners}/{totalListeners} running", Detail = ListenerDetail(status) },
-            new DashboardMetric { Label = "Reconnects", Value = reconnects.ToString(CultureInfo.InvariantCulture), Detail = $"{activeStreams} active streams" },
-            new DashboardMetric { Label = "Proxy Mode", Value = ProxySummary, Detail = LocalProxySummary }
+            new DashboardMetric { Label = T.Runtime, Value = ConnectionHeading, Detail = ConnectionDetail },
+            new DashboardMetric { Label = T.Traffic, Value = $"{FormatBytes(sent)} {T.Up}", Detail = $"{FormatBytes(received)} {T.Down}" },
+            new DashboardMetric { Label = T.Channels, Value = $"{upChannels}/{totalChannels} {T.Up}", Detail = avgRtt > 0 ? $"{avgRtt * 1000:0} ms {T.AvgRtt}" : T.WaitingForRtt },
+            new DashboardMetric { Label = T.Listeners, Value = $"{runningListeners}/{totalListeners} {T.Running}", Detail = ListenerDetail(status) },
+            new DashboardMetric { Label = T.Reconnects, Value = reconnects.ToString(CultureInfo.InvariantCulture), Detail = T.LanguageCode == "zh-CN" ? $"{activeStreams} 个活动流" : $"{activeStreams} active streams" },
+            new DashboardMetric { Label = T.ProxyModeMetric, Value = ProxySummary, Detail = LocalProxySummary }
         ]);
 
         ReplaceCollection(ListenerRows, status?.Listeners.Select(x => new SummaryRow
@@ -2506,8 +2554,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         ReplaceCollection(ChannelRows, status?.Client?.Channels.Select(x => new SummaryRow
         {
-            Name = $"Channel {x.Channel}",
-            Value = x.Up ? "Up" : "Down",
+            Name = $"{T.Channel} {x.Channel}",
+            Value = x.Up ? T.Up : T.Down,
             Detail = x.RttSeconds > 0 ? $"{x.RttSeconds * 1000:0} ms RTT, caps {x.Capabilities}" : $"caps {x.Capabilities}"
         }) ?? []);
     }
@@ -2586,28 +2634,38 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var resolved = _coreLocator.Resolve(Settings);
         if (!string.IsNullOrWhiteSpace(resolved))
         {
-            SetCorePathStatus("Auto-detected", resolved, "#065F46", "#D1FAE5");
+            SetCorePathStatus(T.LanguageCode == "zh-CN" ? "已自动检测" : "Auto-detected", resolved, "#065F46", "#D1FAE5");
             return;
         }
 
-        SetCorePathStatus("Core missing", "Set a full path to x-tunnel.exe or place it in the expected build/output folder.", "#7F1D1D", "#FECACA");
+        SetCorePathStatus(
+            T.LanguageCode == "zh-CN" ? "内核缺失" : "Core missing",
+            T.LanguageCode == "zh-CN" ? "设置 x-tunnel.exe 完整路径，或放入预期的 build/output 文件夹。" : "Set a full path to x-tunnel.exe or place it in the expected build/output folder.",
+            "#7F1D1D",
+            "#FECACA");
     }
 
     private void SetCorePathStatusForPath(string path, bool configuredSource)
     {
         if (!File.Exists(path))
         {
-            SetCorePathStatus("Path missing", path, "#7F1D1D", "#FECACA");
+            SetCorePathStatus(T.LanguageCode == "zh-CN" ? "路径缺失" : "Path missing", path, "#7F1D1D", "#FECACA");
             return;
         }
 
         if (!string.Equals(Path.GetFileName(path), "x-tunnel.exe", StringComparison.OrdinalIgnoreCase))
         {
-            SetCorePathStatus("Check executable", path, "#92400E", "#FEF3C7");
+            SetCorePathStatus(T.LanguageCode == "zh-CN" ? "检查程序" : "Check executable", path, "#92400E", "#FEF3C7");
             return;
         }
 
-        SetCorePathStatus(configuredSource ? "Configured" : "Auto-detected", path, "#065F46", "#D1FAE5");
+        SetCorePathStatus(
+            configuredSource
+                ? T.LanguageCode == "zh-CN" ? "已配置" : "Configured"
+                : T.LanguageCode == "zh-CN" ? "已自动检测" : "Auto-detected",
+            path,
+            "#065F46",
+            "#D1FAE5");
     }
 
     private void SetCorePathStatus(string status, string detail, string background, string foreground)
@@ -2618,20 +2676,30 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         CorePathStatusForeground = foreground;
     }
 
-    private static string ListenerDetail(CoreStatus? status)
+    private string FormatProxyMode(ProxyMode mode)
+    {
+        return mode switch
+        {
+            ProxyMode.System => T.ProxyModeSystem,
+            ProxyMode.Pac => T.ProxyModePac,
+            _ => T.ProxyModeOff
+        };
+    }
+
+    private string ListenerDetail(CoreStatus? status)
     {
         if (status?.Listeners.Count > 0)
         {
             return string.Join(", ", status.Listeners.Select(x => string.IsNullOrWhiteSpace(x.Actual) ? x.Configured : x.Actual));
         }
-        return "no listeners";
+        return T.NoListeners;
     }
 
-    private static string ShortCommit(string? commit)
+    private string ShortCommit(string? commit)
     {
         if (string.IsNullOrWhiteSpace(commit))
         {
-            return "unknown";
+            return T.Unknown;
         }
         return commit.Length <= 8 ? commit : commit[..8];
     }
@@ -2651,7 +2719,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             return "#FCA5A5";
         }
-        if (ContainsAny(message, "copied", "saved", "exported", "cleared", "refreshed", "complete", "updated", "imported", "deleted", "restored", "set from", "formatted", "applied"))
+        if (ContainsAny(message, "copied", "saved", "exported", "cleared", "refreshed", "complete", "updated", "imported", "deleted", "restored", "set from", "formatted", "applied", "已", "成功", "保存"))
         {
             return "#86EFAC";
         }
@@ -3360,6 +3428,31 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             lines.Add("Warnings: " + string.Join("; ", report.Warnings));
         }
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private void ApplyLanguage(string? language, bool refresh = true)
+    {
+        Settings.Language = AppText.NormalizeLanguage(language);
+        var culture = AppText.CultureFor(Settings.Language);
+        CultureInfo.CurrentCulture = culture;
+        CultureInfo.CurrentUICulture = culture;
+        T = AppText.For(Settings.Language);
+        OnPropertyChanged(nameof(SelectedLanguage));
+        OnPropertyChanged(nameof(RuntimeStateText));
+
+        if (refresh)
+        {
+            RefreshLocalizedUi();
+        }
+    }
+
+    private void RefreshLocalizedUi()
+    {
+        OnPropertyChanged(nameof(StartupProfileSummary));
+        UpdateProfileSummary();
+        UpdateSubscriptionSummary();
+        UpdateFilteredLogText();
+        RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
     }
 
     private static void ApplyTheme(string? theme)

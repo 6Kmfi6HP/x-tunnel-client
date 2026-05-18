@@ -11,18 +11,18 @@
       <TrayIcon Icon="/Assets/app-icon.ico" ToolTipText="{Binding TrayToolTipText}">
         <TrayIcon.Menu>
           <NativeMenu>
-            <NativeMenuItem Header="Open Dashboard" Click="ShowWindow_OnClick" />
-            <NativeMenuItem Header="Connect" Command="{Binding ConnectCommand}" />
-            <NativeMenuItem Header="Disconnect" Command="{Binding DisconnectCommand}" />
-            <NativeMenuItem Header="Restart" Command="{Binding RestartCommand}" />
-            <NativeMenuItem Header="Copy Proxy Address" Command="{Binding CopyProxyCommand}" />
-            <NativeMenuItem Header="Update Subscription" Command="{Binding RefreshSubscriptionCommand}" />
+            <NativeMenuItem Header="{Binding T.OpenDashboard}" Click="ShowWindow_OnClick" />
+            <NativeMenuItem Header="{Binding T.Connect}" Command="{Binding ConnectCommand}" />
+            <NativeMenuItem Header="{Binding T.Disconnect}" Command="{Binding DisconnectCommand}" />
+            <NativeMenuItem Header="{Binding T.Restart}" Command="{Binding RestartCommand}" />
+            <NativeMenuItem Header="{Binding T.CopyProxyAddress}" Command="{Binding CopyProxyCommand}" />
+            <NativeMenuItem Header="{Binding T.UpdateSubscription}" Command="{Binding RefreshSubscriptionCommand}" />
             <NativeMenuItemSeparator />
-            <NativeMenuItem Header="Diagnostics" Click="Diagnostics_OnClick" />
-            <NativeMenuItem Header="Open Logs Folder" Command="{Binding OpenLogsFolderCommand}" />
-            <NativeMenuItem Header="Restore Proxy" Command="{Binding RestoreProxyCommand}" />
+            <NativeMenuItem Header="{Binding T.Diagnostics}" Click="Diagnostics_OnClick" />
+            <NativeMenuItem Header="{Binding T.OpenLogsFolder}" Command="{Binding OpenLogsFolderCommand}" />
+            <NativeMenuItem Header="{Binding T.RestoreProxy}" Command="{Binding RestoreProxyCommand}" />
             <NativeMenuItemSeparator />
-            <NativeMenuItem Header="Quit" Click="Quit_OnClick" />
+            <NativeMenuItem Header="{Binding T.Quit}" Click="Quit_OnClick" />
           </NativeMenu>
         </TrayIcon.Menu>
       </TrayIcon>

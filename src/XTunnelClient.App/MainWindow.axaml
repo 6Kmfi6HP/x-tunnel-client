@@ -8,7 +8,7 @@
         MinHeight="620"
         Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
         Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-        Title="x-tunnel Client">
+        Title="{Binding T.AppTitle}">
   <Window.Styles>
     <Style Selector="Button">
       <Setter Property="MinHeight" Value="32"/>
@@ -54,13 +54,13 @@
       <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" RowDefinitions="Auto">
         <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="12">
           <TextBlock Text="x-tunnel" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
-          <TextBlock Grid.Column="1" Text="{Binding RuntimeState}" VerticalAlignment="Center"/>
+          <TextBlock Grid.Column="1" Text="{Binding RuntimeStateText}" VerticalAlignment="Center"/>
           <TextBlock Grid.Column="2" Text="{Binding ErrorText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{Binding AppMessageForeground}" automation:AutomationProperties.AutomationId="AppErrorTextBlock"/>
         </Grid>
-        <Button Grid.Column="1" Content="Connect" Command="{Binding ConnectCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="ConnectButton"/>
-        <Button Grid.Column="2" Content="Disconnect" Command="{Binding DisconnectCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="DisconnectButton"/>
-        <Button Grid.Column="3" Content="Restart" Command="{Binding RestartCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="RestartButton"/>
-        <Button Grid.Column="4" Content="Diagnostics" Command="{Binding OpenDiagnosticsCommand}" automation:AutomationProperties.AutomationId="HeaderDiagnosticsButton"/>
+        <Button Grid.Column="1" Content="{Binding T.Connect}" Command="{Binding ConnectCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="ConnectButton"/>
+        <Button Grid.Column="2" Content="{Binding T.Disconnect}" Command="{Binding DisconnectCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="DisconnectButton"/>
+        <Button Grid.Column="3" Content="{Binding T.Restart}" Command="{Binding RestartCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="RestartButton"/>
+        <Button Grid.Column="4" Content="{Binding T.Diagnostics}" Command="{Binding OpenDiagnosticsCommand}" automation:AutomationProperties.AutomationId="HeaderDiagnosticsButton"/>
       </Grid>
     </Border>
 
@@ -70,19 +70,19 @@
         <TextBlock Grid.Column="1" Text="{Binding ActiveProfileSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarProfileText"/>
         <TextBlock Grid.Column="2" Text="{Binding ProxySummary}" Classes="caption" automation:AutomationProperties.AutomationId="StatusBarProxyModeText"/>
         <TextBlock Grid.Column="3" Text="{Binding LocalProxySummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarLocalProxyText"/>
-        <TextBlock Grid.Column="4" Text="Traffic" Classes="caption"/>
+        <TextBlock Grid.Column="4" Text="{Binding T.Traffic}" Classes="caption"/>
         <TextBlock Grid.Column="5" Text="{Binding StatusBarTrafficSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarTrafficText"/>
-        <TextBlock Grid.Column="6" Text="Channels" Classes="caption"/>
+        <TextBlock Grid.Column="6" Text="{Binding T.Channels}" Classes="caption"/>
         <TextBlock Grid.Column="7" Text="{Binding StatusBarChannelSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarChannelsText"/>
-        <TextBlock Grid.Row="1" Text="Core" Classes="caption"/>
+        <TextBlock Grid.Row="1" Text="{Binding T.Core}" Classes="caption"/>
         <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding CoreSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarCoreText"/>
-        <TextBlock Grid.Row="1" Grid.Column="4" Text="Issue" Classes="caption"/>
+        <TextBlock Grid.Row="1" Grid.Column="4" Text="{Binding T.Issue}" Classes="caption"/>
         <TextBlock Grid.Row="1" Grid.Column="5" Grid.ColumnSpan="3" Text="{Binding RecentIssueSummary}" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StatusBarIssueText"/>
       </Grid>
     </Border>
 
     <TabControl SelectedIndex="{Binding SelectedMainTabIndex}">
-      <TabItem Header="Overview" automation:AutomationProperties.AutomationId="OverviewTab">
+      <TabItem Header="{Binding T.Overview}" automation:AutomationProperties.AutomationId="OverviewTab">
         <ScrollViewer>
         <Grid Margin="16" RowDefinitions="Auto,Auto,Auto" RowSpacing="12">
           <Border Classes="panel">
@@ -91,15 +91,15 @@
                 <TextBlock Text="{Binding ConnectionHeading}" FontSize="26" FontWeight="SemiBold"/>
                 <TextBlock Text="{Binding ConnectionDetail}" Classes="caption"/>
                 <Grid Margin="0,10,0,0" ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
-                  <TextBlock Text="Profile" Classes="caption"/>
+                  <TextBlock Text="{Binding T.Profile}" Classes="caption"/>
                   <TextBlock Grid.Column="1" Text="{Binding ActiveProfileSummary}" TextTrimming="CharacterEllipsis"/>
-                  <TextBlock Grid.Row="1" Text="Core" Classes="caption"/>
+                  <TextBlock Grid.Row="1" Text="{Binding T.Core}" Classes="caption"/>
                   <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CoreSummary}" TextTrimming="CharacterEllipsis"/>
-                  <TextBlock Grid.Row="2" Text="Proxy" Classes="caption"/>
+                  <TextBlock Grid.Row="2" Text="{Binding T.Proxy}" Classes="caption"/>
                   <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ProxySummary}" automation:AutomationProperties.AutomationId="OverviewProxySummaryText"/>
-                  <TextBlock Grid.Row="3" Text="Local" Classes="caption"/>
+                  <TextBlock Grid.Row="3" Text="{Binding T.Local}" Classes="caption"/>
                   <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding LocalProxySummary}" TextTrimming="CharacterEllipsis"/>
-                  <TextBlock Grid.Row="4" Text="Network" Classes="caption"/>
+                  <TextBlock Grid.Row="4" Text="{Binding T.Network}" Classes="caption"/>
                   <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
                     <Border Background="{Binding NetworkTestBadgeBackground}" CornerRadius="4" Padding="7,2" HorizontalAlignment="Left">
                       <TextBlock Text="{Binding NetworkTestSummary}" Foreground="{Binding NetworkTestBadgeForeground}" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="OverviewNetworkSummaryText"/>
@@ -107,41 +107,41 @@
                     <TextBlock Text="{Binding NetworkTestDetail}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="OverviewNetworkDetailText"/>
                     <TextBlock Text="{Binding NetworkTestLastRunText}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="OverviewNetworkLastRunText"/>
                   </StackPanel>
-                  <TextBlock Grid.Row="5" Text="Validation" Classes="caption"/>
+                  <TextBlock Grid.Row="5" Text="{Binding T.Validation}" Classes="caption"/>
                   <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding ValidationSummary}" TextTrimming="CharacterEllipsis"/>
                 </Grid>
               </StackPanel>
 
               <StackPanel Grid.Column="1" Spacing="8">
-                <TextBlock Classes="section" Text="Control"/>
+                <TextBlock Classes="section" Text="{Binding T.Control}"/>
                 <ComboBox ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberBinding="{Binding Name}" MinHeight="34"/>
                 <ComboBox ItemsSource="{Binding ProxyModes}" SelectedItem="{Binding SelectedProxyMode}" MinHeight="34"/>
-                <TextBlock Classes="caption" Text="Proxy mode"/>
+                <TextBlock Classes="caption" Text="{Binding T.ProxyMode}"/>
                 <WrapPanel ItemSpacing="8" LineSpacing="8">
-                  <Button Content="Off" Command="{Binding SetProxyModeOffCommand}" automation:AutomationProperties.AutomationId="SetProxyModeOffButton"/>
-                  <Button Content="System" Command="{Binding SetProxyModeSystemCommand}" automation:AutomationProperties.AutomationId="SetProxyModeSystemButton"/>
-                  <Button Content="PAC" Command="{Binding SetProxyModePacCommand}" automation:AutomationProperties.AutomationId="SetProxyModePacButton"/>
+                  <Button Content="{Binding T.ProxyModeOff}" Command="{Binding SetProxyModeOffCommand}" automation:AutomationProperties.AutomationId="SetProxyModeOffButton"/>
+                  <Button Content="{Binding T.ProxyModeSystem}" Command="{Binding SetProxyModeSystemCommand}" automation:AutomationProperties.AutomationId="SetProxyModeSystemButton"/>
+                  <Button Content="{Binding T.ProxyModePac}" Command="{Binding SetProxyModePacCommand}" automation:AutomationProperties.AutomationId="SetProxyModePacButton"/>
                 </WrapPanel>
-                <TextBox Text="{Binding CorePath}" PlaceholderText="Auto-detect or full path to x-tunnel.exe"/>
+                <TextBox Text="{Binding CorePath}" PlaceholderText="{Binding T.CorePathPlaceholder}"/>
                 <WrapPanel ItemSpacing="8" LineSpacing="8">
-                  <Button Content="Save" Command="{Binding SaveSettingsCommand}" automation:AutomationProperties.AutomationId="OverviewSaveSettingsButton"/>
-                  <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}"/>
-                  <Button Content="Proxy Addr" Command="{Binding CopyProxyCommand}" automation:AutomationProperties.AutomationId="CopyProxyAddressButton"/>
-                  <Button Content="Copy Status" Command="{Binding CopyOverviewStatusCommand}" automation:AutomationProperties.AutomationId="CopyOverviewStatusButton"/>
-                  <Button Content="Restart" Command="{Binding RestartCommand}"/>
+                  <Button Content="{Binding T.Save}" Command="{Binding SaveSettingsCommand}" automation:AutomationProperties.AutomationId="OverviewSaveSettingsButton"/>
+                  <Button Content="{Binding T.RestoreProxy}" Command="{Binding RestoreProxyCommand}"/>
+                  <Button Content="{Binding T.ProxyAddress}" Command="{Binding CopyProxyCommand}" automation:AutomationProperties.AutomationId="CopyProxyAddressButton"/>
+                  <Button Content="{Binding T.CopyStatus}" Command="{Binding CopyOverviewStatusCommand}" automation:AutomationProperties.AutomationId="CopyOverviewStatusButton"/>
+                  <Button Content="{Binding T.Restart}" Command="{Binding RestartCommand}"/>
                 </WrapPanel>
-                <TextBlock Classes="caption" Text="Network"/>
+                <TextBlock Classes="caption" Text="{Binding T.Network}"/>
                 <WrapPanel ItemSpacing="8" LineSpacing="8">
-                  <Button Content="Test Network" Command="{Binding RunOverviewNetworkTestCommand}" automation:AutomationProperties.AutomationId="OverviewTestNetworkButton"/>
-                  <Button Content="Diagnostics" Command="{Binding OpenDiagnosticsCommand}" automation:AutomationProperties.AutomationId="OverviewOpenDiagnosticsButton"/>
+                  <Button Content="{Binding T.TestNetwork}" Command="{Binding RunOverviewNetworkTestCommand}" automation:AutomationProperties.AutomationId="OverviewTestNetworkButton"/>
+                  <Button Content="{Binding T.Diagnostics}" Command="{Binding OpenDiagnosticsCommand}" automation:AutomationProperties.AutomationId="OverviewOpenDiagnosticsButton"/>
                 </WrapPanel>
-                <TextBlock Classes="caption" Text="Open"/>
+                <TextBlock Classes="caption" Text="{Binding T.Open}"/>
                 <WrapPanel ItemSpacing="8" LineSpacing="8">
-                  <Button Content="Profiles" Command="{Binding OpenProfilesCommand}" automation:AutomationProperties.AutomationId="OpenProfilesButton"/>
-                  <Button Content="Subscriptions" Command="{Binding OpenSubscriptionsCommand}" automation:AutomationProperties.AutomationId="OpenSubscriptionsButton"/>
-                  <Button Content="Logs" Command="{Binding OpenLogsCommand}" automation:AutomationProperties.AutomationId="OpenLogsButton"/>
-                  <Button Content="Diagnostics" Command="{Binding OpenDiagnosticsCommand}" automation:AutomationProperties.AutomationId="OpenDiagnosticsButton"/>
-                  <Button Content="Settings" Command="{Binding OpenSettingsCommand}" automation:AutomationProperties.AutomationId="OpenSettingsButton"/>
+                  <Button Content="{Binding T.Profiles}" Command="{Binding OpenProfilesCommand}" automation:AutomationProperties.AutomationId="OpenProfilesButton"/>
+                  <Button Content="{Binding T.Subscriptions}" Command="{Binding OpenSubscriptionsCommand}" automation:AutomationProperties.AutomationId="OpenSubscriptionsButton"/>
+                  <Button Content="{Binding T.Logs}" Command="{Binding OpenLogsCommand}" automation:AutomationProperties.AutomationId="OpenLogsButton"/>
+                  <Button Content="{Binding T.Diagnostics}" Command="{Binding OpenDiagnosticsCommand}" automation:AutomationProperties.AutomationId="OpenDiagnosticsButton"/>
+                  <Button Content="{Binding T.Settings}" Command="{Binding OpenSettingsCommand}" automation:AutomationProperties.AutomationId="OpenSettingsButton"/>
                 </WrapPanel>
               </StackPanel>
             </Grid>
@@ -169,7 +169,7 @@
           <Grid Grid.Row="2" ColumnDefinitions="1.1*,1.1*,1.4*" ColumnSpacing="12">
             <Border Classes="panel">
               <Grid RowDefinitions="Auto,*">
-                <TextBlock Classes="section" Text="Listeners"/>
+                <TextBlock Classes="section" Text="{Binding T.Listeners}"/>
                 <ItemsControl Grid.Row="1" ItemsSource="{Binding ListenerRows}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -186,7 +186,7 @@
 
             <Border Grid.Column="1" Classes="panel">
               <Grid RowDefinitions="Auto,*">
-                <TextBlock Classes="section" Text="Channels"/>
+                <TextBlock Classes="section" Text="{Binding T.Channels}"/>
                 <ItemsControl Grid.Row="1" ItemsSource="{Binding ChannelRows}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
@@ -204,14 +204,14 @@
             <Border Grid.Column="2" Classes="panel">
               <Grid RowDefinitions="Auto,*,Auto,120">
                 <Grid ColumnDefinitions="*,Auto">
-                  <TextBlock Classes="section" Text="Recent Logs" VerticalAlignment="Center"/>
-                  <Button Grid.Column="1" Content="Copy" Command="{Binding CopyOverviewRecentLogsCommand}" automation:AutomationProperties.AutomationId="CopyOverviewRecentLogsButton"/>
+                  <TextBlock Classes="section" Text="{Binding T.RecentLogs}" VerticalAlignment="Center"/>
+                  <Button Grid.Column="1" Content="{Binding T.Copy}" Command="{Binding CopyOverviewRecentLogsCommand}" automation:AutomationProperties.AutomationId="CopyOverviewRecentLogsButton"/>
                 </Grid>
                 <TextBox Grid.Row="1" Text="{Binding LogText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" automation:AutomationProperties.AutomationId="OverviewRecentLogsTextBox"/>
                 <Grid Grid.Row="2" Margin="0,10,0,6" ColumnDefinitions="*,Auto,Auto">
-                  <TextBlock Classes="section" Text="Runtime Details" VerticalAlignment="Center"/>
-                  <Button Grid.Column="1" Content="Copy" Command="{Binding CopyOverviewRuntimeDetailsCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="CopyOverviewRuntimeDetailsButton"/>
-                  <Button Grid.Column="2" Content="Copy Metrics" Command="{Binding CopyRuntimeMetricsCommand}" automation:AutomationProperties.AutomationId="CopyRuntimeMetricsButton"/>
+                  <TextBlock Classes="section" Text="{Binding T.RuntimeDetails}" VerticalAlignment="Center"/>
+                  <Button Grid.Column="1" Content="{Binding T.Copy}" Command="{Binding CopyOverviewRuntimeDetailsCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="CopyOverviewRuntimeDetailsButton"/>
+                  <Button Grid.Column="2" Content="{Binding T.CopyMetrics}" Command="{Binding CopyRuntimeMetricsCommand}" automation:AutomationProperties.AutomationId="CopyRuntimeMetricsButton"/>
                 </Grid>
                 <TextBox Grid.Row="3" Text="{Binding StatusText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="NoWrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" automation:AutomationProperties.AutomationId="OverviewRuntimeDetailsTextBox"/>
               </Grid>
@@ -221,29 +221,29 @@
         </ScrollViewer>
       </TabItem>
 
-      <TabItem Header="Profiles" automation:AutomationProperties.AutomationId="ProfilesTab">
+      <TabItem Header="{Binding T.Profiles}" automation:AutomationProperties.AutomationId="ProfilesTab">
         <Grid Margin="16" ColumnDefinitions="320,*" ColumnSpacing="16">
           <DockPanel>
             <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,10">
               <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                <TextBox Text="{Binding ProfileSearchText}" PlaceholderText="Search profiles" automation:AutomationProperties.AutomationId="ProfileSearchTextBox"/>
-                <Button Grid.Column="1" Content="Clear" Command="{Binding ClearProfileSearchCommand}" automation:AutomationProperties.AutomationId="ClearProfileSearchButton"/>
+                <TextBox Text="{Binding ProfileSearchText}" PlaceholderText="{Binding T.SearchProfiles}" automation:AutomationProperties.AutomationId="ProfileSearchTextBox"/>
+                <Button Grid.Column="1" Content="{Binding T.Clear}" Command="{Binding ClearProfileSearchCommand}" automation:AutomationProperties.AutomationId="ClearProfileSearchButton"/>
               </Grid>
               <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-                <TextBlock Text="Sort" Classes="caption" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding T.Sort}" Classes="caption" VerticalAlignment="Center"/>
                 <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileSortOptions}" SelectedItem="{Binding SelectedProfileSort}" MinHeight="30" automation:AutomationProperties.AutomationId="ProfileSortComboBox"/>
               </Grid>
               <WrapPanel ItemSpacing="8" LineSpacing="8">
-                <Button Content="New" Command="{Binding NewProfileCommand}" automation:AutomationProperties.AutomationId="NewProfileButton"/>
-                <Button Content="Copy" Command="{Binding DuplicateProfileCommand}" automation:AutomationProperties.AutomationId="DuplicateProfileButton"/>
-                <Button Content="Delete" Command="{Binding DeleteProfileCommand}" automation:AutomationProperties.AutomationId="DeleteProfileButton"/>
-                <Button Content="Test Selected" Command="{Binding TestSelectedProfileEndpointCommand}" automation:AutomationProperties.AutomationId="TestSelectedProfileButton"/>
-                <Button Content="Test Visible" Command="{Binding TestVisibleProfilesCommand}" automation:AutomationProperties.AutomationId="TestVisibleProfilesButton"/>
-                <Button Content="Test + Fastest" Command="{Binding TestAndSelectFastestProfileCommand}" automation:AutomationProperties.AutomationId="TestAndSelectFastestProfileButton"/>
-                <Button Content="Fastest" Command="{Binding SelectFastestProfileCommand}" automation:AutomationProperties.AutomationId="SelectFastestProfileButton"/>
-                <Button Content="Clear Tests" Command="{Binding ClearVisibleProfileEndpointTestsCommand}" automation:AutomationProperties.AutomationId="ClearEndpointTestsButton"/>
-                <Button Content="Startup" Command="{Binding UseSelectedProfileAtStartupCommand}" automation:AutomationProperties.AutomationId="UseStartupProfileButton"/>
-                <Button Content="Clear Startup" Command="{Binding ClearStartupProfileCommand}" automation:AutomationProperties.AutomationId="ClearStartupProfileButton"/>
+                <Button Content="{Binding T.New}" Command="{Binding NewProfileCommand}" automation:AutomationProperties.AutomationId="NewProfileButton"/>
+                <Button Content="{Binding T.Copy}" Command="{Binding DuplicateProfileCommand}" automation:AutomationProperties.AutomationId="DuplicateProfileButton"/>
+                <Button Content="{Binding T.Delete}" Command="{Binding DeleteProfileCommand}" automation:AutomationProperties.AutomationId="DeleteProfileButton"/>
+                <Button Content="{Binding T.TestSelected}" Command="{Binding TestSelectedProfileEndpointCommand}" automation:AutomationProperties.AutomationId="TestSelectedProfileButton"/>
+                <Button Content="{Binding T.TestVisible}" Command="{Binding TestVisibleProfilesCommand}" automation:AutomationProperties.AutomationId="TestVisibleProfilesButton"/>
+                <Button Content="{Binding T.TestFastest}" Command="{Binding TestAndSelectFastestProfileCommand}" automation:AutomationProperties.AutomationId="TestAndSelectFastestProfileButton"/>
+                <Button Content="{Binding T.Fastest}" Command="{Binding SelectFastestProfileCommand}" automation:AutomationProperties.AutomationId="SelectFastestProfileButton"/>
+                <Button Content="{Binding T.ClearTests}" Command="{Binding ClearVisibleProfileEndpointTestsCommand}" automation:AutomationProperties.AutomationId="ClearEndpointTestsButton"/>
+                <Button Content="{Binding T.Startup}" Command="{Binding UseSelectedProfileAtStartupCommand}" automation:AutomationProperties.AutomationId="UseStartupProfileButton"/>
+                <Button Content="{Binding T.ClearStartup}" Command="{Binding ClearStartupProfileCommand}" automation:AutomationProperties.AutomationId="ClearStartupProfileButton"/>
               </WrapPanel>
               <TextBlock Text="{Binding StartupProfileSummary}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="StartupProfileSummaryTextBlock"/>
               <TextBlock Text="{Binding ProfileBatchTestText}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="ProfileBatchTestTextBlock"/>
@@ -273,9 +273,9 @@
 
           <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto,Auto,120,*,Auto" RowSpacing="10">
             <Grid ColumnDefinitions="*,160,160" ColumnSpacing="8">
-              <TextBox Text="{Binding SelectedProfile.Name}" PlaceholderText="Profile name" automation:AutomationProperties.AutomationId="ProfileNameTextBox"/>
+              <TextBox Text="{Binding SelectedProfile.Name}" PlaceholderText="{Binding T.ProfileNamePlaceholder}" automation:AutomationProperties.AutomationId="ProfileNameTextBox"/>
               <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileKinds}" SelectedItem="{Binding SelectedProfile.Kind}"/>
-              <TextBox Grid.Column="2" Text="{Binding SelectedProfile.Source}" PlaceholderText="source"/>
+              <TextBox Grid.Column="2" Text="{Binding SelectedProfile.Source}" PlaceholderText="{Binding T.SourcePlaceholder}"/>
             </Grid>
             <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8">
               <TextBox Text="{Binding ProfileListen}" PlaceholderText="listen" automation:AutomationProperties.AutomationId="ProfileListenTextBox"/>
@@ -283,28 +283,28 @@
             </Grid>
             <Grid Grid.Row="2" ColumnDefinitions="120,120,*" ColumnSpacing="8">
               <NumericUpDown Value="{Binding ProfileConnections}" Minimum="1" Maximum="32"/>
-              <CheckBox Grid.Column="1" IsChecked="{Binding ProfileFallback}" Content="fallback" VerticalAlignment="Center"/>
+              <CheckBox Grid.Column="1" IsChecked="{Binding ProfileFallback}" Content="{Binding T.Fallback}" VerticalAlignment="Center"/>
               <TextBox Grid.Column="2" Text="{Binding ProfileMetrics}" PlaceholderText="metrics"/>
             </Grid>
             <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
-              <TextBox Text="{Binding SelectedProfile.SecretRef}" PlaceholderText="secret ref, e.g. profile-token"/>
-              <TextBox Grid.Column="1" Text="{Binding SecretValue}" PasswordChar="*" PlaceholderText="profile secret saved with DPAPI" automation:AutomationProperties.AutomationId="ProfileSecretTextBox"/>
+              <TextBox Text="{Binding SelectedProfile.SecretRef}" PlaceholderText="{Binding T.SecretRefPlaceholder}"/>
+              <TextBox Grid.Column="1" Text="{Binding SecretValue}" PasswordChar="*" PlaceholderText="{Binding T.ProfileSecretPlaceholder}" automation:AutomationProperties.AutomationId="ProfileSecretTextBox"/>
             </Grid>
             <WrapPanel Grid.Row="4" ItemSpacing="8" LineSpacing="8">
-              <Button Content="Apply Form" Command="{Binding ApplyFormCommand}" automation:AutomationProperties.AutomationId="ApplyProfileFormButton"/>
-              <Button Content="Save" Command="{Binding SaveProfileCommand}" automation:AutomationProperties.AutomationId="SaveProfileButton"/>
-              <Button Content="Validate" Command="{Binding ValidateProfileCommand}" automation:AutomationProperties.AutomationId="ValidateProfileButton"/>
-              <Button Content="Format" Command="{Binding FormatProfileCommand}" automation:AutomationProperties.AutomationId="FormatProfileButton"/>
-              <Button Content="Import File" Click="ImportFile_OnClick"/>
-              <Button Content="Import Clipboard" Click="ImportClipboard_OnClick" automation:AutomationProperties.AutomationId="ImportProfileClipboardButton"/>
-              <Button Content="Export" Click="ExportProfile_OnClick"/>
-              <Button Content="Copy Summary" Command="{Binding CopyProfileSummaryCommand}" automation:AutomationProperties.AutomationId="CopyProfileSummaryButton"/>
-              <Button Content="Copy Config" Command="{Binding CopyProfileConfigCommand}" automation:AutomationProperties.AutomationId="CopyProfileConfigButton"/>
-              <Button Content="Copy Issues" Command="{Binding CopyProfileIssuesCommand}" automation:AutomationProperties.AutomationId="CopyProfileIssuesButton"/>
+              <Button Content="{Binding T.ApplyForm}" Command="{Binding ApplyFormCommand}" automation:AutomationProperties.AutomationId="ApplyProfileFormButton"/>
+              <Button Content="{Binding T.Save}" Command="{Binding SaveProfileCommand}" automation:AutomationProperties.AutomationId="SaveProfileButton"/>
+              <Button Content="{Binding T.Validate}" Command="{Binding ValidateProfileCommand}" automation:AutomationProperties.AutomationId="ValidateProfileButton"/>
+              <Button Content="{Binding T.Format}" Command="{Binding FormatProfileCommand}" automation:AutomationProperties.AutomationId="FormatProfileButton"/>
+              <Button Content="{Binding T.ImportFile}" Click="ImportFile_OnClick"/>
+              <Button Content="{Binding T.ImportClipboard}" Click="ImportClipboard_OnClick" automation:AutomationProperties.AutomationId="ImportProfileClipboardButton"/>
+              <Button Content="{Binding T.Export}" Click="ExportProfile_OnClick"/>
+              <Button Content="{Binding T.CopySummary}" Command="{Binding CopyProfileSummaryCommand}" automation:AutomationProperties.AutomationId="CopyProfileSummaryButton"/>
+              <Button Content="{Binding T.CopyConfig}" Command="{Binding CopyProfileConfigCommand}" automation:AutomationProperties.AutomationId="CopyProfileConfigButton"/>
+              <Button Content="{Binding T.CopyIssues}" Command="{Binding CopyProfileIssuesCommand}" automation:AutomationProperties.AutomationId="CopyProfileIssuesButton"/>
             </WrapPanel>
             <Border Grid.Row="5" Classes="panel">
               <Grid RowDefinitions="Auto,*">
-                <TextBlock Classes="section" Text="Profile Checks"/>
+                <TextBlock Classes="section" Text="{Binding T.ProfileChecks}"/>
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                   <ItemsControl ItemsSource="{Binding ProfileIssues}">
                     <ItemsControl.ItemTemplate>
@@ -326,23 +326,23 @@
         </Grid>
       </TabItem>
 
-      <TabItem Header="Subscriptions" automation:AutomationProperties.AutomationId="SubscriptionsTab">
+      <TabItem Header="{Binding T.Subscriptions}" automation:AutomationProperties.AutomationId="SubscriptionsTab">
         <Grid Margin="16" ColumnDefinitions="320,*" ColumnSpacing="16">
           <DockPanel>
             <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,8">
-              <TextBox Text="{Binding SubscriptionSearchText}" PlaceholderText="Search subscriptions" automation:AutomationProperties.AutomationId="SubscriptionSearchTextBox"/>
-              <Button Grid.Column="1" Content="Clear" Command="{Binding ClearSubscriptionSearchCommand}" automation:AutomationProperties.AutomationId="ClearSubscriptionSearchButton"/>
+              <TextBox Text="{Binding SubscriptionSearchText}" PlaceholderText="{Binding T.SearchSubscriptions}" automation:AutomationProperties.AutomationId="SubscriptionSearchTextBox"/>
+              <Button Grid.Column="1" Content="{Binding T.Clear}" Command="{Binding ClearSubscriptionSearchCommand}" automation:AutomationProperties.AutomationId="ClearSubscriptionSearchButton"/>
             </Grid>
             <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,0,0,8">
-              <TextBlock Text="Sort" Classes="caption" VerticalAlignment="Center"/>
+              <TextBlock Text="{Binding T.Sort}" Classes="caption" VerticalAlignment="Center"/>
               <ComboBox Grid.Column="1" ItemsSource="{Binding SubscriptionSortOptions}" SelectedItem="{Binding SelectedSubscriptionSort}" MinHeight="30" automation:AutomationProperties.AutomationId="SubscriptionSortComboBox"/>
             </Grid>
             <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,10" ItemSpacing="8" LineSpacing="8">
-              <Button Content="New" Command="{Binding NewSubscriptionCommand}" automation:AutomationProperties.AutomationId="NewSubscriptionButton"/>
-              <Button Content="Update" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionButton"/>
-              <Button Content="Update All" Command="{Binding RefreshAllSubscriptionsCommand}" automation:AutomationProperties.AutomationId="UpdateAllSubscriptionsButton"/>
-              <Button Content="Save" Command="{Binding SaveSubscriptionCommand}" automation:AutomationProperties.AutomationId="SaveSubscriptionButton"/>
-              <Button Content="Delete" Command="{Binding DeleteSubscriptionCommand}" automation:AutomationProperties.AutomationId="DeleteSubscriptionButton"/>
+              <Button Content="{Binding T.New}" Command="{Binding NewSubscriptionCommand}" automation:AutomationProperties.AutomationId="NewSubscriptionButton"/>
+              <Button Content="{Binding T.Update}" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionButton"/>
+              <Button Content="{Binding T.UpdateAll}" Command="{Binding RefreshAllSubscriptionsCommand}" automation:AutomationProperties.AutomationId="UpdateAllSubscriptionsButton"/>
+              <Button Content="{Binding T.Save}" Command="{Binding SaveSubscriptionCommand}" automation:AutomationProperties.AutomationId="SaveSubscriptionButton"/>
+              <Button Content="{Binding T.Delete}" Command="{Binding DeleteSubscriptionCommand}" automation:AutomationProperties.AutomationId="DeleteSubscriptionButton"/>
             </WrapPanel>
             <TextBlock DockPanel.Dock="Top" Text="{Binding SubscriptionSummaryText}" Classes="caption" Margin="0,0,0,10" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="SubscriptionSummaryTextBlock"/>
             <ListBox ItemsSource="{Binding FilteredSubscriptions}" SelectedItem="{Binding SelectedSubscription}">
@@ -365,36 +365,36 @@
 
           <Grid Grid.Column="1" RowDefinitions="Auto,Auto,150" RowSpacing="10">
             <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="10">
-              <TextBlock Text="Name" VerticalAlignment="Center"/>
-              <TextBox Grid.Column="1" Text="{Binding SelectedSubscription.DisplayName}" PlaceholderText="Subscription name" automation:AutomationProperties.AutomationId="SubscriptionNameTextBox"/>
-              <TextBlock Grid.Row="1" Text="URL" VerticalAlignment="Center"/>
+              <TextBlock Text="{Binding T.Name}" VerticalAlignment="Center"/>
+              <TextBox Grid.Column="1" Text="{Binding SelectedSubscription.DisplayName}" PlaceholderText="{Binding T.Name}" automation:AutomationProperties.AutomationId="SubscriptionNameTextBox"/>
+              <TextBlock Grid.Row="1" Text="{Binding T.Url}" VerticalAlignment="Center"/>
               <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SelectedSubscription.Url}" PlaceholderText="https://example.com/subscription.json" automation:AutomationProperties.AutomationId="SubscriptionUrlTextBox"/>
-              <TextBlock Grid.Row="2" Text="Update interval minutes" VerticalAlignment="Center"/>
+              <TextBlock Grid.Row="2" Text="{Binding T.UpdateIntervalMinutes}" VerticalAlignment="Center"/>
               <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding SelectedSubscription.UpdateIntervalMinutes}" Minimum="1" Maximum="10080"/>
-              <TextBlock Grid.Row="3" Text="Trust policy" VerticalAlignment="Center"/>
+              <TextBlock Grid.Row="3" Text="{Binding T.TrustPolicy}" VerticalAlignment="Center"/>
               <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding SubscriptionTrustPolicies}" SelectedItem="{Binding SelectedSubscription.TrustPolicy}"/>
             </Grid>
             <WrapPanel Grid.Row="1" ItemSpacing="8" LineSpacing="8">
-              <Button Content="Update Now" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionNowButton"/>
-              <Button Content="Update All" Command="{Binding RefreshAllSubscriptionsCommand}" automation:AutomationProperties.AutomationId="UpdateAllSubscriptionsNowButton"/>
-              <Button Content="Save Subscription" Command="{Binding SaveSubscriptionCommand}" automation:AutomationProperties.AutomationId="SaveSubscriptionDetailsButton"/>
-              <Button Content="Copy Source" Command="{Binding CopySubscriptionSourceCommand}" automation:AutomationProperties.AutomationId="CopySubscriptionSourceButton"/>
-              <Button Content="Copy Result" Command="{Binding CopySubscriptionStatusCommand}" automation:AutomationProperties.AutomationId="CopySubscriptionStatusButton"/>
+              <Button Content="{Binding T.UpdateNow}" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionNowButton"/>
+              <Button Content="{Binding T.UpdateAll}" Command="{Binding RefreshAllSubscriptionsCommand}" automation:AutomationProperties.AutomationId="UpdateAllSubscriptionsNowButton"/>
+              <Button Content="{Binding T.SaveSubscription}" Command="{Binding SaveSubscriptionCommand}" automation:AutomationProperties.AutomationId="SaveSubscriptionDetailsButton"/>
+              <Button Content="{Binding T.CopySource}" Command="{Binding CopySubscriptionSourceCommand}" automation:AutomationProperties.AutomationId="CopySubscriptionSourceButton"/>
+              <Button Content="{Binding T.CopyResult}" Command="{Binding CopySubscriptionStatusCommand}" automation:AutomationProperties.AutomationId="CopySubscriptionStatusButton"/>
             </WrapPanel>
             <TextBox Grid.Row="2" Text="{Binding SubscriptionStatusText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="SubscriptionStatusTextBox"/>
           </Grid>
         </Grid>
       </TabItem>
 
-      <TabItem Header="Logs" automation:AutomationProperties.AutomationId="LogsTab">
+      <TabItem Header="{Binding T.Logs}" automation:AutomationProperties.AutomationId="LogsTab">
         <Grid Margin="16" RowDefinitions="Auto,Auto,*" RowSpacing="8">
           <WrapPanel ItemSpacing="8" LineSpacing="8">
-            <Button Content="Refresh Diagnostics" Command="{Binding RefreshDiagnosticsCommand}" automation:AutomationProperties.AutomationId="LogsRefreshDiagnosticsButton"/>
-            <Button Content="Export Diagnostics" Click="ExportDiagnostics_OnClick" automation:AutomationProperties.AutomationId="ExportDiagnosticsButton"/>
+            <Button Content="{Binding T.RefreshDiagnostics}" Command="{Binding RefreshDiagnosticsCommand}" automation:AutomationProperties.AutomationId="LogsRefreshDiagnosticsButton"/>
+            <Button Content="{Binding T.ExportDiagnostics}" Click="ExportDiagnostics_OnClick" automation:AutomationProperties.AutomationId="ExportDiagnosticsButton"/>
             <ComboBox Width="150" ItemsSource="{Binding LogLevelFilters}" SelectedItem="{Binding SelectedLogLevelFilter}" automation:AutomationProperties.AutomationId="LogLevelFilterComboBox"/>
-            <TextBox Width="390" Text="{Binding LogFilterText}" PlaceholderText="Filter logs, /regex/" automation:AutomationProperties.AutomationId="LogFilterTextBox"/>
-            <Button Content="Clear Filters" Command="{Binding ClearLogFiltersCommand}" automation:AutomationProperties.AutomationId="ClearLogFiltersButton"/>
-            <Button Content="Copy Logs" Command="{Binding CopyFilteredLogsCommand}" automation:AutomationProperties.AutomationId="CopyFilteredLogsButton"/>
+            <TextBox Width="390" Text="{Binding LogFilterText}" PlaceholderText="{Binding T.FilterLogsPlaceholder}" automation:AutomationProperties.AutomationId="LogFilterTextBox"/>
+            <Button Content="{Binding T.ClearFilters}" Command="{Binding ClearLogFiltersCommand}" automation:AutomationProperties.AutomationId="ClearLogFiltersButton"/>
+            <Button Content="{Binding T.CopyLogs}" Command="{Binding CopyFilteredLogsCommand}" automation:AutomationProperties.AutomationId="CopyFilteredLogsButton"/>
           </WrapPanel>
           <Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="8">
             <Border Background="{Binding LogFilterBadgeBackground}" CornerRadius="4" Padding="7,2">
@@ -406,19 +406,19 @@
         </Grid>
       </TabItem>
 
-      <TabItem Header="Diagnostics" automation:AutomationProperties.AutomationId="DiagnosticsTab">
+      <TabItem Header="{Binding T.Diagnostics}" automation:AutomationProperties.AutomationId="DiagnosticsTab">
         <Grid Margin="16" RowDefinitions="Auto,Auto,Auto,Auto,88,Auto,Auto,88,132,*" RowSpacing="10">
           <StackPanel Spacing="8">
             <WrapPanel ItemSpacing="8" LineSpacing="8">
-              <Button Content="Run All" Command="{Binding RunAllDiagnosticsCommand}" automation:AutomationProperties.AutomationId="RunAllDiagnosticsButton"/>
-              <Button Content="Clear Tests" Command="{Binding ClearDiagnosticsTestsCommand}" automation:AutomationProperties.AutomationId="ClearDiagnosticsTestsButton"/>
-              <Button Content="Run Checks" Command="{Binding RefreshDiagnosticsCommand}" automation:AutomationProperties.AutomationId="RunDiagnosticsButton"/>
-              <Button Content="Copy Summary" Command="{Binding CopyDiagnosticsSummaryCommand}" automation:AutomationProperties.AutomationId="CopyDiagnosticsSummaryButton"/>
-              <Button Content="Copy Report" Command="{Binding CopyDiagnosticsReportCommand}" automation:AutomationProperties.AutomationId="CopyDiagnosticsReportButton"/>
-              <Button Content="Export Zip" Click="ExportDiagnostics_OnClick" automation:AutomationProperties.AutomationId="ExportDiagnosticsZipButton"/>
-              <Button Content="Restore Proxy" Command="{Binding RestoreProxyCommand}"/>
-              <Button Content="Open Logs" Command="{Binding OpenLogsFolderCommand}"/>
-              <Button Content="Copy Ports" Command="{Binding CopyDiagnosticsPortsCommand}" automation:AutomationProperties.AutomationId="CopyDiagnosticsPortsButton"/>
+              <Button Content="{Binding T.RunAll}" Command="{Binding RunAllDiagnosticsCommand}" automation:AutomationProperties.AutomationId="RunAllDiagnosticsButton"/>
+              <Button Content="{Binding T.ClearTests}" Command="{Binding ClearDiagnosticsTestsCommand}" automation:AutomationProperties.AutomationId="ClearDiagnosticsTestsButton"/>
+              <Button Content="{Binding T.RunChecks}" Command="{Binding RefreshDiagnosticsCommand}" automation:AutomationProperties.AutomationId="RunDiagnosticsButton"/>
+              <Button Content="{Binding T.CopySummary}" Command="{Binding CopyDiagnosticsSummaryCommand}" automation:AutomationProperties.AutomationId="CopyDiagnosticsSummaryButton"/>
+              <Button Content="{Binding T.CopyReport}" Command="{Binding CopyDiagnosticsReportCommand}" automation:AutomationProperties.AutomationId="CopyDiagnosticsReportButton"/>
+              <Button Content="{Binding T.ExportZip}" Click="ExportDiagnostics_OnClick" automation:AutomationProperties.AutomationId="ExportDiagnosticsZipButton"/>
+              <Button Content="{Binding T.RestoreProxy}" Command="{Binding RestoreProxyCommand}"/>
+              <Button Content="{Binding T.OpenLogs}" Command="{Binding OpenLogsFolderCommand}"/>
+              <Button Content="{Binding T.CopyPorts}" Command="{Binding CopyDiagnosticsPortsCommand}" automation:AutomationProperties.AutomationId="CopyDiagnosticsPortsButton"/>
             </WrapPanel>
             <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
               <Border Background="{Binding DiagnosticsPortBackground}" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
@@ -429,16 +429,16 @@
             </Grid>
           </StackPanel>
           <Grid Grid.Row="1" ColumnDefinitions="90,*" ColumnSpacing="8">
-            <TextBlock Text="Target" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding T.Target}" VerticalAlignment="Center"/>
             <ComboBox Grid.Column="1" ItemsSource="{Binding NetworkTestTargets}" SelectedItem="{Binding SelectedNetworkTestTarget}" MinHeight="30" automation:AutomationProperties.AutomationId="NetworkTestTargetComboBox"/>
           </Grid>
           <Grid Grid.Row="2" ColumnDefinitions="90,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
-            <TextBlock Text="Test URL" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding T.TestUrl}" VerticalAlignment="Center"/>
             <TextBox Grid.Column="1" Text="{Binding NetworkTestUrl}" automation:AutomationProperties.AutomationId="NetworkTestUrlTextBox"/>
             <WrapPanel Grid.Row="1" Grid.Column="1" ItemSpacing="8" LineSpacing="8">
-              <Button Content="Test Network" Command="{Binding TestNetworkCommand}" automation:AutomationProperties.AutomationId="TestNetworkButton"/>
-              <Button Content="Copy Result" Command="{Binding CopyNetworkTestResultCommand}" automation:AutomationProperties.AutomationId="CopyNetworkTestResultButton"/>
-              <Button Content="Clear" Command="{Binding ClearNetworkTestCommand}" automation:AutomationProperties.AutomationId="ClearNetworkTestButton"/>
+              <Button Content="{Binding T.TestNetwork}" Command="{Binding TestNetworkCommand}" automation:AutomationProperties.AutomationId="TestNetworkButton"/>
+              <Button Content="{Binding T.CopyResult}" Command="{Binding CopyNetworkTestResultCommand}" automation:AutomationProperties.AutomationId="CopyNetworkTestResultButton"/>
+              <Button Content="{Binding T.Clear}" Command="{Binding ClearNetworkTestCommand}" automation:AutomationProperties.AutomationId="ClearNetworkTestButton"/>
             </WrapPanel>
           </Grid>
           <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
@@ -457,9 +457,9 @@
           </Grid>
           <TextBox Grid.Row="4" Text="{Binding NetworkTestText}" AcceptsReturn="True" IsReadOnly="True" FontFamily="Consolas" TextWrapping="Wrap" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" automation:AutomationProperties.AutomationId="NetworkTestResultTextBox"/>
           <WrapPanel Grid.Row="5" ItemSpacing="8" LineSpacing="8">
-            <Button Content="Test Forward" Command="{Binding TestProfileEndpointCommand}" automation:AutomationProperties.AutomationId="TestProfileEndpointButton"/>
-            <Button Content="Copy Forward" Command="{Binding CopyProfileEndpointTestResultCommand}" automation:AutomationProperties.AutomationId="CopyProfileEndpointTestResultButton"/>
-            <Button Content="Clear Forward" Command="{Binding ClearProfileEndpointTestCommand}" automation:AutomationProperties.AutomationId="ClearProfileEndpointTestButton"/>
+            <Button Content="{Binding T.TestForward}" Command="{Binding TestProfileEndpointCommand}" automation:AutomationProperties.AutomationId="TestProfileEndpointButton"/>
+            <Button Content="{Binding T.CopyForward}" Command="{Binding CopyProfileEndpointTestResultCommand}" automation:AutomationProperties.AutomationId="CopyProfileEndpointTestResultButton"/>
+            <Button Content="{Binding T.ClearForward}" Command="{Binding ClearProfileEndpointTestCommand}" automation:AutomationProperties.AutomationId="ClearProfileEndpointTestButton"/>
             <TextBlock Text="{Binding ProfileEndpointTestLastRunText}" Classes="caption" VerticalAlignment="Center" automation:AutomationProperties.AutomationId="ProfileEndpointLastRunText"/>
           </WrapPanel>
           <Border Grid.Row="6" Background="{Binding ProfileEndpointRouteBackground}" CornerRadius="4" Padding="8,5">
@@ -474,33 +474,36 @@
         </Grid>
       </TabItem>
 
-      <TabItem Header="Settings" automation:AutomationProperties.AutomationId="SettingsTab">
+      <TabItem Header="{Binding T.Settings}" automation:AutomationProperties.AutomationId="SettingsTab">
         <ScrollViewer>
           <Grid Margin="16" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="12">
-            <TextBlock Text="Launch at login" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding T.LaunchAtLogin}" VerticalAlignment="Center"/>
             <CheckBox Grid.Column="1" IsChecked="{Binding Settings.LaunchAtLogin}"/>
-            <TextBlock Grid.Row="1" Text="Start minimized" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="1" Text="{Binding T.StartMinimized}" VerticalAlignment="Center"/>
             <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding Settings.StartMinimized}"/>
-            <TextBlock Grid.Row="2" Text="Auto-connect selected profile" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="2" Text="{Binding T.AutoConnectSelectedProfile}" VerticalAlignment="Center"/>
             <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding AutoConnectSelectedProfile}" automation:AutomationProperties.AutomationId="SettingsAutoConnectCheckBox"/>
-            <TextBlock Grid.Row="3" Text="Startup delay seconds" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="3" Text="{Binding T.StartupDelaySeconds}" VerticalAlignment="Center"/>
             <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding Settings.StartupDelaySeconds}" Minimum="0" Maximum="120"/>
-            <TextBlock Grid.Row="4" Text="Theme" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="4" Text="{Binding T.Theme}" VerticalAlignment="Center"/>
             <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding ThemeOptions}" SelectedItem="{Binding SelectedTheme}"/>
-            <TextBlock Grid.Row="5" Text="Language" VerticalAlignment="Center"/>
-            <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Settings.Language}"/>
-            <TextBlock Grid.Row="6" Text="PAC bypass rules" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="5" Text="{Binding T.Language}" VerticalAlignment="Center" automation:AutomationProperties.AutomationId="SettingsLanguageLabel"/>
+            <StackPanel Grid.Row="5" Grid.Column="1" Spacing="4">
+              <ComboBox ItemsSource="{Binding LanguageOptions}" SelectedItem="{Binding SelectedLanguage}" DisplayMemberBinding="{Binding DisplayName}" MinHeight="30" automation:AutomationProperties.AutomationId="LanguageComboBox"/>
+              <TextBlock Text="{Binding T.LanguageRestartNotRequired}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="LanguageHintText"/>
+            </StackPanel>
+            <TextBlock Grid.Row="6" Text="{Binding T.PacBypassRules}" VerticalAlignment="Center"/>
             <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Settings.PacBypassRules}"/>
-            <TextBlock Grid.Row="7" Text="Log retention days" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="7" Text="{Binding T.LogRetentionDays}" VerticalAlignment="Center"/>
             <NumericUpDown Grid.Row="7" Grid.Column="1" Value="{Binding Settings.LogRetentionDays}" Minimum="1" Maximum="365"/>
-            <TextBlock Grid.Row="8" Text="Update channel" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="8" Text="{Binding T.UpdateChannel}" VerticalAlignment="Center"/>
             <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding UpdateChannels}" SelectedItem="{Binding SelectedUpdateChannel}"/>
-            <TextBlock Grid.Row="9" Text="Core executable" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="9" Text="{Binding T.CoreExecutable}" VerticalAlignment="Center"/>
             <Grid Grid.Row="9" Grid.Column="1" RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="8">
-              <TextBox Text="{Binding CorePath}" PlaceholderText="Auto-detect or full path to x-tunnel.exe" automation:AutomationProperties.AutomationId="SettingsCorePathTextBox"/>
-              <Button Grid.Column="1" Content="Use Detected" Command="{Binding UseDetectedCorePathCommand}" automation:AutomationProperties.AutomationId="UseDetectedCorePathButton"/>
-              <Button Grid.Column="2" Content="Check Version" Command="{Binding CheckCoreVersionCommand}" automation:AutomationProperties.AutomationId="CheckCoreVersionButton"/>
-              <Button Grid.Column="3" Content="Copy Path" Command="{Binding CopyCorePathCommand}" automation:AutomationProperties.AutomationId="CopyCorePathButton"/>
+              <TextBox Text="{Binding CorePath}" PlaceholderText="{Binding T.CorePathPlaceholder}" automation:AutomationProperties.AutomationId="SettingsCorePathTextBox"/>
+              <Button Grid.Column="1" Content="{Binding T.UseDetected}" Command="{Binding UseDetectedCorePathCommand}" automation:AutomationProperties.AutomationId="UseDetectedCorePathButton"/>
+              <Button Grid.Column="2" Content="{Binding T.CheckVersion}" Command="{Binding CheckCoreVersionCommand}" automation:AutomationProperties.AutomationId="CheckCoreVersionButton"/>
+              <Button Grid.Column="3" Content="{Binding T.CopyPath}" Command="{Binding CopyCorePathCommand}" automation:AutomationProperties.AutomationId="CopyCorePathButton"/>
               <TextBlock Grid.Row="1" Grid.ColumnSpan="4" Text="{Binding DetectedCorePath}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="DetectedCorePathTextBlock"/>
               <Grid Grid.Row="2" Grid.ColumnSpan="4" ColumnDefinitions="Auto,*" ColumnSpacing="8">
                 <Border Background="{Binding CorePathStatusBackground}" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
@@ -509,15 +512,15 @@
                 <TextBlock Grid.Column="1" Text="{Binding CorePathStatusDetail}" Classes="caption" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="CorePathStatusDetailText"/>
               </Grid>
             </Grid>
-            <TextBlock Grid.Row="10" Text="Local folders" VerticalAlignment="Center"/>
+            <TextBlock Grid.Row="10" Text="{Binding T.LocalFolders}" VerticalAlignment="Center"/>
             <WrapPanel Grid.Row="10" Grid.Column="1" ItemSpacing="8" LineSpacing="8">
-              <Button Content="Copy Folders" Command="{Binding CopySettingsFoldersCommand}" automation:AutomationProperties.AutomationId="CopySettingsFoldersButton"/>
-              <Button Content="App Data" Command="{Binding OpenDataFolderCommand}"/>
-              <Button Content="Profiles" Command="{Binding OpenProfilesFolderCommand}"/>
-              <Button Content="Logs" Command="{Binding OpenLogsFolderCommand}"/>
-              <Button Content="Runtime" Command="{Binding OpenRuntimeFolderCommand}"/>
+              <Button Content="{Binding T.CopyFolders}" Command="{Binding CopySettingsFoldersCommand}" automation:AutomationProperties.AutomationId="CopySettingsFoldersButton"/>
+              <Button Content="{Binding T.AppData}" Command="{Binding OpenDataFolderCommand}"/>
+              <Button Content="{Binding T.Profiles}" Command="{Binding OpenProfilesFolderCommand}"/>
+              <Button Content="{Binding T.Logs}" Command="{Binding OpenLogsFolderCommand}"/>
+              <Button Content="{Binding T.Runtime}" Command="{Binding OpenRuntimeFolderCommand}"/>
             </WrapPanel>
-            <Button Grid.Row="11" Grid.Column="1" HorizontalAlignment="Left" Content="Save Settings" Command="{Binding SaveSettingsCommand}" automation:AutomationProperties.AutomationId="SaveSettingsButton"/>
+            <Button Grid.Row="11" Grid.Column="1" HorizontalAlignment="Left" Content="{Binding T.SaveSettings}" Command="{Binding SaveSettingsCommand}" automation:AutomationProperties.AutomationId="SaveSettingsButton"/>
           </Grid>
         </ScrollViewer>
       </TabItem>

@@ -218,11 +218,13 @@ public sealed class ClientCoreTests
 
             repository.SaveSettings(new AppSettings
             {
+                Language = "zh-CN",
                 NetworkTestTarget = "Custom",
                 NetworkTestUrl = "http://127.0.0.1:18080/generate_204"
             });
 
             var saved = repository.GetSettings();
+            Assert.Equal("zh-CN", saved.Language);
             Assert.Equal("Custom", saved.NetworkTestTarget);
             Assert.Equal("http://127.0.0.1:18080/generate_204", saved.NetworkTestUrl);
         }

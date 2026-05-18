@@ -123,3 +123,4 @@ Implication for x-tunnel Client: system proxy/PAC/TUN should be visible as mode 
 - Extended Overview Copy Runtime Details to include both control status and stats JSON.
 - Added GUI smoke coverage for duplicating and deleting an imported profile.
 - Added GUI smoke coverage for deleting a subscription through a stable AutomationId.
+- Added immediate English / Simplified Chinese language switching in Settings, with GUI smoke coverage for the live switch, localized saved feedback, and persistence after restart.
