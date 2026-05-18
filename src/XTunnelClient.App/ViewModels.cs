@@ -2604,7 +2604,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, SubscriptionStatusText);
-        ErrorText = "Subscription result copied";
+        ErrorText = L("Subscription result copied", "订阅结果已复制");
     }
 
     private void CopySubscriptionSource()
@@ -2615,7 +2615,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         CopyTextRequested?.Invoke(this, BuildSubscriptionSourceSummary(SelectedSubscription));
-        ErrorText = "Subscription source copied";
+        ErrorText = L("Subscription source copied", "订阅来源已复制");
     }
 
     private void ClearProfileSearch()

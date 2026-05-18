@@ -142,6 +142,7 @@ function Set-SmokeClipboardText {
     for ($i = 0; $i -lt 10; $i++) {
         try {
             Set-Clipboard -Value $text
+            Start-Sleep -Milliseconds 150
             return
         }
         catch {
@@ -289,6 +290,39 @@ function Get-ElementValue {
     }
     catch {
         return $Element.Current.Name
+    }
+}
+
+function Wait-AutomationTextMatch {
+    param(
+        [System.Windows.Automation.AutomationElement]$Root,
+        [string]$AutomationId,
+        [string]$Pattern,
+        [int]$TimeoutSeconds,
+        [string]$Message
+    )
+    $state = @{
+        Seen = $false
+        LastText = $null
+    }
+    try {
+        return Wait-Until -TimeoutSeconds $TimeoutSeconds -Message $Message -Condition {
+            $element = Find-ByAutomationId -Root $Root -AutomationId $AutomationId
+            if ($element) {
+                $state.Seen = $true
+                $state.LastText = Get-ElementValue $element
+                if ($state.LastText -match $Pattern) {
+                    return $state.LastText
+                }
+            }
+            return $null
+        }
+    }
+    catch {
+        if ($state.Seen) {
+            throw "$Message Last observed ${AutomationId}: '$($state.LastText)'."
+        }
+        throw "$Message Last observed ${AutomationId}: <not found>."
     }
 }
 
@@ -1890,7 +1924,7 @@ try {
 
     $importProfileClipboardButton = Get-ByAutomationId -Root $window -AutomationId "ImportProfileClipboardButton" -TimeoutSeconds $TimeoutSeconds
     $importProfileJson = $profileConfigClipboardText -replace '"token_ref"\s*:\s*"secret:profile-token"', '"token": "clipboard-token"'
-    Set-Clipboard -Value $importProfileJson
+    Set-SmokeClipboardText -Value $importProfileJson
     Invoke-Element $importProfileClipboardButton
     $importedProfileName = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Import profile from clipboard did not select the imported profile." -Condition {
         $nameBox = Find-ByAutomationId -Root $window -AutomationId "ProfileNameTextBox"
@@ -1951,6 +1985,32 @@ try {
         return $null
     }
     Write-Host "Profile copy deleted: $deletedProfileSummary"
+
+    $profilesTab = Get-ByAutomationId -Root $window -AutomationId "ProfilesTab" -TimeoutSeconds $TimeoutSeconds
+    Select-Element $profilesTab
+    $clearStartupBeforeRestartButton = Get-ByAutomationId -Root $window -AutomationId "ClearStartupProfileButton" -TimeoutSeconds $TimeoutSeconds
+    if ($clearStartupBeforeRestartButton.Current.IsEnabled) {
+        Invoke-Element $clearStartupBeforeRestartButton
+        $startupClearedBeforeRestart = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Startup profile did not clear before restart." -Condition {
+            $text = Get-ElementValue $startupProfileSummaryBlock
+            if ($text -match "Startup: not set") {
+                return $text
+            }
+            return $null
+        }
+        $settingsTab = Get-ByAutomationId -Root $window -AutomationId "SettingsTab" -TimeoutSeconds $TimeoutSeconds
+        Select-Element $settingsTab
+        $saveSettingsButton = Get-ByAutomationId -Root $window -AutomationId "SaveSettingsButton" -TimeoutSeconds $TimeoutSeconds
+        Invoke-Element $saveSettingsButton
+        Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Clearing startup profile was not saved before restart." -Condition {
+            $text = Get-ElementValue $appErrorText
+            if ($text -match "Settings saved") {
+                return $text
+            }
+            return $null
+        } | Out-Null
+        Write-Host "Startup profile cleared before restart: $startupClearedBeforeRestart"
+    }
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force
@@ -2062,6 +2122,53 @@ try {
         }
         return $null
     }
+    $newLocalizedSubscriptionButton = Get-ByAutomationId -Root $window -AutomationId "NewSubscriptionButton" -TimeoutSeconds $TimeoutSeconds
+    Invoke-Element $newLocalizedSubscriptionButton
+    $localizedSubscriptionStatusBox = Get-ByAutomationId -Root $window -AutomationId "SubscriptionStatusTextBox" -TimeoutSeconds $TimeoutSeconds
+    $localizedNewSubscriptionStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "New subscription status did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $localizedSubscriptionStatusBox
+        if ($text -match "上次结果: 未保存") {
+            return $text
+        }
+        return $null
+    }
+    $copyLocalizedSubscriptionSourceButton = Get-ByAutomationId -Root $window -AutomationId "CopySubscriptionSourceButton" -TimeoutSeconds $TimeoutSeconds
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized subscription source copy button did not become enabled." -Condition {
+        if ($copyLocalizedSubscriptionSourceButton.Current.IsEnabled) {
+            return $true
+        }
+        return $null
+    } | Out-Null
+    Clear-SmokeClipboard
+    Invoke-Element $copyLocalizedSubscriptionSourceButton
+    $localizedSubscriptionSourceClipboard = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized subscription source was not copied after switching to Chinese." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "^订阅:" -and
+            $text -match "间隔:" -and
+            $text -match "上次结果: 未保存") {
+            return $text
+        }
+        return $null
+    }
+    $localizedSubscriptionSourceCopyText = Wait-AutomationTextMatch -Root $window -AutomationId "AppErrorTextBlock" -Pattern "订阅来源已复制" -TimeoutSeconds $TimeoutSeconds -Message "Localized subscription source copy feedback did not appear after switching to Chinese."
+    $copyLocalizedSubscriptionStatusButton = Get-ByAutomationId -Root $window -AutomationId "CopySubscriptionStatusButton" -TimeoutSeconds $TimeoutSeconds
+    Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized subscription result copy button did not become enabled." -Condition {
+        if ($copyLocalizedSubscriptionStatusButton.Current.IsEnabled) {
+            return $true
+        }
+        return $null
+    } | Out-Null
+    Clear-SmokeClipboard
+    Invoke-Element $copyLocalizedSubscriptionStatusButton
+    $localizedSubscriptionStatusClipboard = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized subscription result was not copied after switching to Chinese." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "上次结果: 未保存" -and
+            $text -match "更新时间:") {
+            return $text
+        }
+        return $null
+    }
+    $localizedSubscriptionStatusCopyText = Wait-AutomationTextMatch -Root $window -AutomationId "AppErrorTextBlock" -Pattern "订阅结果已复制" -TimeoutSeconds $TimeoutSeconds -Message "Localized subscription result copy feedback did not appear after switching to Chinese."
     Select-Element $settingsTab
     $localizedCorePathStatusText = Get-ByAutomationId -Root $window -AutomationId "CorePathStatusText" -TimeoutSeconds $TimeoutSeconds
     $localizedCorePathStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Core path status did not localize after switching to Chinese." -Condition {
@@ -2096,7 +2203,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedSubscriptionSummary / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force

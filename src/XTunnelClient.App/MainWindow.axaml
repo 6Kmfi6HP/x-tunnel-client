@@ -55,7 +55,7 @@
         <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="12">
           <TextBlock Text="x-tunnel" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
           <TextBlock Grid.Column="1" Text="{Binding RuntimeStateText}" VerticalAlignment="Center"/>
-          <TextBlock Grid.Column="2" Text="{Binding ErrorText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{Binding AppMessageForeground}" automation:AutomationProperties.AutomationId="AppErrorTextBlock"/>
+          <TextBlock Grid.Column="2" Text="{Binding ErrorText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{Binding AppMessageForeground}" automation:AutomationProperties.AutomationId="AppErrorTextBlock" automation:AutomationProperties.Name="{Binding ErrorText}"/>
         </Grid>
         <Button Grid.Column="1" Content="{Binding T.Connect}" Command="{Binding ConnectCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="ConnectButton"/>
         <Button Grid.Column="2" Content="{Binding T.Disconnect}" Command="{Binding DisconnectCommand}" Margin="0,0,8,0" automation:AutomationProperties.AutomationId="DisconnectButton"/>
