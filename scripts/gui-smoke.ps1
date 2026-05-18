@@ -2112,8 +2112,25 @@ try {
         }
         return $null
     }
+    $profileSubtitle = Get-ByAutomationId -Root $window -AutomationId "ProfileListItemSubtitle" -TimeoutSeconds $TimeoutSeconds
+    $localizedProfileSubtitle = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile list subtitle did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $profileSubtitle
+        if ($text -match "^(客户端|服务端) / (本地|导入|订阅)$") {
+            return $text
+        }
+        return $null
+    }
     $copyProfileSummaryButton = Get-ByAutomationId -Root $window -AutomationId "CopyProfileSummaryButton" -TimeoutSeconds $TimeoutSeconds
+    Clear-SmokeClipboard
     Invoke-Element $copyProfileSummaryButton
+    $localizedProfileSummaryClipboard = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized profile summary was not copied after switching to Chinese." -Condition {
+        $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if ($text -match "类型: (客户端|服务端)" -and
+            $text -match "来源: (本地|导入|订阅)") {
+            return $text
+        }
+        return $null
+    }
     $appErrorText = Get-ByAutomationId -Root $window -AutomationId "AppErrorTextBlock" -TimeoutSeconds $TimeoutSeconds
     $localizedProfileCopyText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Localized profile copy feedback did not appear after switching to Chinese." -Condition {
         $text = Get-ElementValue $appErrorText
@@ -2145,6 +2162,14 @@ try {
     $localizedProfileKindText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile kind option did not localize after switching to Chinese." -Condition {
         $text = Get-ElementValue $localizedProfileKindCombo
         if ($text -eq "客户端") {
+            return $text
+        }
+        return $null
+    }
+    $localizedStatusProfile = Get-ByAutomationId -Root $window -AutomationId "StatusBarProfileText" -TimeoutSeconds $TimeoutSeconds
+    $localizedStatusProfileText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Status bar profile summary did not localize profile metadata after switching to Chinese." -Condition {
+        $text = Get-ElementValue $localizedStatusProfile
+        if ($text -match "^配置 \d+ 副本 \(客户端 / 本地\)$") {
             return $text
         }
         return $null
@@ -2190,6 +2215,7 @@ try {
         $text = Get-Clipboard -Raw -ErrorAction SilentlyContinue
         if ($text -match "^订阅: 订阅 1" -and
             $text -match "间隔:" -and
+            $text -match "信任策略: 确认" -and
             $text -match "上次结果: 未保存") {
             return $text
         }
@@ -2248,7 +2274,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedProfileKindText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $localizedSubscriptionTrustText / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedProfileSummary / $localizedProfileState / $localizedProfileSubtitle / $($localizedProfileSummaryClipboard.Split([Environment]::NewLine)[1]) / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedProfileKindText / $localizedStatusProfileText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $localizedSubscriptionTrustText / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force

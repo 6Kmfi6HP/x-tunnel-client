@@ -438,11 +438,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         get => SelectedProfile is null ? null : FindOption(ProfileKinds, SelectedProfile.Kind);
         set
         {
-            if (SelectedProfile is not null && value is not null)
+            var profile = SelectedProfile;
+            if (profile is not null && value is not null)
             {
-                SelectedProfile.Kind = value.Value;
+                profile.Kind = value.Value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SelectedProfile));
+                RefreshProfileListItem(profile);
                 RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
             }
         }
@@ -1438,8 +1440,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var profile = SelectedProfile;
         var summary = new StringBuilder();
         summary.AppendLine($"{T.Profile}: {profile.Name}");
-        summary.AppendLine($"{L("Kind", "类型")}: {profile.Kind}");
-        summary.AppendLine($"{L("Source", "来源")}: {profile.Source}");
+        summary.AppendLine($"{L("Kind", "类型")}: {LocalizeProfileKind(profile.Kind)}");
+        summary.AppendLine($"{L("Source", "来源")}: {LocalizeProfileSource(profile.Source)}");
         summary.AppendLine($"{T.Validation}: {LocalizeValidationState(profile)} - {LocalizeValidationDetail(profile)}");
         summary.AppendLine($"{L("Endpoint test", "端点测试")}: {LocalizeEndpointTestState(profile)} - {LocalizeEndpointTestDetail(profile)}");
 
@@ -1478,8 +1480,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var profile = SelectedProfile;
         var summary = new StringBuilder();
         summary.AppendLine($"{T.Profile}: {profile.Name}");
-        summary.AppendLine($"{L("Kind", "类型")}: {profile.Kind}");
-        summary.AppendLine($"{L("Source", "来源")}: {profile.Source}");
+        summary.AppendLine($"{L("Kind", "类型")}: {LocalizeProfileKind(profile.Kind)}");
+        summary.AppendLine($"{L("Source", "来源")}: {LocalizeProfileSource(profile.Source)}");
         summary.AppendLine($"{T.Validation}: {LocalizeValidationState(profile)} - {LocalizeValidationDetail(profile)}");
         if (!string.IsNullOrWhiteSpace(profile.LastValidationError))
         {
@@ -2704,7 +2706,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             : IsChinese ? $"{status.Mode} 模式，已运行 {FormatDuration(status.UptimeSeconds)}" : $"{status.Mode} mode, uptime {FormatDuration(status.UptimeSeconds)}";
         ActiveProfileSummary = SelectedProfile is null
             ? "-"
-            : $"{SelectedProfile.Name} ({SelectedProfile.Kind}, {SelectedProfile.Source})";
+            : $"{SelectedProfile.Name} ({FormatProfileSubtitle(SelectedProfile)})";
         ProxySummary = FormatProxyMode(SelectedProxyMode);
         CoreSummary = status is null ? T.CoreNotRunning : $"{status.Version} / {ShortCommit(status.Commit)}";
         RecentIssueSummary = FirstNonEmpty(ErrorText, status?.LastFatalError, SelectedProfile?.LastValidationError, "-");
@@ -2996,6 +2998,32 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return result;
     }
 
+    private string LocalizeProfileKind(string kind)
+    {
+        return FindOption(ProfileKinds, kind)?.DisplayName ?? kind;
+    }
+
+    private string LocalizeProfileSource(string source)
+    {
+        return source switch
+        {
+            _ when string.Equals(source, "local", StringComparison.OrdinalIgnoreCase) => L("Local", "本地"),
+            _ when string.Equals(source, "import", StringComparison.OrdinalIgnoreCase) => L("Imported", "导入"),
+            _ when string.Equals(source, "subscription", StringComparison.OrdinalIgnoreCase) => L("Subscription", "订阅"),
+            _ => source
+        };
+    }
+
+    private string FormatProfileSubtitle(Profile profile)
+    {
+        return $"{LocalizeProfileKind(profile.Kind)} / {LocalizeProfileSource(profile.Source)}";
+    }
+
+    private string LocalizeTrustPolicy(string policy)
+    {
+        return FindOption(SubscriptionTrustPolicies, policy)?.DisplayName ?? policy;
+    }
+
     private static string ClassifyAppMessageForeground(string message)
     {
         if (string.IsNullOrWhiteSpace(message))
@@ -3194,6 +3222,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         return ProfileFieldContains(profile.Name, filter)
             || ProfileFieldContains(profile.Kind, filter)
             || ProfileFieldContains(profile.Source, filter)
+            || ProfileFieldContains(LocalizeProfileKind(profile.Kind), filter)
+            || ProfileFieldContains(LocalizeProfileSource(profile.Source), filter)
             || ProfileFieldContains(profile.ValidationState, filter)
             || ProfileFieldContains(profile.ValidationDetail, filter)
             || ProfileFieldContains(profile.EndpointTestState, filter)
@@ -3216,7 +3246,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             Profile = profile,
             Name = profile.Name,
-            ListSubtitle = profile.ListSubtitle,
+            ListSubtitle = FormatProfileSubtitle(profile),
             ValidationState = LocalizeValidationState(profile),
             ValidationDetail = LocalizeValidationDetail(profile),
             ValidationBadgeBackground = profile.ValidationBadgeBackground,
@@ -3658,7 +3688,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             $"{L("Subscription", "订阅")}: {subscription.DisplayName}",
             $"URL: {subscription.Url}",
             $"{L("Interval", "间隔")}: {subscription.UpdateIntervalMinutes} {L("minute(s)", "分钟")}",
-            $"{L("Trust", "信任策略")}: {subscription.TrustPolicy}",
+            $"{L("Trust", "信任策略")}: {LocalizeTrustPolicy(subscription.TrustPolicy)}",
             $"{L("Last result", "上次结果")}: {LocalizeSubscriptionResult(subscription.LastResult)}",
             $"{L("Updated", "更新时间")}: {updated}"
         });
@@ -3700,6 +3730,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             || SubscriptionFieldContains(subscription.UpdateState, filter)
             || SubscriptionFieldContains(subscription.UpdateDetail, filter)
             || SubscriptionFieldContains(subscription.TrustPolicy, filter)
+            || SubscriptionFieldContains(LocalizeTrustPolicy(subscription.TrustPolicy), filter)
             || SubscriptionFieldContains(LocalizeSubscriptionResult(subscription.LastResult), filter)
             || SubscriptionFieldContains(LocalizeSubscriptionUpdateState(subscription), filter)
             || SubscriptionFieldContains(LocalizeSubscriptionUpdateDetail(subscription), filter);

@@ -258,7 +258,7 @@
                       <Border Grid.Column="1" Background="{Binding ValidationBadgeBackground}" CornerRadius="4" Padding="7,2">
                         <TextBlock Text="{Binding ValidationState}" Foreground="{Binding ValidationBadgeForeground}" FontSize="11" FontWeight="SemiBold" automation:AutomationProperties.AutomationId="ProfileListItemValidationState"/>
                       </Border>
-                      <TextBlock Grid.Row="1" Text="{Binding ListSubtitle}" Classes="caption" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Grid.Row="1" Text="{Binding ListSubtitle}" Classes="caption" TextTrimming="CharacterEllipsis" automation:AutomationProperties.AutomationId="ProfileListItemSubtitle"/>
                       <Border Grid.Row="1" Grid.Column="1" Background="{Binding EndpointBadgeBackground}" CornerRadius="4" Padding="7,2">
                         <TextBlock Text="{Binding EndpointTestState}" Foreground="{Binding EndpointBadgeForeground}" FontSize="11" FontWeight="SemiBold" automation:AutomationProperties.AutomationId="ProfileListItemEndpointState"/>
                       </Border>
