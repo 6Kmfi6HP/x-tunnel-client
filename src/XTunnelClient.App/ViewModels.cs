@@ -352,10 +352,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<Subscription> FilteredSubscriptions { get; } = [];
     public ObservableCollection<SubscriptionListRow> FilteredSubscriptionRows { get; } = [];
     public ObservableCollection<SelectOption<ProxyMode>> ProxyModeOptions { get; } = [];
-    public IReadOnlyList<string> ProfileKinds { get; } = ["client", "server"];
+    public ObservableCollection<SelectOption<string>> ProfileKinds { get; } = [];
     public ObservableCollection<SelectOption<string>> ThemeOptions { get; } = [];
     public ObservableCollection<SelectOption<string>> UpdateChannels { get; } = [];
-    public IReadOnlyList<string> SubscriptionTrustPolicies { get; } = ["confirm", "auto"];
+    public ObservableCollection<SelectOption<string>> SubscriptionTrustPolicies { get; } = [];
     public ObservableCollection<SelectOption<string>> LogLevelFilters { get; } = [];
     public ObservableCollection<SelectOption<string>> ProfileSortOptions { get; } = [];
     public ObservableCollection<SelectOption<string>> SubscriptionSortOptions { get; } = [];
@@ -378,6 +378,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 SecretValue = value?.SecretRef is null ? "" : _repository.GetSecret(value.Id, value.SecretRef) ?? "";
                 LoadStructuredFields();
                 ProfileIssues.Clear();
+                OnPropertyChanged(nameof(SelectedProfileKindOption));
                 OnPropertyChanged(nameof(AutoConnectSelectedProfile));
                 OnPropertyChanged(nameof(StartupProfileSummary));
                 RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
@@ -401,6 +402,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _selectedSubscription, value))
             {
                 SubscriptionStatusText = value is null ? NoSubscriptionSelectedText : BuildSubscriptionStatus(value);
+                OnPropertyChanged(nameof(SelectedSubscriptionTrustPolicyOption));
                 RaiseSubscriptionCommandState();
                 SyncSelectedSubscriptionRow();
             }
@@ -427,6 +429,34 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (SetProperty(ref _selectedSubscriptionRow, value) && !_syncingSubscriptionRowSelection)
             {
                 SelectedSubscription = value?.Subscription;
+            }
+        }
+    }
+
+    public SelectOption<string>? SelectedProfileKindOption
+    {
+        get => SelectedProfile is null ? null : FindOption(ProfileKinds, SelectedProfile.Kind);
+        set
+        {
+            if (SelectedProfile is not null && value is not null)
+            {
+                SelectedProfile.Kind = value.Value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SelectedProfile));
+                RefreshOverview(_supervisor.CurrentStatus, _supervisor.CurrentStats);
+            }
+        }
+    }
+
+    public SelectOption<string>? SelectedSubscriptionTrustPolicyOption
+    {
+        get => SelectedSubscription is null ? null : FindOption(SubscriptionTrustPolicies, SelectedSubscription.TrustPolicy);
+        set
+        {
+            if (SelectedSubscription is not null && value is not null)
+            {
+                SelectedSubscription.TrustPolicy = value.Value;
+                OnPropertyChanged();
             }
         }
     }
@@ -4027,6 +4057,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             new SelectOption<string>("Updated", T.SortUpdated),
             new SelectOption<string>("Status", T.SortStatus)
         ]);
+        ReplaceCollection(ProfileKinds,
+        [
+            new SelectOption<string>("client", T.ProfileKindClient),
+            new SelectOption<string>("server", T.ProfileKindServer)
+        ]);
+        ReplaceCollection(SubscriptionTrustPolicies,
+        [
+            new SelectOption<string>("confirm", T.TrustPolicyConfirm),
+            new SelectOption<string>("auto", T.TrustPolicyAuto)
+        ]);
 
         OnPropertyChanged(nameof(SelectedProxyModeOption));
         OnPropertyChanged(nameof(SelectedThemeOption));
@@ -4035,6 +4075,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(SelectedLogLevelFilterOption));
         OnPropertyChanged(nameof(SelectedProfileSortOption));
         OnPropertyChanged(nameof(SelectedSubscriptionSortOption));
+        OnPropertyChanged(nameof(SelectedProfileKindOption));
+        OnPropertyChanged(nameof(SelectedSubscriptionTrustPolicyOption));
     }
 
     private static void ApplyTheme(string? theme)

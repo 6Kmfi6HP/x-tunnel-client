@@ -68,6 +68,8 @@ public sealed class AppText
         [nameof(ClearStartup)] = "Clear Startup",
         [nameof(ProfileNamePlaceholder)] = "Profile name",
         [nameof(SourcePlaceholder)] = "source",
+        [nameof(ProfileKindClient)] = "Client",
+        [nameof(ProfileKindServer)] = "Server",
         [nameof(Fallback)] = "fallback",
         [nameof(SecretRefPlaceholder)] = "secret ref, e.g. profile-token",
         [nameof(ProfileSecretPlaceholder)] = "profile secret saved with DPAPI",
@@ -89,6 +91,8 @@ public sealed class AppText
         [nameof(TrustPolicy)] = "Trust policy",
         [nameof(UpdateNow)] = "Update Now",
         [nameof(SaveSubscription)] = "Save Subscription",
+        [nameof(TrustPolicyConfirm)] = "Confirm",
+        [nameof(TrustPolicyAuto)] = "Auto",
         [nameof(CopySource)] = "Copy Source",
         [nameof(CopyResult)] = "Copy Result",
         [nameof(RefreshDiagnostics)] = "Refresh Diagnostics",
@@ -232,6 +236,8 @@ public sealed class AppText
         [nameof(ClearStartup)] = "清除启动项",
         [nameof(ProfileNamePlaceholder)] = "配置名称",
         [nameof(SourcePlaceholder)] = "来源",
+        [nameof(ProfileKindClient)] = "客户端",
+        [nameof(ProfileKindServer)] = "服务端",
         [nameof(Fallback)] = "回退",
         [nameof(SecretRefPlaceholder)] = "密钥引用，例如 profile-token",
         [nameof(ProfileSecretPlaceholder)] = "使用 DPAPI 保存的配置密钥",
@@ -253,6 +259,8 @@ public sealed class AppText
         [nameof(TrustPolicy)] = "信任策略",
         [nameof(UpdateNow)] = "立即更新",
         [nameof(SaveSubscription)] = "保存订阅",
+        [nameof(TrustPolicyConfirm)] = "确认",
+        [nameof(TrustPolicyAuto)] = "自动",
         [nameof(CopySource)] = "复制来源",
         [nameof(CopyResult)] = "复制结果",
         [nameof(RefreshDiagnostics)] = "刷新诊断",
@@ -452,6 +460,8 @@ public sealed class AppText
     public string ClearStartup => Get();
     public string ProfileNamePlaceholder => Get();
     public string SourcePlaceholder => Get();
+    public string ProfileKindClient => Get();
+    public string ProfileKindServer => Get();
     public string Fallback => Get();
     public string SecretRefPlaceholder => Get();
     public string ProfileSecretPlaceholder => Get();
@@ -473,6 +483,8 @@ public sealed class AppText
     public string TrustPolicy => Get();
     public string UpdateNow => Get();
     public string SaveSubscription => Get();
+    public string TrustPolicyConfirm => Get();
+    public string TrustPolicyAuto => Get();
     public string CopySource => Get();
     public string CopyResult => Get();
     public string RefreshDiagnostics => Get();

@@ -274,7 +274,7 @@
           <Grid Grid.Column="1" RowDefinitions="Auto,Auto,Auto,Auto,Auto,120,*,Auto" RowSpacing="10">
             <Grid ColumnDefinitions="*,160,160" ColumnSpacing="8">
               <TextBox Text="{Binding SelectedProfile.Name}" PlaceholderText="{Binding T.ProfileNamePlaceholder}" automation:AutomationProperties.AutomationId="ProfileNameTextBox"/>
-              <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileKinds}" SelectedItem="{Binding SelectedProfile.Kind}"/>
+              <ComboBox Grid.Column="1" ItemsSource="{Binding ProfileKinds}" SelectedItem="{Binding SelectedProfileKindOption}" DisplayMemberBinding="{Binding DisplayName}" automation:AutomationProperties.AutomationId="ProfileKindComboBox"/>
               <TextBox Grid.Column="2" Text="{Binding SelectedProfile.Source}" PlaceholderText="{Binding T.SourcePlaceholder}"/>
             </Grid>
             <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8">
@@ -372,7 +372,7 @@
               <TextBlock Grid.Row="2" Text="{Binding T.UpdateIntervalMinutes}" VerticalAlignment="Center"/>
               <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding SelectedSubscription.UpdateIntervalMinutes}" Minimum="1" Maximum="10080"/>
               <TextBlock Grid.Row="3" Text="{Binding T.TrustPolicy}" VerticalAlignment="Center"/>
-              <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding SubscriptionTrustPolicies}" SelectedItem="{Binding SelectedSubscription.TrustPolicy}"/>
+              <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding SubscriptionTrustPolicies}" SelectedItem="{Binding SelectedSubscriptionTrustPolicyOption}" DisplayMemberBinding="{Binding DisplayName}" automation:AutomationProperties.AutomationId="SubscriptionTrustPolicyComboBox"/>
             </Grid>
             <WrapPanel Grid.Row="1" ItemSpacing="8" LineSpacing="8">
               <Button Content="{Binding T.UpdateNow}" Command="{Binding RefreshSubscriptionCommand}" automation:AutomationProperties.AutomationId="UpdateSubscriptionNowButton"/>

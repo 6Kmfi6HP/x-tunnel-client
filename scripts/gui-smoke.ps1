@@ -2141,6 +2141,14 @@ try {
         }
         return $null
     }
+    $localizedProfileKindCombo = Get-ByAutomationId -Root $window -AutomationId "ProfileKindComboBox" -TimeoutSeconds $TimeoutSeconds
+    $localizedProfileKindText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Profile kind option did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $localizedProfileKindCombo
+        if ($text -eq "客户端") {
+            return $text
+        }
+        return $null
+    }
     $subscriptionsTab = Get-ByAutomationId -Root $window -AutomationId "SubscriptionsTab" -TimeoutSeconds $TimeoutSeconds
     Select-Element $subscriptionsTab
     $subscriptionSummary = Get-ByAutomationId -Root $window -AutomationId "SubscriptionSummaryTextBlock" -TimeoutSeconds $TimeoutSeconds
@@ -2157,6 +2165,14 @@ try {
     $localizedNewSubscriptionStatus = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "New subscription status did not localize after switching to Chinese." -Condition {
         $text = Get-ElementValue $localizedSubscriptionStatusBox
         if ($text -match "上次结果: 未保存") {
+            return $text
+        }
+        return $null
+    }
+    $localizedSubscriptionTrustCombo = Get-ByAutomationId -Root $window -AutomationId "SubscriptionTrustPolicyComboBox" -TimeoutSeconds $TimeoutSeconds
+    $localizedSubscriptionTrustText = Wait-Until -TimeoutSeconds $TimeoutSeconds -Message "Subscription trust policy option did not localize after switching to Chinese." -Condition {
+        $text = Get-ElementValue $localizedSubscriptionTrustCombo
+        if ($text -eq "确认") {
             return $text
         }
         return $null
@@ -2232,7 +2248,7 @@ try {
         }
         return $null
     }
-    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
+    Write-Host "Language switched: $languageLabelText / $localizedThemeText / $localizedUpdateChannelText / $localizedNetworkTargetText / $localizedProfileSummary / $localizedProfileState / $localizedProfileCopyText / $localizedNewProfileName / $localizedDuplicatedProfileName / $localizedProfileKindText / $localizedSubscriptionSummary / $($localizedNewSubscriptionStatus.Split([Environment]::NewLine)[0]) / $localizedSubscriptionTrustText / $($localizedSubscriptionSourceClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionSourceCopyText / $($localizedSubscriptionStatusClipboard.Split([Environment]::NewLine)[0]) / $localizedSubscriptionStatusCopyText / $localizedCorePathStatus / $($localizedSettingsFoldersClipboard.Split([Environment]::NewLine)[0]) / $languageSavedText"
 
     if ($process -and !$process.HasExited) {
         Stop-Process -Id $process.Id -Force
