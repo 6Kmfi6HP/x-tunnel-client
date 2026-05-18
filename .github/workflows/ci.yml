@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-package:
+    name: Build, test, and package smoke
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: x-tunnel-client
+
+    steps:
+      - name: Checkout client
+        uses: actions/checkout@v6
+        with:
+          path: x-tunnel-client
+          fetch-depth: 0
+
+      - name: Read release configuration
+        id: release-config
+        run: |
+          $config = Get-Content -Raw eng/release.json | ConvertFrom-Json
+          "dotnet_sdk=$($config.dotnetSdk)" >> $env:GITHUB_OUTPUT
+          "go_version=$($config.goVersion)" >> $env:GITHUB_OUTPUT
+          "core_repository=$($config.coreRepository)" >> $env:GITHUB_OUTPUT
+          "core_ref=$($config.coreRef)" >> $env:GITHUB_OUTPUT
+
+      - name: Checkout x-tunnel core
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ steps.release-config.outputs.core_repository }}
+          ref: ${{ steps.release-config.outputs.core_ref }}
+          path: x-tunnel
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ steps.release-config.outputs.dotnet_sdk }}
+          cache: true
+          cache-dependency-path: x-tunnel-client/**/packages.lock.json
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ steps.release-config.outputs.go_version }}
+          cache: true
+          cache-dependency-path: x-tunnel/go.sum
+
+      - name: Package smoke with MSI
+        run: .\scripts\package.ps1 -Configuration Release -Runtimes win-x64 -CoreRepo ..\x-tunnel -Output artifacts\ci-dist
+
+      - name: Verify package manifest and payloads
+        run: .\scripts\verify-release.ps1 -Dist artifacts\ci-dist
+
+      - name: Upload CI packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: x-tunnel-client-ci-win-x64
+          path: x-tunnel-client/artifacts/ci-dist/*
+          if-no-files-found: error
+          retention-days: 14

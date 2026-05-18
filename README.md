@@ -38,7 +38,7 @@ Windows desktop client for `x-tunnel`, implemented as a separate C# / Avalonia r
 
 ## Build
 
-Use the local SDK installed by the development task:
+Use the pinned .NET SDK from `global.json`:
 
 ```powershell
 $dotnet = "$env:USERPROFILE\.dotnet-sdk\dotnet.exe"
@@ -46,13 +46,29 @@ $dotnet = "$env:USERPROFILE\.dotnet-sdk\dotnet.exe"
 & $dotnet test XTunnelClient.sln
 ```
 
-Build a portable artifact and bundle the sibling Go core:
+Build a framework-dependent portable artifact and bundle the sibling Go core:
 
 ```powershell
 .\scripts\build.ps1 -Configuration Release -Runtime win-x64
 ```
 
-The portable zip is written under `artifacts\`.
+The portable zip is written under `artifacts\dist\`.
+
+## Packaging and Release
+
+The release pipeline builds the Windows GUI plus pinned `x-tunnel.exe` sidecar
+for `win-x64` and `win-arm64`. It produces framework-dependent portable zips,
+self-contained portable zips, self-contained MSI installers, `SHA256SUMS`, and a
+machine-readable `release-manifest.json`:
+
+```powershell
+.\scripts\package.ps1 -Configuration Release
+.\scripts\verify-release.ps1
+```
+
+GitHub Actions runs the same gates on CI and publishes release assets on tags
+like `v0.1.0`. See [docs/release.md](docs/release.md) for the package matrix,
+permissions, core pinning, attestation, signing, and rollback notes.
 
 ## Development Smoke
 

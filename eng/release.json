@@ -1,0 +1,18 @@
+{
+  "$schema": "https://example.invalid/schemas/x-tunnel-client-release.json",
+  "dotnetSdk": "8.0.421",
+  "goVersion": "1.24.4",
+  "wixVersion": "6.0.2",
+  "coreRepository": "6Kmfi6HP/x-tunnel",
+  "coreRef": "v0.4.1",
+  "runtimes": [
+    "win-x64",
+    "win-arm64"
+  ],
+  "portableDeployments": [
+    "framework-dependent",
+    "self-contained"
+  ],
+  "installerDeployment": "self-contained",
+  "releaseAssetBaseUrl": "https://github.com/6Kmfi6HP/x-tunnel-client/releases/download"
+}

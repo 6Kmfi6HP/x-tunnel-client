@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <Company>XTunnel</Company>
+    <Authors>XTunnel</Authors>
+    <Product>x-tunnel Client</Product>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <RepositoryUrl>https://github.com/6Kmfi6HP/x-tunnel-client</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+    <DebugType>embedded</DebugType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <TreatWarningsAsErrors Condition="'$(CI)' == 'true'">true</TreatWarningsAsErrors>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+</Project>

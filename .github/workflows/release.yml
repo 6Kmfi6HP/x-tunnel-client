@@ -1,0 +1,246 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing client release tag, for example v0.1.0
+        required: true
+        type: string
+      core_ref:
+        description: Optional x-tunnel core ref override. Defaults to eng/release.json.
+        required: false
+        type: string
+      prerelease:
+        description: Mark the GitHub release as prerelease.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  verify:
+    name: Verify release candidate
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: x-tunnel-client
+
+    steps:
+      - name: Checkout client release tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          path: x-tunnel-client
+          fetch-depth: 0
+
+      - name: Read release configuration
+        id: release-config
+        run: |
+          $config = Get-Content -Raw eng/release.json | ConvertFrom-Json
+          "dotnet_sdk=$($config.dotnetSdk)" >> $env:GITHUB_OUTPUT
+          "go_version=$($config.goVersion)" >> $env:GITHUB_OUTPUT
+          "core_repository=$($config.coreRepository)" >> $env:GITHUB_OUTPUT
+          "core_ref=$($config.coreRef)" >> $env:GITHUB_OUTPUT
+
+      - name: Checkout x-tunnel core
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ steps.release-config.outputs.core_repository }}
+          ref: ${{ inputs.core_ref || steps.release-config.outputs.core_ref }}
+          path: x-tunnel
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ steps.release-config.outputs.dotnet_sdk }}
+          cache: true
+          cache-dependency-path: x-tunnel-client/**/packages.lock.json
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ steps.release-config.outputs.go_version }}
+          cache: true
+          cache-dependency-path: x-tunnel/go.sum
+
+      - name: Validate tag and test
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$') {
+            throw "Release tag must look like v1.2.3 or v1.2.3-rc.1: $env:RELEASE_TAG"
+          }
+          git rev-parse --verify "refs/tags/$env:RELEASE_TAG"
+          dotnet restore .\XTunnelClient.sln
+          dotnet test .\XTunnelClient.sln -c Release --no-restore
+          Push-Location ..\x-tunnel
+          try {
+            go test ./...
+          }
+          finally {
+            Pop-Location
+          }
+
+      - name: Release script smoke
+        run: .\scripts\package.ps1 -Configuration Release -Runtimes win-x64 -CoreRepo ..\x-tunnel -Output artifacts\release-smoke -Version $env:RELEASE_TAG -SkipInstaller -SkipSelfContained -SkipTests
+
+      - name: Verify smoke package
+        run: .\scripts\verify-release.ps1 -Dist artifacts\release-smoke
+
+  build:
+    name: Build release packages
+    runs-on: windows-latest
+    needs: verify
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: x-tunnel-client
+
+    steps:
+      - name: Checkout client release tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          path: x-tunnel-client
+          fetch-depth: 0
+
+      - name: Read release configuration
+        id: release-config
+        run: |
+          $config = Get-Content -Raw eng/release.json | ConvertFrom-Json
+          "dotnet_sdk=$($config.dotnetSdk)" >> $env:GITHUB_OUTPUT
+          "go_version=$($config.goVersion)" >> $env:GITHUB_OUTPUT
+          "core_repository=$($config.coreRepository)" >> $env:GITHUB_OUTPUT
+          "core_ref=$($config.coreRef)" >> $env:GITHUB_OUTPUT
+
+      - name: Checkout x-tunnel core
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ steps.release-config.outputs.core_repository }}
+          ref: ${{ inputs.core_ref || steps.release-config.outputs.core_ref }}
+          path: x-tunnel
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ steps.release-config.outputs.dotnet_sdk }}
+          cache: true
+          cache-dependency-path: x-tunnel-client/**/packages.lock.json
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ steps.release-config.outputs.go_version }}
+          cache: true
+          cache-dependency-path: x-tunnel/go.sum
+
+      - name: Build all release packages
+        env:
+          WINDOWS_SIGNING_CERT_BASE64: ${{ secrets.WINDOWS_SIGNING_CERT_BASE64 }}
+          WINDOWS_SIGNING_CERT_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERT_PASSWORD }}
+        run: |
+          $packageArgs = @(
+            "-Configuration", "Release",
+            "-CoreRepo", "..\x-tunnel",
+            "-Output", "artifacts\dist",
+            "-Version", $env:RELEASE_TAG,
+            "-SkipTests"
+          )
+
+          if (-not [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERT_BASE64)) {
+            $certPath = Join-Path $env:RUNNER_TEMP "windows-signing.pfx"
+            [System.IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_SIGNING_CERT_BASE64))
+            $packageArgs += @("-Sign", "-SignCertificatePath", $certPath, "-SignCertificatePasswordEnv", "WINDOWS_SIGNING_CERT_PASSWORD")
+          }
+
+          .\scripts\package.ps1 @packageArgs
+
+      - name: Verify release packages
+        run: .\scripts\verify-release.ps1 -Dist artifacts\dist
+
+      - name: Attest release assets
+        uses: actions/attest@v4
+        with:
+          subject-path: x-tunnel-client/artifacts/dist/*
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: x-tunnel-client-release-assets
+          path: x-tunnel-client/artifacts/dist/*
+          if-no-files-found: error
+          retention-days: 30
+
+  github-release:
+    name: Publish GitHub release
+    runs-on: windows-latest
+    needs: build
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Download release assets
+        uses: actions/download-artifact@v5
+        with:
+          name: x-tunnel-client-release-assets
+          path: dist
+
+      - name: Create release notes
+        run: |
+          $manifest = Get-Content -Raw dist\release-manifest.json | ConvertFrom-Json
+          $lines = @(
+            "# x-tunnel Client $env:RELEASE_TAG",
+            "",
+            "Built from client commit ``$($manifest.commit)`` and x-tunnel core commit ``$($manifest.core.commit)``.",
+            "",
+            "Assets:",
+            ""
+          )
+          foreach ($asset in $manifest.assets) {
+            $lines += "- ``$($asset.name)``: $($asset.kind), $($asset.runtime), $($asset.deployment), SHA256 ``$($asset.sha256)``"
+          }
+          $lines += ""
+          $lines += "Checksums are in ``SHA256SUMS`` and machine-readable metadata is in ``release-manifest.json``."
+          Set-Content -LiteralPath release-notes.md -Encoding UTF8 -Value $lines
+
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $prerelease = "${{ inputs.prerelease }}" -eq "true" -or $env:RELEASE_TAG.Contains("-")
+          $args = @("release", "create", $env:RELEASE_TAG)
+          $args += Get-ChildItem -LiteralPath dist -File | ForEach-Object { $_.FullName }
+          $args += @("--title", "x-tunnel Client $env:RELEASE_TAG", "--notes-file", "release-notes.md", "--verify-tag")
+          if ($prerelease) {
+            $args += "--prerelease"
+          }
+
+          gh release view $env:RELEASE_TAG *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release edit $env:RELEASE_TAG --title "x-tunnel Client $env:RELEASE_TAG" --notes-file release-notes.md
+            gh release upload $env:RELEASE_TAG (Get-ChildItem -LiteralPath dist -File | ForEach-Object { $_.FullName }) --clobber
+          }
+          else {
+            gh @args
+          }

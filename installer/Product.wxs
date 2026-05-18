@@ -1,0 +1,54 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="$(ProductName)"
+    Manufacturer="$(Manufacturer)"
+    Version="$(ProductVersion)"
+    UpgradeCode="$(UpgradeCode)"
+    Scope="perMachine">
+    <SummaryInformation
+      Description="$(ProductName) $(DisplayVersion)"
+      Manufacturer="$(Manufacturer)" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of $(ProductName) is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="AppIcon.ico" SourceFile="$(IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="x-tunnel-client" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="x-tunnel Client">
+        <Component Id="ApplicationShortcuts" Guid="{66A0B060-E171-48B2-96F0-AB6D5D7409E1}">
+          <Shortcut
+            Id="ApplicationStartMenuShortcut"
+            Name="x-tunnel Client"
+            Description="x-tunnel Windows desktop client"
+            Target="[INSTALLFOLDER]XTunnelClient.App.exe"
+            WorkingDirectory="INSTALLFOLDER" />
+          <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
+          <RegistryValue
+            Root="HKCU"
+            Key="Software\XTunnel\x-tunnel Client"
+            Name="installed"
+            Type="integer"
+            Value="1"
+            KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="$(ProductName)" Level="1">
+      <ComponentGroupRef Id="PublishedFiles" />
+      <ComponentRef Id="ApplicationShortcuts" />
+    </Feature>
+
+    <ComponentGroup Id="PublishedFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(PayloadDir)\**">
+        <Exclude Files="$(PayloadDir)\*.pdb" />
+      </Files>
+    </ComponentGroup>
+  </Package>
+</Wix>
